@@ -7,9 +7,14 @@ use CodeIgniter\Router\RouteCollection;
  */
 $routes->get('/', 'Home::index');
 $routes->get('admin/veiculos', 'Veiculos::index');
+$routes->get('admin/veiculos/listar', 'Veiculos::listar');
+$routes->post('admin/veiculos/criar', 'Veiculos::criar');
+$routes->get('admin/veiculos/editar/(:num)', 'Veiculos::editar/$1');
+$routes->post('admin/veiculos/atualizar/(:num)', 'Veiculos::atualizar/$1');
 $routes->get('admin/locatarios', 'Locatarios::index');
 $routes->get('admin/locacoes', 'Locoes::index');
 $routes->get('admin/contratos', 'Contratos::index');
+$routes->get('admin/cobrancas', 'Cobrancas::index');
 $routes->get('admin/financeiro', 'Financeiro::index');
 $routes->get('admin/financeiro/movimentacoes', 'Financeiro::movimentacoes');
 $routes->get('admin/manutencao', 'Manutencao::index');

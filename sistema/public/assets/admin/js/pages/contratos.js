@@ -15,6 +15,19 @@ if (document.getElementById("table-contratos")) {
         }
     };
 
+    const fromController = Array.isArray(window.__MEUS_CONTRATOS__)
+        ? window.__MEUS_CONTRATOS__.map((c) => ([
+            String(c.id),
+            c.numero,
+            c.locatario,
+            c.veiculo,
+            c.inicio,
+            c.termino,
+            c.valor_total,
+            c.status
+        ]))
+        : null;
+
     new gridjs.Grid({
         columns: [
             {
@@ -87,7 +100,7 @@ if (document.getElementById("table-contratos")) {
         sort: true,
         search: true,
         language: ptBR,
-        data: [
+        data: fromController ?? [
             ["1", "CT-2026-001", "João Silva", "ABC-1234", "15/01/2026", "15/02/2026", "R$ 1.200,00", "Ativo"],
             ["2", "CT-2026-002", "Maria Santos", "XYZ-5678", "10/01/2026", "10/02/2026", "R$ 1.000,00", "Encerrado"],
             ["3", "CT-2026-003", "Pedro Oliveira", "DEF-9012", "20/01/2026", "20/02/2026", "R$ 1.800,00", "Ativo"],
