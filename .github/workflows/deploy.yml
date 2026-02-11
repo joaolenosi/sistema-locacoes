@@ -25,7 +25,7 @@ jobs:
           username: guinesoftware
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./sistema/
-          server-dir: www/painel/
+          server-dir: /www/painel/
           dangerous-clean-slate: false
           dry-run: false
           log-level: verbose
