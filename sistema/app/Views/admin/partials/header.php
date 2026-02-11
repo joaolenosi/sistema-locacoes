@@ -301,7 +301,7 @@
 
                                     <a
                                         class="dropdown-item text-danger"
-                                        href="auth-signin.html"
+                                        href="<?= base_url('logout') ?>"
                                     >
                                         <i class="bx bx-log-out fs-18 align-middle me-1"></i
                                         ><span class="align-middle">Sair</span>
