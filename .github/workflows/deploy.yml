@@ -18,6 +18,22 @@ jobs:
             rm -rf ./sistema/.cursor
           fi
       
+      - name: Create main directories via FTP
+        run: |
+          apt-get update && apt-get install -y lftp
+          lftp -u guinesoftware,${{ secrets.FTP_PASSWORD }} ftp.guinesoftware.com.br <<EOF
+          cd /www/sistema
+          mkdir -p app
+          mkdir -p public
+          mkdir -p writable
+          mkdir -p writable/cache
+          mkdir -p writable/logs
+          mkdir -p writable/session
+          mkdir -p writable/uploads
+          quit
+          EOF
+        continue-on-error: true
+      
       - name: Deploy to FTP
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
@@ -25,7 +41,7 @@ jobs:
           username: guinesoftware
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./sistema/
-          server-dir: sistema/
+          server-dir: /www/sistema/
           dangerous-clean-slate: false
           dry-run: false
           log-level: verbose
