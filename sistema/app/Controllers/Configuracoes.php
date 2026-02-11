@@ -170,11 +170,20 @@ class Configuracoes extends BaseController
             'emp_cidade' => trim((string) ($payload['cidade'] ?? '')) ?: null,
             'emp_estado' => trim((string) ($payload['estado'] ?? '')) ?: null,
             'emp_obs' => trim((string) ($payload['observacoes'] ?? '')) ?: null,
+            'emp_inscricao_estadual' => trim((string) ($payload['inscricao_estadual'] ?? '')) ?: null,
+            'emp_inscricao_municipal' => trim((string) ($payload['inscricao_municipal'] ?? '')) ?: null,
+            'emp_site' => trim((string) ($payload['site'] ?? '')) ?: null,
         ];
 
         // Só atualiza emp_tipo quando vier preenchido no payload (evita gravar NULL e quebrar NOT NULL)
         if ($tipo !== '') {
             $data['emp_tipo'] = $tipo;
+        }
+
+        // Senha: só atualiza se foi preenchida (hash)
+        $senha = trim((string) ($payload['senha'] ?? ''));
+        if ($senha !== '') {
+            $data['senha'] = password_hash($senha, PASSWORD_DEFAULT);
         }
 
         return $data;

@@ -41,11 +41,11 @@
     <div class="row mb-3">
         <div class="col-md-6">
             <label for="inscricao_estadual" class="form-label">Inscrição Estadual</label>
-            <input type="text" class="form-control" id="inscricao_estadual" name="inscricao_estadual">
+            <input type="text" class="form-control" id="inscricao_estadual" name="inscricao_estadual" value="<?= esc($empresa['emp_inscricao_estadual'] ?? '') ?>">
         </div>
         <div class="col-md-6">
             <label for="inscricao_municipal" class="form-label">Inscrição Municipal</label>
-            <input type="text" class="form-control" id="inscricao_municipal" name="inscricao_municipal">
+            <input type="text" class="form-control" id="inscricao_municipal" name="inscricao_municipal" value="<?= esc($empresa['emp_inscricao_municipal'] ?? '') ?>">
         </div>
     </div>
 
@@ -122,15 +122,19 @@
         </div>
     </div>
 
-    <!-- Telefone e Email -->
+    <!-- Telefone, E-mail e Senha (credenciais de acesso) -->
     <div class="row mb-3">
-        <div class="col-md-6">
+        <div class="col-md-4">
             <label for="telefone" class="form-label">Telefone <span class="text-danger">*</span></label>
             <input type="text" class="form-control" id="telefone" name="telefone" placeholder="(00) 00000-0000" value="<?= esc($empresa['emp_telefone'] ?? '') ?>" required>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
             <label for="email" class="form-label">E-mail <span class="text-danger">*</span></label>
             <input type="email" class="form-control" id="email" name="email" value="<?= esc($empresa['emp_email'] ?? '') ?>" required>
+        </div>
+        <div class="col-md-4">
+            <label for="senha" class="form-label">Senha</label>
+            <input type="password" class="form-control" id="senha" name="senha" placeholder="Deixe em branco para não alterar" autocomplete="new-password">
         </div>
     </div>
 
@@ -138,7 +142,7 @@
     <div class="row mb-3">
         <div class="col-md-6">
             <label for="site" class="form-label">Site</label>
-            <input type="url" class="form-control" id="site" name="site" placeholder="https://" value="">
+            <input type="url" class="form-control" id="site" name="site" placeholder="https://" value="<?= esc($empresa['emp_site'] ?? '') ?>">
         </div>
         <div class="col-md-6">
             <label for="observacoes" class="form-label">Observações</label>
