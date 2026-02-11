@@ -128,7 +128,7 @@
     }
 
     .vei-kpi-icon {
-        width: 44px;
+        width: 44px;   
         height: 44px;
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.22);
