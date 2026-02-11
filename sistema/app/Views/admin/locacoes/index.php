@@ -162,7 +162,7 @@
                 <div>
                     <div class="fw-medium" style="opacity: .95;">Entradas</div>
                     <div class="fw-semibold" style="font-size: 2rem; line-height: 1.1;">
-                        <?= esc($entradas ?? 0) ?>
+                        <span id="kpi-loc-entradas"><?= esc($entradas ?? 0) ?></span>
                     </div>
                 </div>
                 <div class="loc-kpi-icon" aria-hidden="true">
@@ -177,7 +177,7 @@
                 <div>
                     <div class="fw-medium" style="opacity: .95;">Saídas</div>
                     <div class="fw-semibold" style="font-size: 2rem; line-height: 1.1;">
-                        <?= esc($saidas ?? 0) ?>
+                        <span id="kpi-loc-saidas"><?= esc($saidas ?? 0) ?></span>
                     </div>
                 </div>
                 <div class="loc-kpi-icon" aria-hidden="true">
@@ -192,7 +192,7 @@
                 <div>
                     <div class="fw-medium" style="opacity: .95;">Em atraso</div>
                     <div class="fw-semibold" style="font-size: 2rem; line-height: 1.1;">
-                        <?= esc($em_atraso ?? 0) ?>
+                        <span id="kpi-loc-em-atraso"><?= esc($em_atraso ?? 0) ?></span>
                     </div>
                 </div>
                 <div class="loc-kpi-icon" aria-hidden="true">
@@ -214,7 +214,7 @@
                             <iconify-icon icon="iconamoon:filter-duotone" class="fs-18"></iconify-icon>
                             Filtros
                         </button>
-                        <button type="button" class="btn btn-primary">
+                        <button type="button" class="btn btn-primary" onclick="abrirModalLocacao()">
                             <iconify-icon icon="iconamoon:plus-duotone" class="fs-18"></iconify-icon>
                             Nova Locação
                         </button>
@@ -247,39 +247,214 @@
 <!-- Gridjs Plugin js -->
 <script src="<?= base_url('assets/admin/vendor/gridjs/gridjs.umd.js') ?>"></script>
 
+<!-- jQuery Mask Plugin (já usado em outras telas) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
+<script>
+window.__LOCACOES_BOOTSTRAP__ = {
+  locacoes: <?= json_encode($locacoes ?? []) ?>,
+  kpis: {
+    entradas: <?= json_encode($entradas ?? 0) ?>,
+    saidas: <?= json_encode($saidas ?? 0) ?>,
+    emAtraso: <?= json_encode($em_atraso ?? 0) ?>
+  }
+};
+</script>
+
 <!-- Gridjs Locações js -->
 <script src="<?= base_url('assets/admin/js/pages/locacoes.js') ?>"></script>
 
-<!-- Script para controle de filtros -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const btnFiltros = document.getElementById('btn-filtros');
-    const filtrosContainer = document.getElementById('filtros-container');
-    let filtrosAtivos = false;
-    
-    // Aguardar GridJS renderizar
-    setTimeout(function() {
-        const gridSearchWrapper = document.querySelector('#table-locacoes .gridjs-search')?.parentElement;
-        
-        if (btnFiltros && filtrosContainer && gridSearchWrapper) {
-            // Mover filtros para dentro do wrapper do GridJS, na mesma linha da pesquisa
-            gridSearchWrapper.appendChild(filtrosContainer);
-            
-            btnFiltros.addEventListener('click', function() {
-                filtrosAtivos = !filtrosAtivos;
-                
-                if (filtrosAtivos) {
-                    filtrosContainer.style.display = 'inline-flex';
-                    btnFiltros.classList.remove('btn-outline-primary');
-                    btnFiltros.classList.add('btn-primary');
-                } else {
-                    filtrosContainer.style.display = 'none';
-                    btnFiltros.classList.remove('btn-primary');
-                    btnFiltros.classList.add('btn-outline-primary');
-                }
-            });
-        }
-    }, 500);
-});
-</script>
+<!-- Modal Locação (Cadastro/Edição) -->
+<div class="modal fade" id="modalLocacao" tabindex="-1" aria-labelledby="modalLocacaoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content d-flex flex-column">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalLocacaoLabel">Cadastrar locação</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+        <form id="formLocacao">
+          <input type="hidden" id="locacao_id" name="locacao_id" value="">
+          <input type="hidden" id="loc_cli_id" name="loc_cli_id" value="">
+          <input type="hidden" id="loc_vei_id" name="loc_vei_id" value="">
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Locatário <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="loc_cli_display" placeholder="Selecione o locatário" readonly required>
+                <button class="btn btn-outline-secondary" type="button" onclick="abrirModalEscolherLocatario()" title="Pesquisar locatário">
+                  <iconify-icon icon="iconamoon:search-duotone" class="fs-18"></iconify-icon>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Placa do veículo <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="loc_vei_display" placeholder="Selecione a placa do veículo" readonly required>
+                <button class="btn btn-outline-secondary" type="button" onclick="abrirModalEscolherVeiculo()" title="Pesquisar veículo">
+                  <iconify-icon icon="iconamoon:search-duotone" class="fs-18"></iconify-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="loc_data_inicio" class="form-label">Início da locação <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="loc_data_inicio" name="loc_data_inicio" required>
+            </div>
+            <div class="col-md-6">
+              <label for="loc_tempo_minimo" class="form-label">Tempo mínimo</label>
+              <select class="form-select" id="loc_tempo_minimo">
+                <option value="">Selecione a duração</option>
+                <option value="1">1 dia</option>
+                <option value="3">3 dias</option>
+                <option value="7">7 dias</option>
+                <option value="15">15 dias</option>
+                <option value="30">30 dias</option>
+              </select>
+              <div class="form-text">Opcional: sugere a data fim prevista (você pode alterar).</div>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="loc_valor_locacao" class="form-label">Valor da locação <span class="text-danger">*</span></label>
+              <input type="text" class="form-control money" id="loc_valor_locacao" name="loc_valor_locacao" placeholder="0,00" required>
+            </div>
+            <div class="col-md-6">
+              <label for="loc_valor_caucao" class="form-label">Valor da caução</label>
+              <input type="text" class="form-control money" id="loc_valor_caucao" name="loc_valor_caucao" placeholder="0,00">
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="loc_data_inicio_pagamento" class="form-label">Início do pagamento</label>
+              <input type="date" class="form-control" id="loc_data_inicio_pagamento" name="loc_data_inicio_pagamento">
+            </div>
+            <div class="col-md-6">
+              <label for="loc_recorrencia_pagamento" class="form-label">Recorrência de pagamento</label>
+              <select class="form-select" id="loc_recorrencia_pagamento" name="loc_recorrencia_pagamento">
+                <option value="">Selecione a recorrência</option>
+                <option value="diaria">Diária</option>
+                <option value="semanal">Semanal</option>
+                <option value="quinzenal">Quinzenal</option>
+                <option value="mensal">Mensal</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="loc_taxa_juros" class="form-label">Taxa de juros R$</label>
+              <input type="text" class="form-control money" id="loc_taxa_juros" name="loc_taxa_juros" placeholder="0,00">
+            </div>
+            <div class="col-md-6">
+              <label for="loc_taxa_multa" class="form-label">Taxa de multa R$</label>
+              <input type="text" class="form-control money" id="loc_taxa_multa" name="loc_taxa_multa" placeholder="0,00">
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="loc_km_retirada" class="form-label">KM na retirada</label>
+              <input type="number" class="form-control" id="loc_km_retirada" name="loc_km_retirada" placeholder="Ex.: 68000">
+            </div>
+            <div class="col-md-6">
+              <label for="loc_data_fim_prevista" class="form-label">Fim previsto <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="loc_data_fim_prevista" name="loc_data_fim_prevista" required>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="loc_status" class="form-label">Status</label>
+              <select class="form-select" id="loc_status" name="loc_status">
+                <option value="reservada">Reservada</option>
+                <option value="ativa">Ativa</option>
+                <option value="atrasada">Atrasada</option>
+                <option value="inadimplente">Inadimplente</option>
+                <option value="finalizada">Finalizada</option>
+                <option value="cancelada">Cancelada</option>
+              </select>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="loc_valores_recebidos" name="loc_valores_recebidos">
+                <label class="form-check-label" for="loc_valores_recebidos">Marcar valores como recebido</label>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btnSalvarLocacao" onclick="salvarLocacao()">
+          <span class="btn-label">Adicionar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: escolher veículo -->
+<div class="modal fade" id="modalEscolherVeiculo" tabindex="-1" aria-labelledby="modalEscolherVeiculoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalEscolherVeiculoLabel">Selecionar veículo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-2 mb-2">
+          <div class="col-md-6">
+            <input type="text" class="form-control" id="filtro-veiculo-geral" placeholder="Buscar por placa, modelo ou marca...">
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="filtro-veiculo-status">
+              <option value="">Status (todos)</option>
+              <option value="disponivel">Disponível</option>
+              <option value="locado">Locado</option>
+              <option value="manutencao">Manutenção</option>
+              <option value="inativo">Inativo</option>
+            </select>
+          </div>
+          <div class="col-md-3 d-flex justify-content-end align-items-center">
+            <small class="text-muted">Clique em selecionar para preencher</small>
+          </div>
+        </div>
+        <div id="table-escolher-veiculo"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: escolher locatário -->
+<div class="modal fade" id="modalEscolherLocatario" tabindex="-1" aria-labelledby="modalEscolherLocatarioLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalEscolherLocatarioLabel">Selecionar locatário</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-2 mb-2">
+          <div class="col-md-6">
+            <input type="text" class="form-control" id="filtro-locatario-nome" placeholder="Buscar por nome...">
+          </div>
+          <div class="col-md-3">
+            <input type="text" class="form-control" id="filtro-locatario-cpfcnpj" placeholder="Filtrar por CPF/CNPJ">
+          </div>
+          <div class="col-md-3 d-flex justify-content-end align-items-center">
+            <small class="text-muted">Clique em selecionar para preencher</small>
+          </div>
+        </div>
+        <div id="table-escolher-locatario"></div>
+      </div>
+    </div>
+  </div>
+</div>
 <?= $this->endSection() ?>

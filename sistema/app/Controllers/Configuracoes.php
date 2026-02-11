@@ -2,76 +2,38 @@
 
 namespace App\Controllers;
 
+use App\Models\EmpresaModel;
+use App\Models\PlanoModel;
+
 class Configuracoes extends BaseController
 {
     public function index(): string
     {
-        // Dados simulados dos planos (baseado no SQL fornecido)
-        $planos = [
-            [
-                'id' => 1,
-                'nome' => 'Pulse',
-                'slug' => 'pulse',
-                'descricao' => 'Plano ideal para pequenas operações',
-                'preco_mensal' => 40.49,
-                'preco_anual' => 340.13,
-                'desconto_anual' => 30.00,
-                'limite_veiculos' => 5,
-                'limite_locatarios' => 50,
-                'limite_locacoes' => 100,
-                'suporte_tipo' => 'email',
-                'backup_diario' => false,
-                'relatorios_avancados' => false,
-                'acesso_antecipado' => false,
-                'ordem' => 1
-            ],
-            [
-                'id' => 2,
-                'nome' => 'Flow',
-                'slug' => 'flow',
-                'descricao' => 'Plano mais completo para negócios em crescimento',
-                'preco_mensal' => 64.79,
-                'preco_anual' => 544.25,
-                'desconto_anual' => 30.00,
-                'limite_veiculos' => 25,
-                'limite_locatarios' => null,
-                'limite_locacoes' => null,
-                'suporte_tipo' => 'whatsapp',
-                'backup_diario' => true,
-                'relatorios_avancados' => false,
-                'acesso_antecipado' => false,
-                'ordem' => 2,
-                'mais_escolhido' => true
-            ],
-            [
-                'id' => 3,
-                'nome' => 'Orbit',
-                'slug' => 'orbit',
-                'descricao' => 'Plano avançado para grandes operações',
-                'preco_mensal' => 89.99,
-                'preco_anual' => 755.93,
-                'desconto_anual' => 30.00,
-                'limite_veiculos' => null,
-                'limite_locatarios' => null,
-                'limite_locacoes' => null,
-                'suporte_tipo' => 'prioritario',
-                'backup_diario' => true,
-                'relatorios_avancados' => true,
-                'acesso_antecipado' => true,
-                'ordem' => 3
-            ]
-        ];
+        $empresaId = 1; // fixo (por enquanto), mesmo padrão do cadastro de veículos
 
-        // Dados do plano atual (simulado)
+        $empresaModel = new EmpresaModel();
+        $planoModel = new PlanoModel();
+
+        $empresa = $empresaModel->find($empresaId);
+
+        $planosDb = $planoModel
+            ->where('pla_status', 'ativo')
+            ->orderBy('pla_ordem', 'ASC')
+            ->findAll();
+
+        $planos = $this->mapPlanosForView($planosDb);
+
+        // Plano atual: por enquanto, UI (sem integração de assinatura)
         $plano_atual = [
             'nome' => 'Período de Teste',
-            'dias_restantes' => 5
+            'dias_restantes' => 5,
         ];
 
         $data = [
             'title' => 'Configurações',
             'planos' => $planos,
             'plano_atual' => $plano_atual,
+            'empresa' => $empresa,
         ];
         
         try {
@@ -79,5 +41,156 @@ class Configuracoes extends BaseController
         } catch (\Exception $e) {
             return 'Error: ' . $e->getMessage();
         }
+    }
+
+    public function listarPlanos()
+    {
+        try {
+            $planoModel = new PlanoModel();
+            $planosDb = $planoModel
+                ->where('pla_status', 'ativo')
+                ->orderBy('pla_ordem', 'ASC')
+                ->findAll();
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $this->mapPlanosForView($planosDb),
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao listar planos.',
+            ]);
+        }
+    }
+
+    public function atualizarEmpresa()
+    {
+        try {
+            $empresaId = 1; // fixo (por enquanto)
+            $empresaModel = new EmpresaModel();
+
+            $existing = $empresaModel->find($empresaId);
+            if (!$existing) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => 'Empresa não encontrada.',
+                ]);
+            }
+
+            $payload = (array) $this->request->getPost();
+            $data = $this->normalizeEmpresaPayload($payload);
+            $validationError = $this->validateEmpresaPayload($data);
+            if ($validationError) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'success' => false,
+                    'message' => $validationError,
+                ]);
+            }
+
+            // CNPJ não pode ser alterado
+            unset($data['emp_cpf_cnpj']);
+
+            // manter empresa fixa (não confiar no payload)
+            $ok = $empresaModel->update($empresaId, $data);
+            if (!$ok) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'message' => 'Não foi possível atualizar os dados da empresa.',
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Dados da empresa atualizados com sucesso.',
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao atualizar dados da empresa.',
+            ]);
+        }
+    }
+
+    /**
+     * Converte linhas do banco (pla_*) no formato esperado pela view/JS atual.
+     */
+    private function mapPlanosForView(array $planosDb): array
+    {
+        $out = [];
+        foreach ($planosDb as $p) {
+            $out[] = [
+                'id' => (int) ($p['id'] ?? 0),
+                'nome' => (string) ($p['pla_nome'] ?? ''),
+                'slug' => (string) ($p['pla_slug'] ?? ''),
+                'descricao' => (string) ($p['pla_descricao'] ?? ''),
+                'preco_mensal' => (float) ($p['pla_preco_mensal'] ?? 0),
+                'preco_anual' => (float) ($p['pla_preco_anual'] ?? 0),
+                'desconto_anual' => (float) ($p['pla_desconto_anual_percentual'] ?? 0),
+                'limite_veiculos' => $p['pla_limite_veiculos'] ?? null,
+                'limite_locatarios' => $p['pla_limite_locatarios'] ?? null,
+                'limite_locacoes' => $p['pla_limite_locacoes'] ?? null,
+                'suporte_tipo' => (string) ($p['pla_suporte_tipo'] ?? 'email'),
+                'backup_diario' => (bool) ($p['pla_backup_diario'] ?? 0),
+                'relatorios_avancados' => (bool) ($p['pla_relatorios_avancados'] ?? 0),
+                'acesso_antecipado' => (bool) ($p['pla_acesso_antecipado'] ?? 0),
+                'ordem' => (int) ($p['pla_ordem'] ?? 1),
+            ];
+        }
+
+        // Mantém a UX de destaque (se existir slug "flow", marca como mais escolhido)
+        foreach ($out as $idx => $plano) {
+            if (($plano['slug'] ?? '') === 'flow') {
+                $out[$idx]['mais_escolhido'] = true;
+                break;
+            }
+        }
+
+        return array_values($out);
+    }
+
+    private function normalizeEmpresaPayload(array $payload): array
+    {
+        // Normaliza CPF/CNPJ e CEP sem formatação
+        $cpfCnpj = preg_replace('/\\D/', '', (string) ($payload['cpf_cnpj'] ?? '')) ?: null;
+        $cep = preg_replace('/\\D/', '', (string) ($payload['cep'] ?? '')) ?: null;
+        $telefone = preg_replace('/\\D/', '', (string) ($payload['telefone'] ?? '')) ?: null;
+
+        $tipo = trim((string) ($payload['emp_tipo'] ?? ($payload['tipo_negocio'] ?? '')));
+
+        $data = [
+            'emp_nome' => trim((string) ($payload['nome_empresa'] ?? '')),
+            'emp_cpf_cnpj' => $cpfCnpj,
+            'emp_telefone' => $telefone,
+            'emp_email' => trim((string) ($payload['email'] ?? '')) ?: null,
+            'emp_cep' => $cep,
+            'emp_rua' => trim((string) ($payload['endereco'] ?? '')) ?: null,
+            'emp_numero' => trim((string) ($payload['numero'] ?? '')) ?: null,
+            'emp_complemento' => trim((string) ($payload['complemento'] ?? '')) ?: null,
+            'emp_cidade' => trim((string) ($payload['cidade'] ?? '')) ?: null,
+            'emp_estado' => trim((string) ($payload['estado'] ?? '')) ?: null,
+            'emp_obs' => trim((string) ($payload['observacoes'] ?? '')) ?: null,
+        ];
+
+        // Só atualiza emp_tipo quando vier preenchido no payload (evita gravar NULL e quebrar NOT NULL)
+        if ($tipo !== '') {
+            $data['emp_tipo'] = $tipo;
+        }
+
+        return $data;
+    }
+
+    private function validateEmpresaPayload(array $data): ?string
+    {
+        if (($data['emp_nome'] ?? '') === '') return 'Informe o nome da empresa.';
+
+        if (array_key_exists('emp_tipo', $data)) {
+            $allowedTipos = ['salao', 'locadora', 'clinica', 'outro'];
+            if (!in_array($data['emp_tipo'], $allowedTipos, true)) {
+                return 'Tipo de negócio inválido.';
+            }
+        }
+
+        return null;
     }
 }

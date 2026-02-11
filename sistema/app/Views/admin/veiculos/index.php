@@ -136,6 +136,12 @@
         align-items: center;
         justify-content: center;
     }
+
+    /* Melhor leitura no modal */
+    #modalVeiculo .form-control,
+    #modalVeiculo .form-select {
+        color: #111827; /* mais escuro */
+    }
 </style>
 
 <!-- ========== Page Title Start ========== -->
@@ -162,7 +168,7 @@
                 <div>
                     <div class="fw-medium" style="opacity: .95;">Total de veículos</div>
                     <div class="fw-semibold" style="font-size: 2rem; line-height: 1.1;">
-                        <?= esc($total_veiculos ?? 0) ?>
+                        <span id="kpi-total-veiculos"><?= esc($total_veiculos ?? 0) ?></span>
                     </div>
                 </div>
                 <div class="vei-kpi-icon" aria-hidden="true">
@@ -177,7 +183,7 @@
                 <div>
                     <div class="fw-medium" style="opacity: .95;">Veículos livres</div>
                     <div class="fw-semibold" style="font-size: 2rem; line-height: 1.1;">
-                        <?= esc($veiculos_livres ?? 0) ?>
+                        <span id="kpi-veiculos-livres"><?= esc($veiculos_livres ?? 0) ?></span>
                     </div>
                 </div>
                 <div class="vei-kpi-icon" aria-hidden="true">
@@ -192,11 +198,11 @@
                 <div>
                     <div class="fw-medium" style="opacity: .95;">Veículos ocupados</div>
                     <div class="fw-semibold" style="font-size: 2rem; line-height: 1.1;">
-                        <?= esc($veiculos_ocupados ?? 0) ?>
+                        <span id="kpi-veiculos-ocupados"><?= esc($veiculos_ocupados ?? 0) ?></span>
                     </div>
                 </div>
                 <div class="vei-kpi-icon" aria-hidden="true">
-                    <iconify-icon icon="iconamoon:profile-circle-duotone" class="fs-22 text-white"></iconify-icon>
+                    <iconify-icon icon="iconamoon:car-duotone" class="fs-22 text-white"></iconify-icon>
                 </div>
             </div>
         </div>
@@ -214,7 +220,7 @@
                             <iconify-icon icon="iconamoon:filter-duotone" class="fs-18"></iconify-icon>
                             Filtros
                         </button>
-                        <button type="button" class="btn btn-primary">
+                        <button type="button" class="btn btn-primary" id="btn-add-veiculo" data-bs-toggle="modal" data-bs-target="#modalVeiculo">
                             <iconify-icon icon="iconamoon:plus-duotone" class="fs-18"></iconify-icon>
                             Adicionar Veículo
                         </button>
@@ -266,8 +272,120 @@
 </div>
 <!-- end row -->
 
+<!-- Modal: Cadastro/Edição de Veículo -->
+<div class="modal fade" id="modalVeiculo" tabindex="-1" aria-labelledby="modalVeiculoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalVeiculoLabel">Cadastrar veículo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formVeiculo" novalidate>
+                    <input type="hidden" id="vei_id" name="vei_id" value="">
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="vei_tipo">Tipo <span class="text-danger">*</span></label>
+                            <select class="form-select" id="vei_tipo" name="vei_tipo" required>
+                                <option value="">Selecione tipo</option>
+                                <option value="carro">Carro</option>
+                                <option value="moto">Moto</option>
+                                <option value="caminhao">Caminhão</option>
+                                <option value="utilitario">Utilitário</option>
+                                <option value="suv">SUV</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="vei_marca">Marca <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="vei_marca" name="vei_marca" placeholder="Ex.: Hyundai" required>
+                        </div>
+
+                        <div class="col-md-8">
+                            <label class="form-label" for="vei_modelo">Modelo <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="vei_modelo" name="vei_modelo" placeholder="Ex.: HB20" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="vei_ano">Ano <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="vei_ano" name="vei_ano" placeholder="Ex.: 2022" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="vei_placa">Placa <span class="text-danger">*</span></label>
+                            <div class="position-relative">
+                                <input type="text" class="form-control" id="vei_placa" name="vei_placa" placeholder="ABC-1A23" style="text-transform: uppercase; padding-right: 44px;" required>
+                                <span id="vei-placa-loading" class="position-absolute top-50 end-0 translate-middle-y me-3 d-none" aria-hidden="true">
+                                    <span class="spinner-border spinner-border-sm text-primary"></span>
+                                </span>
+                            </div>
+                            <div class="form-text">Digite o código da placa para pesquisar.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="vei_cor">Cor</label>
+                            <input type="text" class="form-control" id="vei_cor" name="vei_cor" placeholder="Ex.: Prata">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="vei_renavam">Nº Renavam</label>
+                            <input type="text" class="form-control" id="vei_renavam" name="vei_renavam" placeholder="Ex.: 12345678910">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="vei_chassi">Nº Chassi</label>
+                            <input type="text" class="form-control" id="vei_chassi" name="vei_chassi" placeholder="Ex.: 9BWZZZ377VT004251">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="vei_data_licenciamento">Data licenciamento</label>
+                            <input type="date" class="form-control" id="vei_data_licenciamento" name="vei_data_licenciamento">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="vei_km_atual">KM atual</label>
+                            <input type="number" class="form-control" id="vei_km_atual" name="vei_km_atual" placeholder="Ex.: 68000" min="0" step="1">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="vei_data_compra">Data da compra (opcional)</label>
+                            <input type="date" class="form-control" id="vei_data_compra" name="vei_data_compra">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="vei_valor_compra">Valor compra (opcional)</label>
+                            <input type="text" class="form-control" id="vei_valor_compra" name="vei_valor_compra" placeholder="Valor da compra">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="vei_status">Status <span class="text-danger">*</span></label>
+                            <select class="form-select" id="vei_status" name="vei_status" required>
+                                <option value="disponivel">Disponível</option>
+                                <option value="locado">Locado</option>
+                                <option value="manutencao">Manutenção</option>
+                                <option value="inativo">Inativo</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+
+                <div id="vei-form-alert" class="alert alert-danger mt-3 d-none" role="alert"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnSalvarVeiculo">
+                    <span class="btn-text">Adicionar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Gridjs Plugin js -->
 <script src="<?= base_url('assets/admin/vendor/gridjs/gridjs.umd.js') ?>"></script>
+
+<!-- jQuery Mask Plugin (padrão usado no Financeiro) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
+<script>
+window.__VEICULOS__ = <?= json_encode($veiculos ?? []) ?>;
+</script>
 
 <!-- Gridjs Veículos js -->
 <script src="<?= base_url('assets/admin/js/pages/veiculos.js') ?>"></script>

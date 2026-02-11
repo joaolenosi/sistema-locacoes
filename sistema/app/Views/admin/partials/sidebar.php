@@ -1,4 +1,4 @@
-﻿<div class="main-nav">
+<div class="main-nav">
     <!-- Sidebar Logo -->
     <div class="logo-box">
         <a href="<?= base_url() ?>" class="logo-dark">
@@ -200,6 +200,12 @@
                             <a class="sub-nav-link" href="<?= base_url('admin/cadastro/categorias-financeiras') ?>">
                                 <iconify-icon icon="iconamoon:category-duotone" class="me-1"></iconify-icon>
                                 Categorias Financeiras
+                            </a>
+                        </li>
+                        <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="<?= base_url('admin/empresa') ?>">
+                                <iconify-icon icon="iconamoon:building-duotone" class="me-1"></iconify-icon>
+                                Empresa
                             </a>
                         </li>
                     </ul>

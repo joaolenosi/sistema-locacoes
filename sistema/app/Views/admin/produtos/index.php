@@ -117,6 +117,12 @@
         margin-bottom: 0;
         font-size: 0.875rem;
     }
+
+    /* Melhor leitura no modal */
+    #modalProduto .form-control,
+    #modalProduto .form-select {
+        color: #111827;
+    }
 </style>
 
 <!-- ========== Page Title Start ========== -->
@@ -149,7 +155,7 @@
                             <iconify-icon icon="iconamoon:filter-duotone" class="fs-18"></iconify-icon>
                             Filtros
                         </button>
-                        <button type="button" class="btn btn-primary">
+                        <button type="button" class="btn btn-primary" id="btn-add-produto" data-bs-toggle="modal" data-bs-target="#modalProduto">
                             <iconify-icon icon="iconamoon:plus-duotone" class="fs-18"></iconify-icon>
                             Adicionar Produto
                         </button>
@@ -183,8 +189,87 @@
 </div>
 <!-- end row -->
 
+<!-- Modal: Cadastro/Edição de Produto -->
+<div class="modal fade" id="modalProduto" tabindex="-1" aria-labelledby="modalProdutoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalProdutoLabel">Cadastrar produto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formProduto" novalidate>
+                    <input type="hidden" id="pro_id" name="pro_id" value="">
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label" for="pro_nome">Nome <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="pro_nome" name="pro_nome" placeholder="Ex.: Filtro de Óleo" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="pro_sku">SKU</label>
+                            <input type="text" class="form-control" id="pro_sku" name="pro_sku" placeholder="Ex.: FIL-001">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="pro_categoria">Categoria</label>
+                            <input type="text" class="form-control" id="pro_categoria" name="pro_categoria" placeholder="Ex.: Peças">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="pro_marca">Marca</label>
+                            <input type="text" class="form-control" id="pro_marca" name="pro_marca" placeholder="Ex.: Vipal">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="pro_preco_venda">Preço venda <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control money" id="pro_preco_venda" name="pro_preco_venda" placeholder="Ex.: 45,90">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="pro_preco_custo">Preço custo (opcional)</label>
+                            <input type="text" class="form-control money" id="pro_preco_custo" name="pro_preco_custo" placeholder="Ex.: 30,00">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="pro_estoque_atual">Estoque atual</label>
+                            <input type="number" class="form-control" id="pro_estoque_atual" name="pro_estoque_atual" min="0" step="1" placeholder="Ex.: 10">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="pro_estoque_minimo">Estoque mínimo</label>
+                            <input type="number" class="form-control" id="pro_estoque_minimo" name="pro_estoque_minimo" min="0" step="1" placeholder="Ex.: 5">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="pro_ativo">Status</label>
+                            <select class="form-select" id="pro_ativo" name="pro_ativo">
+                                <option value="1">Ativo</option>
+                                <option value="0">Inativo</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+
+                <div id="pro-form-alert" class="alert alert-danger mt-3 d-none" role="alert"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnSalvarProduto">
+                    <span class="btn-text">Adicionar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Gridjs Plugin js -->
 <script src="<?= base_url('assets/admin/vendor/gridjs/gridjs.umd.js') ?>"></script>
+
+<!-- jQuery Mask Plugin (padrão usado no Financeiro) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
+<script>
+window.__PRODUTOS__ = <?= json_encode($produtos ?? []) ?>;
+</script>
 
 <!-- Gridjs Produtos js -->
 <script src="<?= base_url('assets/admin/js/pages/produtos.js') ?>"></script>

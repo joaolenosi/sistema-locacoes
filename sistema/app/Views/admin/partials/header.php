@@ -1,4 +1,5 @@
-﻿<header class="topbar">
+<?php helper('empresa'); ?>
+<header class="topbar">
     <div class="container-xxl">
         <div class="navbar-header">
             <div class="d-flex align-items-center gap-2">
@@ -254,24 +255,23 @@
                                     aria-expanded="false"
                                 >
                                     <span class="d-flex align-items-center">
-                                        <img
-                                            class="rounded-circle"
-                                            width="32"
-                                            src="<?= base_url('assets/admin/images/users/avatar-1.jpg') ?>"
-                                            alt="avatar-3"
-                                        />
+                                        <span class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center fw-semibold" style="width:32px;height:32px;font-size:14px;" title="Empresa"><?= esc(empresa_iniciais()) ?></span>
                                     </span>
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-end">
                                     <!-- item-->
                                     <h6 class="dropdown-header">Bem-vindo Gaston!</h6>
-                                    <a class="dropdown-item" href="pages-profile.html">
+                                <!--     <a class="dropdown-item" href="pages-profile.html">
                                         <i
                                             class="bx bx-user-circle text-muted fs-18 align-middle me-1"
                                         ></i
                                         ><span class="align-middle">Perfil</span>
+                                    </a> -->
+                                    <a class="dropdown-item" href="<?= base_url('admin/empresa') ?>">
+                                        <i class="bx bx-building-house text-muted fs-18 align-middle me-1"></i>
+                                        <span class="align-middle">Empresa</span>
                                     </a>
-                                    <a class="dropdown-item" href="apps-chat.html">
+                                    <!-- <a class="dropdown-item" href="apps-chat.html">
                                         <i
                                             class="bx bx-message-dots text-muted fs-18 align-middle me-1"
                                         ></i
@@ -295,7 +295,7 @@
                                             class="bx bx-lock text-muted fs-18 align-middle me-1"
                                         ></i
                                         ><span class="align-middle">Bloquear tela</span>
-                                    </a>
+                                    </a> -->
 
                                     <div class="dropdown-divider my-1"></div>
 

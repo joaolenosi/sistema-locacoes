@@ -117,6 +117,12 @@
         margin-bottom: 0;
         font-size: 0.875rem;
     }
+
+    /* Melhor leitura no modal */
+    #modalServico .form-control,
+    #modalServico .form-select {
+        color: #111827;
+    }
 </style>
 
 <!-- ========== Page Title Start ========== -->
@@ -149,7 +155,7 @@
                             <iconify-icon icon="iconamoon:filter-duotone" class="fs-18"></iconify-icon>
                             Filtros
                         </button>
-                        <button type="button" class="btn btn-primary">
+                        <button type="button" class="btn btn-primary" id="btn-add-servico" data-bs-toggle="modal" data-bs-target="#modalServico">
                             <iconify-icon icon="iconamoon:plus-duotone" class="fs-18"></iconify-icon>
                             Adicionar Serviço
                         </button>
@@ -183,8 +189,69 @@
 </div>
 <!-- end row -->
 
+<!-- Modal: Cadastro/Edição de Serviço -->
+<div class="modal fade" id="modalServico" tabindex="-1" aria-labelledby="modalServicoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalServicoLabel">Cadastrar serviço</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formServico" novalidate>
+                    <input type="hidden" id="ser_id" name="ser_id" value="">
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label" for="ser_nome">Nome <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="ser_nome" name="ser_nome" placeholder="Ex.: Troca de Óleo" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="ser_preco_padrao">Preço padrão</label>
+                            <input type="text" class="form-control money" id="ser_preco_padrao" name="ser_preco_padrao" placeholder="Ex.: 120,00">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="ser_categoria">Categoria</label>
+                            <input type="text" class="form-control" id="ser_categoria" name="ser_categoria" placeholder="Ex.: Manutenção">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="ser_ativo">Status</label>
+                            <select class="form-select" id="ser_ativo" name="ser_ativo">
+                                <option value="1">Ativo</option>
+                                <option value="0">Inativo</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label" for="ser_descricao">Descrição (opcional)</label>
+                            <input type="text" class="form-control" id="ser_descricao" name="ser_descricao" placeholder="Ex.: Inclui filtro e mão de obra">
+                        </div>
+                    </div>
+                </form>
+
+                <div id="ser-form-alert" class="alert alert-danger mt-3 d-none" role="alert"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnSalvarServico">
+                    <span class="btn-text">Adicionar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Gridjs Plugin js -->
 <script src="<?= base_url('assets/admin/vendor/gridjs/gridjs.umd.js') ?>"></script>
+
+<!-- jQuery Mask Plugin (padrão usado no Financeiro) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
+<script>
+window.__SERVICOS__ = <?= json_encode($servicos ?? []) ?>;
+</script>
 
 <!-- Gridjs Serviços js -->
 <script src="<?= base_url('assets/admin/js/pages/servicos.js') ?>"></script>

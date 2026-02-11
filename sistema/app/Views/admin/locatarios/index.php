@@ -146,7 +146,7 @@
                             <iconify-icon icon="iconamoon:filter-duotone" class="fs-18"></iconify-icon>
                             Filtros
                         </button>
-                        <button type="button" class="btn btn-primary">
+                        <button type="button" class="btn btn-primary" id="btn-add-locatario" data-bs-toggle="modal" data-bs-target="#modalLocatario">
                             <iconify-icon icon="iconamoon:plus-duotone" class="fs-18"></iconify-icon>
                             Adicionar Locatário
                         </button>
@@ -175,8 +175,129 @@
 </div>
 <!-- end row -->
 
+<!-- Modal: Cadastro/Edição de Locatário -->
+<div class="modal fade" id="modalLocatario" tabindex="-1" aria-labelledby="modalLocatarioLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalLocatarioLabel">Cadastrar locatário</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formLocatario" novalidate>
+                    <input type="hidden" id="cli_id" name="cli_id" value="">
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label" for="cli_tipo_pessoa">Tipo pessoa <span class="text-danger">*</span></label>
+                            <select class="form-select" id="cli_tipo_pessoa" name="cli_tipo_pessoa" required>
+                                <option value="fisica">Física</option>
+                                <option value="juridica">Jurídica</option>
+                                <option value="estrangeiro">Estrangeiro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label" for="cli_nome">Nome / Razão social <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="cli_nome" name="cli_nome" placeholder="Ex.: João Silva" required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label" for="cli_cpf_cnpj">CPF/CNPJ <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="cli_cpf_cnpj" name="cli_cpf_cnpj" placeholder="000.000.000-00" required>
+                            <div class="form-text">Para estrangeiro, pode ficar em branco.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="cli_data_nascimento">Data de nascimento</label>
+                            <input type="date" class="form-control" id="cli_data_nascimento" name="cli_data_nascimento">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="cli_ativo" checked>
+                                <label class="form-check-label" for="cli_ativo">Ativo</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="cli_email">E-mail</label>
+                            <input type="email" class="form-control" id="cli_email" name="cli_email" placeholder="exemplo@email.com">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="cli_telefone">Telefone</label>
+                            <input type="text" class="form-control" id="cli_telefone" name="cli_telefone" placeholder="(00) 0000-0000">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="cli_whatsapp">WhatsApp</label>
+                            <input type="text" class="form-control" id="cli_whatsapp" name="cli_whatsapp" placeholder="(00) 00000-0000">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label" for="cli_cnh_numero">CNH (número)</label>
+                            <input type="text" class="form-control" id="cli_cnh_numero" name="cli_cnh_numero" placeholder="Somente números">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="cli_cnh_validade">CNH (validade)</label>
+                            <input type="date" class="form-control" id="cli_cnh_validade" name="cli_cnh_validade">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="cli_cep">CEP</label>
+                            <input type="text" class="form-control" id="cli_cep" name="cli_cep" placeholder="00000-000">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label" for="cli_estado">UF</label>
+                            <input type="text" class="form-control" id="cli_estado" name="cli_estado" placeholder="SP" maxlength="2">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label" for="cli_cidade">Cidade</label>
+                            <input type="text" class="form-control" id="cli_cidade" name="cli_cidade" placeholder="Ex.: São Paulo">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label" for="cli_bairro">Bairro</label>
+                            <input type="text" class="form-control" id="cli_bairro" name="cli_bairro" placeholder="Ex.: Centro">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="cli_rua">Rua</label>
+                            <input type="text" class="form-control" id="cli_rua" name="cli_rua" placeholder="Ex.: Av. Paulista">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label" for="cli_numero">Número</label>
+                            <input type="text" class="form-control" id="cli_numero" name="cli_numero" placeholder="Ex.: 123">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="cli_complemento">Complemento</label>
+                            <input type="text" class="form-control" id="cli_complemento" name="cli_complemento" placeholder="Apto, bloco, etc.">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label" for="cli_obs">Observações</label>
+                            <textarea class="form-control" id="cli_obs" name="cli_obs" rows="3" placeholder="Observações internas..."></textarea>
+                        </div>
+                    </div>
+                </form>
+
+                <div id="loc-form-alert" class="alert alert-danger mt-3 d-none" role="alert"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnSalvarLocatario">
+                    <span class="btn-text">Adicionar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Gridjs Plugin js -->
 <script src="<?= base_url('assets/admin/vendor/gridjs/gridjs.umd.js') ?>"></script>
+
+<!-- jQuery Mask Plugin (padrão usado no Financeiro) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
+<script>
+window.__LOCATARIOS__ = <?= json_encode($locatarios ?? []) ?>;
+</script>
 
 <!-- Gridjs Locatários js -->
 <script src="<?= base_url('assets/admin/js/pages/locatarios.js') ?>"></script>

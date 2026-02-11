@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Models\VeiculoModel;
+use Config\Services;
 
 class Veiculos extends BaseController
 {
@@ -164,6 +165,60 @@ class Veiculos extends BaseController
         }
     }
 
+    public function consultarPlaca($placa)
+    {
+        try {
+            $token = (string) env('TOKEN_API_PLACA', '');
+            if ($token === '') {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'message' => 'TOKEN_API_PLACA não configurado.',
+                ]);
+            }
+
+            $placa = strtoupper((string) $placa);
+            $placa = preg_replace('/[^A-Z0-9]/', '', $placa ?? '') ?? '';
+            if (strlen($placa) < 7) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'success' => false,
+                    'message' => 'Placa inválida.',
+                ]);
+            }
+
+            $url = "https://wdapi2.com.br/consulta/{$placa}/{$token}";
+            $client = Services::curlrequest();
+            $res = $client->get($url, [
+                'timeout' => 15,
+                'http_errors' => false,
+                'headers' => [
+                    'Accept' => 'application/json',
+                ],
+            ]);
+
+            $statusCode = (int) $res->getStatusCode();
+            $body = (string) $res->getBody();
+            $json = json_decode($body, true);
+
+            if ($statusCode !== 200 || !is_array($json)) {
+                return $this->response->setStatusCode(502)->setJSON([
+                    'success' => false,
+                    'message' => 'Falha ao consultar a placa na API.',
+                ]);
+            }
+
+            // Algumas respostas podem vir com mensagemRetorno, mantemos payload completo
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $json,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao consultar placa.',
+            ]);
+        }
+    }
+
     private function normalizeVeiculoPayload(array $payload): array
     {
         $placa = strtoupper(trim((string) ($payload['vei_placa'] ?? '')));
@@ -173,6 +228,19 @@ class Veiculos extends BaseController
         $allowedStatus = ['disponivel', 'locado', 'manutencao', 'inativo'];
         if (!in_array($status, $allowedStatus, true)) {
             $status = 'disponivel';
+        }
+
+        $valorCompra = null;
+        if (array_key_exists('vei_valor_compra', $payload) && $payload['vei_valor_compra'] !== '' && $payload['vei_valor_compra'] !== null) {
+            $raw = trim((string) $payload['vei_valor_compra']);
+            // Aceita tanto "1234.56" quanto "1.234,56"
+            $raw = str_replace([' ', 'R$', 'r$'], '', $raw);
+            if (str_contains($raw, ',')) {
+                $raw = str_replace('.', '', $raw);
+                $raw = str_replace(',', '.', $raw);
+            }
+            $raw = preg_replace('/[^0-9.]/', '', $raw) ?? '';
+            $valorCompra = $raw !== '' ? (float) $raw : null;
         }
 
         return [
@@ -189,9 +257,7 @@ class Veiculos extends BaseController
                 ? (int) preg_replace('/\D/', '', (string) $payload['vei_km_atual'])
                 : null,
             'vei_data_compra' => $payload['vei_data_compra'] ?: null,
-            'vei_valor_compra' => ($payload['vei_valor_compra'] !== '' && $payload['vei_valor_compra'] !== null)
-                ? (float) $payload['vei_valor_compra']
-                : null,
+            'vei_valor_compra' => $valorCompra,
             'vei_status' => $status,
         ];
     }

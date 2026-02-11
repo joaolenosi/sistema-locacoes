@@ -1,97 +1,452 @@
-// Listagem Financeira com GridJS
-if (document.getElementById("table-financeiro")) {
+(() => {
+  const tableEl = document.getElementById("table-financeiro");
+  if (!tableEl) return;
+
     // Tradução para Português do Brasil
     const ptBR = {
-        search: {
-            placeholder: 'Digite uma palavra-chave...'
-        },
-        pagination: {
-            previous: 'Anterior',
-            next: 'Próximo',
-            showing: 'Mostrando',
-            to: 'a',
-            of: 'de',
-            results: 'resultados'
-        }
+    search: { placeholder: "Digite uma palavra-chave..." },
+    pagination: {
+      previous: "Anterior",
+      next: "Próximo",
+      showing: "Mostrando",
+      to: "a",
+      of: "de",
+      results: "resultados",
+    },
+  };
+
+  const bootstrapData = window.__FINANCEIRO_BOOTSTRAP__ || {};
+
+  let allData = Array.isArray(bootstrapData.lancamentos) ? bootstrapData.lancamentos : [];
+  let grid = null;
+  let filtrosInitialized = false;
+  let filtrosAtivos = false;
+
+  const tipoLabel = (tipo) => (tipo === "despesa" ? "Despesa" : "Receita");
+  const tipoBadge = (tipo) =>
+    tipo === "despesa" ? "bg-danger-subtle text-danger" : "bg-success-subtle text-success";
+
+  const statusLabel = (status) => {
+    switch (status) {
+      case "pago":
+        return "Pago";
+      case "cancelado":
+        return "Cancelado";
+      default:
+        return "Pendente";
+    }
+  };
+
+  const statusBadge = (status) => {
+    if (status === "pago") return "bg-success-subtle text-success";
+    if (status === "cancelado") return "bg-danger-subtle text-danger";
+    return "bg-warning-subtle text-warning";
+  };
+
+  const toDateBR = (iso) => {
+    if (!iso) return "-";
+    const s = String(iso).slice(0, 10);
+    const parts = s.split("-");
+    if (parts.length !== 3) return s;
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  };
+
+  const toMoneyNumber = (value) => {
+    if (value === null || value === undefined || value === "") return 0;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const toMoneyBR = (value) =>
+    toMoneyNumber(value).toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
+  const valorLancamento = (l) => {
+    const status = String(l?.lan_status || "pendente");
+    if (status === "pago" && l?.lan_valor_pago !== null && l?.lan_valor_pago !== "") {
+      return toMoneyNumber(l.lan_valor_pago);
+    }
+    return toMoneyNumber(l?.lan_valor);
+  };
+
+  const toGridRows = (items) =>
+    (items || []).map((l) => [
+      String(l.id),
+      l.lan_data_vencimento || l.lan_data_lancamento || "",
+      l.lan_tipo || "receita",
+      l.categoria_nome || "-",
+      l.lan_descricao || "-",
+      valorLancamento(l),
+      l.lan_status || "pendente",
+      String(l.id), // ações
+    ]);
+
+  const computeCardsMesAtual = (items) => {
+    const mes = new Date().getMonth() + 1;
+    const ano = new Date().getFullYear();
+
+    let receitas = 0;
+    let despesas = 0;
+
+    (items || []).forEach((l) => {
+      if (String(l.lan_status || "") !== "pago") return;
+      const base = (l.lan_data_pagamento || l.lan_data_lancamento || "").slice(0, 10);
+      if (!base) return;
+      const [y, m] = base.split("-").map((x) => Number(x));
+      if (y !== ano || m !== mes) return;
+
+      const v = valorLancamento(l);
+      if (String(l.lan_tipo) === "despesa") despesas += v;
+      else receitas += v;
+    });
+
+    return { receitas, despesas, lucro: receitas - despesas };
+  };
+
+  const updateCards = (items) => {
+    const totals = computeCardsMesAtual(items);
+    const elReceitas = document.getElementById("kpi-receitas-mes-atual");
+    const elDespesas = document.getElementById("kpi-despesas-mes-atual");
+    const elLucro = document.getElementById("kpi-lucro-mes-atual");
+    if (elReceitas) elReceitas.textContent = toMoneyBR(totals.receitas);
+    if (elDespesas) elDespesas.textContent = toMoneyBR(totals.despesas);
+    if (elLucro) elLucro.textContent = toMoneyBR(totals.lucro);
+  };
+
+  const fetchJson = async (url, options = {}) => {
+    const res = await fetch(url, {
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+      ...options,
+    });
+    const json = await res.json().catch(() => null);
+    if (!res.ok) {
+      const msg = json?.message || "Erro na requisição.";
+      throw new Error(msg);
+    }
+    return json;
+  };
+
+  const setButtonLoading = (btn, loading) => {
+    if (!btn) return;
+    const label = btn.querySelector(".btn-label");
+
+    if (loading) {
+      btn.disabled = true;
+      if (label && !btn.dataset.originalLabel) btn.dataset.originalLabel = label.textContent || "";
+      if (label) label.textContent = "Salvando...";
+
+      if (!btn.querySelector(".spinner-border")) {
+        const sp = document.createElement("span");
+        sp.className = "spinner-border spinner-border-sm me-2";
+        sp.setAttribute("role", "status");
+        sp.setAttribute("aria-hidden", "true");
+        btn.insertBefore(sp, btn.firstChild);
+      }
+      return;
+    }
+
+    btn.disabled = false;
+    const sp = btn.querySelector(".spinner-border");
+    if (sp) sp.remove();
+    if (label && btn.dataset.originalLabel !== undefined) {
+      label.textContent = btn.dataset.originalLabel;
+      delete btn.dataset.originalLabel;
+    }
+  };
+
+  const setModalMode = (tipo, mode) => {
+    const isReceita = tipo === "receita";
+    const titleEl = document.getElementById(isReceita ? "modalReceitaLabel" : "modalDespesaLabel");
+    const btn = document.getElementById(isReceita ? "btnSalvarReceita" : "btnSalvarDespesa");
+    const label = btn?.querySelector(".btn-label");
+
+    if (mode === "edit") {
+      if (titleEl) titleEl.textContent = isReceita ? "Editar Receita" : "Editar Despesa";
+      if (label) label.textContent = "Salvar";
+    } else {
+      if (titleEl) titleEl.textContent = isReceita ? "Receita" : "Despesa";
+      if (label) label.textContent = isReceita ? "+ Receita" : "- Despesa";
+    }
+  };
+
+  const setCamposAdicionaisVisiveis = (tipo, visible) => {
+    const isReceita = tipo === "receita";
+    const camposEl = document.getElementById(isReceita ? "receitaCamposAdicionais" : "despesaCamposAdicionais");
+    const toggleEl = document.getElementById(isReceita ? "toggleReceitaCampos" : "toggleDespesaCampos");
+    if (!camposEl || !toggleEl) return;
+
+    camposEl.style.display = visible ? "block" : "none";
+    toggleEl.innerHTML = visible
+      ? '<iconify-icon icon="iconamoon:arrow-up-2-duotone"></iconify-icon> Ver menos'
+      : '<iconify-icon icon="iconamoon:arrow-down-2-duotone"></iconify-icon> Ver mais';
+  };
+
+  const preencherModal = (tipo, l) => {
+    const isReceita = tipo === "receita";
+    const prefix = isReceita ? "receita" : "despesa";
+
+    const setVal = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.value = value ?? "";
     };
 
-    new gridjs.Grid({
-        columns: [
-            {
-                name: 'ID',
-                width: '80px',
-                formatter: (function (cell) {
-                    return gridjs.html('<span class="fw-semibold">' + cell + '</span>');
-                })
-            },
-            {
-                name: 'Data',
-                width: '120px',
-                formatter: (function (cell) {
-                    return gridjs.html('<span class="text-muted">' + cell + '</span>');
-                })
-            },
-            {
-                name: 'Tipo',
-                width: '120px',
-                formatter: (function (cell) {
-                    const badgeClass = cell === 'receita' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger';
-                    const label = cell === 'receita' ? 'Receita' : 'Despesa';
-                    return gridjs.html('<span class="badge ' + badgeClass + '">' + label + '</span>');
-                })
+    setVal(`${prefix}_id`, l.id);
+    setVal(`${prefix}_categoria`, l.lan_categoria_id ?? "");
+    setVal(`${prefix}_descricao`, l.lan_descricao ?? "");
+    setVal(`${prefix}_data_vencimento`, (l.lan_data_vencimento || "").slice(0, 10));
+    setVal(`${prefix}_valor`, toMoneyBR(l.lan_valor ?? 0));
+    setVal(`${prefix}_locacao`, l.lan_locacao_id ?? "");
+
+    // Veículo: aqui só populamos placa se você estiver armazenando/retornando isso. Caso não, mantém vazio.
+    setVal(`${prefix}_veiculo`, "");
+
+    const marcarEl = document.getElementById(isReceita ? "receita_marcar_recebida" : "despesa_marcar_paga");
+    if (marcarEl) marcarEl.checked = String(l.lan_status || "") === "pago";
+
+    // Campos adicionais
+    setVal(`${prefix}_data_lancamento`, (l.lan_data_lancamento || "").slice(0, 10));
+    setVal(`${prefix}_data_pagamento`, (l.lan_data_pagamento || "").slice(0, 10));
+    setVal(`${prefix}_valor_pago`, l.lan_valor_pago !== null && l.lan_valor_pago !== "" ? toMoneyBR(l.lan_valor_pago) : "");
+    setVal(`${prefix}_forma_pagamento`, l.lan_forma_pagamento ?? "");
+    setVal(`${prefix}_referencia`, l.lan_referencia ?? "");
+    setVal(`${prefix}_obs`, l.lan_obs ?? "");
+
+    const hasAdicionais =
+      !!(l.lan_data_lancamento || l.lan_data_pagamento || l.lan_valor_pago || l.lan_forma_pagamento || l.lan_referencia || l.lan_obs);
+    setCamposAdicionaisVisiveis(tipo, hasAdicionais);
+
+    // Reaplicar máscaras (jQuery Mask Plugin)
+    if (typeof $ !== "undefined" && $.fn.mask) {
+      $(`.money`).mask("000.000.000.000.000,00", { reverse: true });
+    }
+  };
+
+  const openModal = async (tipo, id = null) => {
+    const isReceita = tipo === "receita";
+    const modalEl = document.getElementById(isReceita ? "modalReceita" : "modalDespesa");
+    const formEl = document.getElementById(isReceita ? "formReceita" : "formDespesa");
+    if (!modalEl || !formEl) return;
+
+    // reset sempre (garante estado limpo)
+    formEl.reset();
+    setCamposAdicionaisVisiveis(tipo, false);
+
+    if (!id) {
+      setModalMode(tipo, "new");
+      const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.show();
+      return;
+    }
+
+    setModalMode(tipo, "edit");
+    const json = await fetchJson(`${window.location.origin}/admin/financeiro/editar/${id}`);
+    preencherModal(tipo, json.data || {});
+
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+  };
+
+  const save = async (tipo) => {
+    const isReceita = tipo === "receita";
+    const formEl = document.getElementById(isReceita ? "formReceita" : "formDespesa");
+    const modalEl = document.getElementById(isReceita ? "modalReceita" : "modalDespesa");
+    const btn = document.getElementById(isReceita ? "btnSalvarReceita" : "btnSalvarDespesa");
+    const idInput = document.getElementById(isReceita ? "receita_id" : "despesa_id");
+    if (!formEl || !modalEl) return;
+
+    if (!formEl.checkValidity()) {
+      formEl.reportValidity();
+      return;
+    }
+
+    const fd = new FormData(formEl);
+
+    // Normalizar dinheiro (BR -> decimal)
+    const stripMoney = (s) => String(s || "").replace(/[^\d,]/g, "").replace(",", ".");
+    const valorInput = document.getElementById(isReceita ? "receita_valor" : "despesa_valor");
+    const valorPagoInput = document.getElementById(isReceita ? "receita_valor_pago" : "despesa_valor_pago");
+    if (valorInput) fd.set("lan_valor", stripMoney(valorInput.value) || "0");
+    if (valorPagoInput && valorPagoInput.value) fd.set("lan_valor_pago", stripMoney(valorPagoInput.value));
+
+    // Checkbox define status pago e data_pagamento (server também reforça)
+    const chk = document.getElementById(isReceita ? "receita_marcar_recebida" : "despesa_marcar_paga");
+    const dataPagamentoEl = document.getElementById(isReceita ? "receita_data_pagamento" : "despesa_data_pagamento");
+    if (chk?.checked) {
+      fd.set("lan_status", "pago");
+      if (dataPagamentoEl && !dataPagamentoEl.value) {
+        dataPagamentoEl.value = new Date().toISOString().slice(0, 10);
+      }
+      if (dataPagamentoEl?.value) fd.set("lan_data_pagamento", dataPagamentoEl.value);
+    } else {
+      fd.set("lan_status", "pendente");
+    }
+
+    const id = idInput?.value ? String(idInput.value) : "";
+    const url = id
+      ? `${window.location.origin}/admin/financeiro/atualizar/${id}`
+      : `${window.location.origin}/admin/financeiro/criar`;
+
+    try {
+      setButtonLoading(btn, true);
+      const json = await fetchJson(url, { method: "POST", body: fd });
+
+      const modal = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.hide();
+
+      await reload();
+      alert(json?.message || "Salvo com sucesso.");
+    } catch (e) {
+      alert(e?.message || "Erro ao salvar.");
+    } finally {
+      setButtonLoading(btn, false);
+    }
+  };
+
+  const renderGrid = (items) => {
+    const rows = toGridRows(items);
+
+    const columns = [
+      {
+        name: "ID",
+        width: "80px",
+        formatter: (cell) => gridjs.html(`<span class="fw-semibold">${cell}</span>`),
+      },
+      {
+        name: "Vencimento",
+        width: "130px",
+        formatter: (cell) => gridjs.html(`<span class="text-muted">${toDateBR(cell)}</span>`),
+      },
+      {
+        name: "Tipo",
+        width: "120px",
+        formatter: (cell) =>
+          gridjs.html(`<span class="badge ${tipoBadge(cell)}">${tipoLabel(cell)}</span>`),
             },
             "Categoria",
-            {
-                name: 'Descrição',
-                width: '250px'
-            },
-            {
-                name: 'Valor',
-                width: '130px',
-                formatter: (function (cell) {
-                    return gridjs.html('<span class="fw-semibold">' + cell + '</span>');
-                })
-            },
-            {
-                name: 'Status',
-                width: '130px',
-                formatter: (function (cell) {
-                    let badgeClass = 'bg-success-subtle text-success';
-                    if (cell === 'Pendente') {
-                        badgeClass = 'bg-warning-subtle text-warning';
-                    } else if (cell === 'Cancelado') {
-                        badgeClass = 'bg-danger-subtle text-danger';
-                    }
-                    return gridjs.html('<span class="badge ' + badgeClass + '">' + cell + '</span>');
-                })
-            },
-            {
-                name: 'Ações',
-                width: '120px',
-                formatter: (function (cell) {
-                    return gridjs.html("<a href='#' class='text-reset text-decoration-underline'>Detalhes</a>");
-                })
-            }
-        ],
-        pagination: {
-            limit: 5
+      { name: "Descrição", width: "250px" },
+      {
+        name: "Valor",
+        width: "140px",
+        formatter: (cell) => gridjs.html(`<span class="fw-semibold">R$ ${toMoneyBR(cell)}</span>`),
+      },
+      {
+        name: "Status",
+        width: "140px",
+        formatter: (cell) =>
+          gridjs.html(`<span class="badge ${statusBadge(cell)}">${statusLabel(cell)}</span>`),
+      },
+      {
+        name: "Ações",
+        width: "120px",
+        formatter: (_cell, row) => {
+          const id = row.cells[0].data;
+          const tipo = row.cells[2].data;
+          return gridjs.html(`
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-outline-primary btn-edit-lancamento" data-id="${id}" data-tipo="${tipo}" title="Editar">
+                <iconify-icon icon="iconamoon:edit-duotone" class="fs-18"></iconify-icon>
+              </button>
+            </div>
+          `);
         },
+      },
+    ];
+
+    if (!grid) {
+      grid = new gridjs.Grid({
+        columns,
+        pagination: { limit: 5 },
         sort: true,
         search: true,
         language: ptBR,
-        data: [
-            ["1", "15/01/2026", "receita", "Locação de veículos", "Locação veículo ABC-1234 - João Silva", "R$ 1.200,00", "Pago"],
-            ["2", "10/01/2026", "receita", "Locação de veículos", "Locação veículo XYZ-5678 - Maria Santos", "R$ 1.000,00", "Pago"],
-            ["3", "20/01/2026", "receita", "Locação de veículos", "Locação veículo DEF-9012 - Pedro Oliveira", "R$ 1.800,00", "Pendente"],
-            ["4", "08/01/2026", "despesa", "Combustível", "Abastecimento veículo ABC-1234", "R$ 250,00", "Pago"],
-            ["5", "12/01/2026", "receita", "Caução", "Caução locação veículo JKL-7890", "R$ 500,00", "Pago"],
-            ["6", "18/01/2026", "despesa", "Manutenção de veículos", "Revisão veículo GHI-3456", "R$ 450,00", "Pago"],
-            ["7", "22/01/2026", "receita", "Locação de veículos", "Locação veículo PQR-1357 - Fernanda Lima", "R$ 2.200,00", "Pendente"],
-            ["8", "05/01/2026", "despesa", "Peças e acessórios", "Troca de pneus veículo MNO-2468", "R$ 1.200,00", "Pago"],
-            ["9", "25/01/2026", "receita", "Taxa administrativa", "Taxa administrativa contrato CT-2026-009", "R$ 150,00", "Pago"],
-            ["10", "14/01/2026", "despesa", "Seguro", "Seguro veículo STU-8024", "R$ 380,00", "Pago"],
-            ["11", "16/01/2026", "receita", "Serviços adicionais", "Lavagem completa veículo YZA-2468", "R$ 80,00", "Pago"],
-            ["12", "19/01/2026", "despesa", "Energia elétrica", "Conta de energia - Janeiro/2026", "R$ 320,00", "Pendente"]
-        ]
-    }).render(document.getElementById("table-financeiro"));
-}
+        data: rows,
+      }).render(tableEl);
+
+      // Setup filtros/UI após primeira renderização
+      setupFiltrosUI();
+      return;
+    }
+
+    grid.updateConfig({ columns, data: rows }).forceRender();
+  };
+
+  const applyFilters = () => {
+    const tipoSel = document.getElementById("filtro-tipo");
+    const statusSel = document.getElementById("filtro-status");
+    const tipo = tipoSel?.value || "";
+    const status = statusSel?.value || "";
+
+    const filtered = (allData || []).filter((l) => {
+      if (tipo && String(l.lan_tipo) !== tipo) return false;
+      if (status && String(l.lan_status) !== status) return false;
+      return true;
+    });
+
+    renderGrid(filtered);
+  };
+
+  const setupFiltrosUI = () => {
+    if (filtrosInitialized) return;
+    filtrosInitialized = true;
+
+    const btnFiltros = document.getElementById("btn-filtros");
+    const filtrosContainer = document.getElementById("filtros-container");
+    const tipoSel = document.getElementById("filtro-tipo");
+    const statusSel = document.getElementById("filtro-status");
+
+    // mover filtros para a mesma linha do search
+    setTimeout(() => {
+      const gridSearchWrapper = tableEl.querySelector(".gridjs-search")?.parentElement;
+      if (gridSearchWrapper && filtrosContainer) {
+        gridSearchWrapper.appendChild(filtrosContainer);
+      }
+    }, 0);
+
+    if (btnFiltros && filtrosContainer) {
+      btnFiltros.addEventListener("click", () => {
+        filtrosAtivos = !filtrosAtivos;
+        filtrosContainer.style.display = filtrosAtivos ? "inline-flex" : "none";
+        btnFiltros.classList.toggle("btn-primary", filtrosAtivos);
+        btnFiltros.classList.toggle("btn-outline-primary", !filtrosAtivos);
+      });
+    }
+
+    tipoSel?.addEventListener("change", applyFilters);
+    statusSel?.addEventListener("change", applyFilters);
+  };
+
+  const reload = async () => {
+    const json = await fetchJson(`${window.location.origin}/admin/financeiro/listar`);
+    allData = json.data || [];
+    updateCards(allData);
+    applyFilters();
+  };
+
+  // Delegação: click no botão editar dentro do grid
+  tableEl.addEventListener("click", (e) => {
+    const btn = e.target?.closest?.(".btn-edit-lancamento");
+    if (!btn) return;
+    e.preventDefault();
+    const id = btn.getAttribute("data-id");
+    const tipo = btn.getAttribute("data-tipo") || "receita";
+    openModal(tipo, id);
+  });
+
+  // Reset UI ao fechar modais
+  const modalReceitaEl = document.getElementById("modalReceita");
+  const modalDespesaEl = document.getElementById("modalDespesa");
+  modalReceitaEl?.addEventListener("hidden.bs.modal", () => setModalMode("receita", "new"));
+  modalDespesaEl?.addEventListener("hidden.bs.modal", () => setModalMode("despesa", "new"));
+
+  // Expor funções globais usadas pela view
+  window.abrirModalReceita = (id = null) => openModal("receita", id);
+  window.abrirModalDespesa = (id = null) => openModal("despesa", id);
+  window.salvarReceita = () => save("receita");
+  window.salvarDespesa = () => save("despesa");
+
+  // primeira renderização
+  updateCards(allData);
+  renderGrid(allData);
+})();

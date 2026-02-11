@@ -162,7 +162,7 @@
                 <div>
                     <div class="fw-medium" style="opacity: .95;">Receitas do mês atual</div>
                     <div class="fw-semibold" style="font-size: 2rem; line-height: 1.1;">
-                        R$ <?= number_format($receitas_mes_atual ?? 0, 2, ',', '.') ?>
+                        R$ <span id="kpi-receitas-mes-atual"><?= number_format($receitas_mes_atual ?? 0, 2, ',', '.') ?></span>
                     </div>
                 </div>
                 <div class="fin-kpi-icon" aria-hidden="true">
@@ -177,7 +177,7 @@
                 <div>
                     <div class="fw-medium" style="opacity: .95;">Despesas do mês atual</div>
                     <div class="fw-semibold" style="font-size: 2rem; line-height: 1.1;">
-                        R$ <?= number_format($despesas_mes_atual ?? 0, 2, ',', '.') ?>
+                        R$ <span id="kpi-despesas-mes-atual"><?= number_format($despesas_mes_atual ?? 0, 2, ',', '.') ?></span>
                     </div>
                 </div>
                 <div class="fin-kpi-icon" aria-hidden="true">
@@ -192,7 +192,7 @@
                 <div>
                     <div class="fw-medium" style="opacity: .95;">Lucro do mês atual</div>
                     <div class="fw-semibold" style="font-size: 2rem; line-height: 1.1;">
-                        R$ <?= number_format($lucro_mes_atual ?? 0, 2, ',', '.') ?>
+                        R$ <span id="kpi-lucro-mes-atual"><?= number_format($lucro_mes_atual ?? 0, 2, ',', '.') ?></span>
                     </div>
                 </div>
                 <div class="fin-kpi-icon" aria-hidden="true">
@@ -223,11 +223,11 @@
                             <iconify-icon icon="iconamoon:arrow-repeat-2-duotone" class="fs-18"></iconify-icon>
                             Movimentações
                         </a>
-                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalReceita">
+                        <button type="button" class="btn btn-success" onclick="abrirModalReceita()">
                             <iconify-icon icon="iconamoon:plus-duotone" class="fs-18"></iconify-icon>
                             Receita
                         </button>
-                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalDespesa">
+                        <button type="button" class="btn btn-danger" onclick="abrirModalDespesa()">
                             <iconify-icon icon="iconamoon:minus-duotone" class="fs-18"></iconify-icon>
                             Despesa
                         </button>
@@ -268,41 +268,22 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 
+<script>
+window.__FINANCEIRO_BOOTSTRAP__ = {
+  lancamentos: <?= json_encode($lancamentos ?? []) ?>,
+  categoriasReceita: <?= json_encode($categorias_receita ?? []) ?>,
+  categoriasDespesa: <?= json_encode($categorias_despesa ?? []) ?>,
+  locacoes: <?= json_encode($locacoes ?? []) ?>,
+  cards: {
+    receitasMesAtual: <?= json_encode($receitas_mes_atual ?? 0) ?>,
+    despesasMesAtual: <?= json_encode($despesas_mes_atual ?? 0) ?>,
+    lucroMesAtual: <?= json_encode($lucro_mes_atual ?? 0) ?>
+  }
+};
+</script>
+
 <!-- Gridjs Financeiro js -->
 <script src="<?= base_url('assets/admin/js/pages/financeiro.js') ?>"></script>
-
-<!-- Script para controle de filtros -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const btnFiltros = document.getElementById('btn-filtros');
-    const filtrosContainer = document.getElementById('filtros-container');
-    let filtrosAtivos = false;
-    
-    // Aguardar GridJS renderizar
-    setTimeout(function() {
-        const gridSearchWrapper = document.querySelector('#table-financeiro .gridjs-search')?.parentElement;
-        
-        if (btnFiltros && filtrosContainer && gridSearchWrapper) {
-            // Mover filtros para dentro do wrapper do GridJS, na mesma linha da pesquisa
-            gridSearchWrapper.appendChild(filtrosContainer);
-            
-            btnFiltros.addEventListener('click', function() {
-                filtrosAtivos = !filtrosAtivos;
-                
-                if (filtrosAtivos) {
-                    filtrosContainer.style.display = 'inline-flex';
-                    btnFiltros.classList.remove('btn-outline-primary');
-                    btnFiltros.classList.add('btn-primary');
-                } else {
-                    filtrosContainer.style.display = 'none';
-                    btnFiltros.classList.remove('btn-primary');
-                    btnFiltros.classList.add('btn-outline-primary');
-                }
-            });
-        }
-    }, 500);
-});
-</script>
 
 <!-- Modal Receita -->
 <div class="modal fade" id="modalReceita" tabindex="-1" aria-labelledby="modalReceitaLabel" aria-hidden="true">
@@ -314,22 +295,21 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
                 <form id="formReceita">
+                    <input type="hidden" id="receita_id" name="lancamento_id" value="">
+                    <input type="hidden" id="receita_tipo" name="lan_tipo" value="receita">
                     <!-- Campos Principais -->
                     <div class="row mb-3">
                         <div class="col-md-8">
                             <label for="receita_categoria" class="form-label">Categoria <span class="text-danger">*</span></label>
                             <select class="form-select" id="receita_categoria" name="lan_categoria_id" required>
                                 <option value="">Selecione a categoria da receita</option>
-                                <option value="1">Locação de veículos</option>
-                                <option value="2">Caução</option>
-                                <option value="3">Multa por atraso</option>
-                                <option value="4">Taxa administrativa</option>
-                                <option value="5">Serviços adicionais</option>
-                                <option value="6">Venda de serviços</option>
+                                <?php foreach (($categorias_receita ?? []) as $c): ?>
+                                    <option value="<?= esc($c['id']) ?>"><?= esc($c['cat_nome'] ?? $c['nome'] ?? '') ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="col-md-4 d-flex align-items-end">
-                            <a href="#" class="text-primary text-decoration-underline">Cadastrar nova categoria</a>
+                            <a href="<?= base_url('admin/cadastro/categorias-financeiras') ?>" target="_blank" rel="noopener" class="text-primary text-decoration-underline">Cadastrar nova categoria</a>
                         </div>
                     </div>
 
@@ -356,14 +336,14 @@ document.addEventListener('DOMContentLoaded', function() {
                             <label for="receita_locacao" class="form-label">Locação</label>
                             <select class="form-select" id="receita_locacao" name="lan_locacao_id">
                                 <option value="">Selecione a locação</option>
-                                <option value="1">Locação #001 - João Silva</option>
-                                <option value="2">Locação #002 - Maria Santos</option>
-                                <option value="3">Locação #003 - Pedro Oliveira</option>
+                                <?php foreach (($locacoes ?? []) as $l): ?>
+                                    <option value="<?= esc($l['id']) ?>"><?= esc($l['label'] ?? ('Locação #' . ($l['id'] ?? ''))) ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label for="receita_veiculo" class="form-label">Veículo</label>
-                            <input type="text" class="form-control" id="receita_veiculo" name="lan_veiculo_id" placeholder="Ex.: ABC-1234 ou ABC-1A23" style="text-transform: uppercase;">
+                            <input type="text" class="form-control" id="receita_veiculo" name="lan_veiculo_placa" placeholder="Ex.: ABC-1234 ou ABC-1A23" style="text-transform: uppercase;">
                         </div>
                     </div>
 
@@ -438,9 +418,9 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-success" onclick="salvarReceita()">
+                <button type="button" class="btn btn-success" id="btnSalvarReceita" onclick="salvarReceita()">
                     <iconify-icon icon="iconamoon:plus-duotone"></iconify-icon>
-                    + Receita
+                    <span class="btn-label">+ Receita</span>
                 </button>
             </div>
         </div>
@@ -457,28 +437,21 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
                 <form id="formDespesa">
+                    <input type="hidden" id="despesa_id" name="lancamento_id" value="">
+                    <input type="hidden" id="despesa_tipo" name="lan_tipo" value="despesa">
                     <!-- Campos Principais -->
                     <div class="row mb-3">
                         <div class="col-md-8">
                             <label for="despesa_categoria" class="form-label">Categoria <span class="text-danger">*</span></label>
                             <select class="form-select" id="despesa_categoria" name="lan_categoria_id" required>
                                 <option value="">Selecione a categoria da despesa</option>
-                                <option value="7">Combustível</option>
-                                <option value="8">Manutenção de veículos</option>
-                                <option value="9">Peças e acessórios</option>
-                                <option value="10">Seguro</option>
-                                <option value="11">IPVA</option>
-                                <option value="12">Licenciamento</option>
-                                <option value="13">Multas de trânsito</option>
-                                <option value="14">Internet</option>
-                                <option value="15">Aluguel</option>
-                                <option value="16">Energia elétrica</option>
-                                <option value="17">Água</option>
-                                <option value="18">Folha de pagamento</option>
+                                <?php foreach (($categorias_despesa ?? []) as $c): ?>
+                                    <option value="<?= esc($c['id']) ?>"><?= esc($c['cat_nome'] ?? $c['nome'] ?? '') ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="col-md-4 d-flex align-items-end">
-                            <a href="#" class="text-primary text-decoration-underline">Cadastrar nova categoria</a>
+                            <a href="<?= base_url('admin/cadastro/categorias-financeiras') ?>" target="_blank" rel="noopener" class="text-primary text-decoration-underline">Cadastrar nova categoria</a>
                         </div>
                     </div>
 
@@ -505,14 +478,14 @@ document.addEventListener('DOMContentLoaded', function() {
                             <label for="despesa_locacao" class="form-label">Locação</label>
                             <select class="form-select" id="despesa_locacao" name="lan_locacao_id">
                                 <option value="">Selecione a locação</option>
-                                <option value="1">Locação #001 - João Silva</option>
-                                <option value="2">Locação #002 - Maria Santos</option>
-                                <option value="3">Locação #003 - Pedro Oliveira</option>
+                                <?php foreach (($locacoes ?? []) as $l): ?>
+                                    <option value="<?= esc($l['id']) ?>"><?= esc($l['label'] ?? ('Locação #' . ($l['id'] ?? ''))) ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label for="despesa_veiculo" class="form-label">Veículo</label>
-                            <input type="text" class="form-control" id="despesa_veiculo" name="lan_veiculo_id" placeholder="Ex.: ABC-1234 ou ABC-1A23" style="text-transform: uppercase;">
+                            <input type="text" class="form-control" id="despesa_veiculo" name="lan_veiculo_placa" placeholder="Ex.: ABC-1234 ou ABC-1A23" style="text-transform: uppercase;">
                         </div>
                     </div>
 
@@ -587,9 +560,9 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" onclick="salvarDespesa()">
+                <button type="button" class="btn btn-danger" id="btnSalvarDespesa" onclick="salvarDespesa()">
                     <iconify-icon icon="iconamoon:minus-duotone"></iconify-icon>
-                    - Despesa
+                    <span class="btn-label">- Despesa</span>
                 </button>
             </div>
         </div>
@@ -737,96 +710,5 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
-// Funções para salvar
-function salvarReceita() {
-    const form = document.getElementById('formReceita');
-    if (form.checkValidity()) {
-        const formData = new FormData(form);
-        formData.append('lan_tipo', 'receita');
-        
-        // Obter valores monetários sem máscara (jQuery Mask)
-        const valorInput = $('#receita_valor');
-        const valorPagoInput = $('#receita_valor_pago');
-        
-        if (valorInput.length) {
-            let valor = valorInput.val().replace(/[^\d,]/g, '').replace(',', '.');
-            formData.set('lan_valor', valor || '0');
-        }
-        
-        if (valorPagoInput.length && valorPagoInput.val()) {
-            let valorPago = valorPagoInput.val().replace(/[^\d,]/g, '').replace(',', '.');
-            if (valorPago) {
-                formData.set('lan_valor_pago', valorPago);
-            }
-        }
-        
-        // Verificar se marcar como recebida está marcado
-        const marcarRecebida = document.getElementById('receita_marcar_recebida').checked;
-        if (marcarRecebida) {
-            formData.append('lan_status', 'pago');
-            if (!formData.get('lan_data_pagamento')) {
-                formData.set('lan_data_pagamento', new Date().toISOString().split('T')[0]);
-            }
-        } else {
-            formData.append('lan_status', 'pendente');
-        }
-
-        // Aqui será implementada a lógica de salvamento
-        console.log('Salvar Receita:', Object.fromEntries(formData));
-        alert('Receita salva com sucesso! (Implementar lógica de salvamento)');
-        
-        // Fechar modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('modalReceita'));
-        modal.hide();
-    } else {
-        form.reportValidity();
-    }
-}
-
-function salvarDespesa() {
-    const form = document.getElementById('formDespesa');
-    if (form.checkValidity()) {
-        const formData = new FormData(form);
-        formData.append('lan_tipo', 'despesa');
-        
-        // Obter valores monetários sem máscara (jQuery Mask)
-        const valorInput = $('#despesa_valor');
-        const valorPagoInput = $('#despesa_valor_pago');
-        
-        if (valorInput.length) {
-            let valor = valorInput.val().replace(/[^\d,]/g, '').replace(',', '.');
-            formData.set('lan_valor', valor || '0');
-        }
-        
-        if (valorPagoInput.length && valorPagoInput.val()) {
-            let valorPago = valorPagoInput.val().replace(/[^\d,]/g, '').replace(',', '.');
-            if (valorPago) {
-                formData.set('lan_valor_pago', valorPago);
-            }
-        }
-        
-        // Verificar se marcar como paga está marcado
-        const marcarPaga = document.getElementById('despesa_marcar_paga').checked;
-        if (marcarPaga) {
-            formData.append('lan_status', 'pago');
-            if (!formData.get('lan_data_pagamento')) {
-                formData.set('lan_data_pagamento', new Date().toISOString().split('T')[0]);
-            }
-        } else {
-            formData.append('lan_status', 'pendente');
-        }
-
-        // Aqui será implementada a lógica de salvamento
-        console.log('Salvar Despesa:', Object.fromEntries(formData));
-        alert('Despesa salva com sucesso! (Implementar lógica de salvamento)');
-        
-        // Fechar modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('modalDespesa'));
-        modal.hide();
-    } else {
-        form.reportValidity();
-    }
-}
 </script>
 <?= $this->endSection() ?>
