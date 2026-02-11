@@ -12,9 +12,10 @@ class Locoes extends BaseController
     {
         $locacaoModel = new LocacaoModel();
 
+        $empresaId = get_empresa_id();
         $locacoes = $locacaoModel
             ->builderWithJoins()
-            ->where('locacoes.loc_empresa_id', 1)
+            ->where('locacoes.loc_empresa_id', $empresaId)
             ->orderBy('locacoes.created_at', 'DESC')
             ->get()
             ->getResultArray();
@@ -45,7 +46,7 @@ class Locoes extends BaseController
             $locacaoModel = new LocacaoModel();
             $rows = $locacaoModel
                 ->builderWithJoins()
-                ->where('locacoes.loc_empresa_id', 1)
+                ->where('locacoes.loc_empresa_id', get_empresa_id())
                 ->orderBy('locacoes.created_at', 'DESC')
                 ->get()
                 ->getResultArray();
@@ -68,7 +69,7 @@ class Locoes extends BaseController
             $locacaoModel = new LocacaoModel();
             $row = $locacaoModel
                 ->builderWithJoins()
-                ->where('locacoes.loc_empresa_id', 1)
+                ->where('locacoes.loc_empresa_id', get_empresa_id())
                 ->where('locacoes.id', (int) $id)
                 ->get()
                 ->getRowArray();
@@ -106,7 +107,7 @@ class Locoes extends BaseController
                 ]);
             }
 
-            $data['loc_empresa_id'] = 1; // fixo (por enquanto)
+            $data['loc_empresa_id'] = get_empresa_id();
 
             // calcular total (fallback simples)
             if (!array_key_exists('loc_valor_total', $data) || $data['loc_valor_total'] === null) {
@@ -157,7 +158,7 @@ class Locoes extends BaseController
                 ]);
             }
 
-            $data['loc_empresa_id'] = 1; // manter empresa fixa
+            $data['loc_empresa_id'] = get_empresa_id();
 
             if (!array_key_exists('loc_valor_total', $data) || $data['loc_valor_total'] === null) {
                 $data['loc_valor_total'] = (float) ($data['loc_valor_locacao'] ?? 0);

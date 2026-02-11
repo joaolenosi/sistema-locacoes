@@ -8,7 +8,7 @@ class Empresa extends BaseController
 {
     public function index(): string
     {
-        $empresaId = 1;
+        $empresaId = get_empresa_id();
         $empresaModel = new EmpresaModel();
         $empresa = $empresaModel->find($empresaId);
 

@@ -9,8 +9,7 @@ class Configuracoes extends BaseController
 {
     public function index(): string
     {
-        $empresaId = 1; // fixo (por enquanto), mesmo padrão do cadastro de veículos
-
+        $empresaId = get_empresa_id();
         $empresaModel = new EmpresaModel();
         $planoModel = new PlanoModel();
 
@@ -67,7 +66,7 @@ class Configuracoes extends BaseController
     public function atualizarEmpresa()
     {
         try {
-            $empresaId = 1; // fixo (por enquanto)
+            $empresaId = get_empresa_id();
             $empresaModel = new EmpresaModel();
 
             $existing = $empresaModel->find($empresaId);

@@ -11,6 +11,7 @@ class Servicos extends BaseController
         $servicoModel = new ServicoModel();
 
         $servicos = $servicoModel
+            ->where('ser_empresa_id', get_empresa_id())
             ->orderBy('created_at', 'DESC')
             ->findAll();
 
@@ -30,7 +31,10 @@ class Servicos extends BaseController
     {
         try {
             $servicoModel = new ServicoModel();
-            $servicos = $servicoModel->orderBy('created_at', 'DESC')->findAll();
+            $servicos = $servicoModel
+                ->where('ser_empresa_id', get_empresa_id())
+                ->orderBy('created_at', 'DESC')
+                ->findAll();
             return $this->response->setJSON(['success' => true, 'data' => $servicos]);
         } catch (\Throwable $e) {
             return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Erro ao listar serviços.']);
@@ -61,7 +65,7 @@ class Servicos extends BaseController
                 return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => $err]);
             }
 
-            $data['ser_empresa_id'] = 1;
+            $data['ser_empresa_id'] = get_empresa_id();
 
             $servicoModel = new ServicoModel();
             $id = $servicoModel->insert($data, true);
@@ -91,7 +95,7 @@ class Servicos extends BaseController
                 return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => $err]);
             }
 
-            $data['ser_empresa_id'] = 1;
+            $data['ser_empresa_id'] = get_empresa_id();
 
             $ok = $servicoModel->update((int) $id, $data);
             if (!$ok) {

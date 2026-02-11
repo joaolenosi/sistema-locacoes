@@ -1,6 +1,14 @@
 <?php
 
 /**
+ * Retorna o ID da empresa logada (sessão). 0 se não houver sessão.
+ */
+function get_empresa_id(): int
+{
+    return (int) session()->get('empresa_id');
+}
+
+/**
  * Retorna as iniciais do nome da empresa (fantasia ou razão social) para exibição em avatar.
  * Ex.: "MOBILI LOCACOES" -> "ML", "Empresa" -> "EM"
  *
@@ -8,8 +16,12 @@
  */
 function empresa_iniciais(): string
 {
+    $id = get_empresa_id();
+    if ($id < 1) {
+        return 'E';
+    }
     $model = new \App\Models\EmpresaModel();
-    $empresa = $model->find(1);
+    $empresa = $model->find($id);
     if (! $empresa) {
         return 'E';
     }

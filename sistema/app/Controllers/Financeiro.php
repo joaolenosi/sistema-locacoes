@@ -14,9 +14,10 @@ class Financeiro extends BaseController
         $categoriaModel = new CategoriaFinanceiraModel();
         $lancamentoModel = new LancamentoFinanceiroModel();
 
+        $empresaId = get_empresa_id();
         $lancamentos = $lancamentoModel
             ->builderWithCategoria()
-            ->where('lancamentos_financeiros.lan_empresa_id', 1)
+            ->where('lancamentos_financeiros.lan_empresa_id', $empresaId)
             ->orderBy('lancamentos_financeiros.created_at', 'DESC')
             ->get()
             ->getResultArray();
@@ -50,7 +51,7 @@ class Financeiro extends BaseController
             $lancamentoModel = new LancamentoFinanceiroModel();
             $rows = $lancamentoModel
                 ->builderWithCategoria()
-                ->where('lancamentos_financeiros.lan_empresa_id', 1)
+                ->where('lancamentos_financeiros.lan_empresa_id', get_empresa_id())
                 ->orderBy('lancamentos_financeiros.created_at', 'DESC')
                 ->get()
                 ->getResultArray();
@@ -73,7 +74,7 @@ class Financeiro extends BaseController
             $lancamentoModel = new LancamentoFinanceiroModel();
             $row = $lancamentoModel
                 ->builderWithCategoria()
-                ->where('lancamentos_financeiros.lan_empresa_id', 1)
+                ->where('lancamentos_financeiros.lan_empresa_id', get_empresa_id())
                 ->where('lancamentos_financeiros.id', (int) $id)
                 ->get()
                 ->getRowArray();
@@ -111,7 +112,7 @@ class Financeiro extends BaseController
                 ]);
             }
 
-            $data['lan_empresa_id'] = 1; // fixo (por enquanto)
+            $data['lan_empresa_id'] = get_empresa_id();
 
             $lancamentoModel = new LancamentoFinanceiroModel();
             $id = $lancamentoModel->insert($data, true);
@@ -157,7 +158,7 @@ class Financeiro extends BaseController
                 ]);
             }
 
-            $data['lan_empresa_id'] = 1; // manter empresa fixa
+            $data['lan_empresa_id'] = get_empresa_id();
 
             $ok = $lancamentoModel->update((int) $id, $data);
             if (!$ok) {
@@ -308,7 +309,7 @@ class Financeiro extends BaseController
             $db = db_connect();
             $rows = $db->table('locacoes')
                 ->select('id')
-                ->where('loc_empresa_id', 1)
+                ->where('loc_empresa_id', get_empresa_id())
                 ->orderBy('id', 'DESC')
                 ->limit(200)
                 ->get()

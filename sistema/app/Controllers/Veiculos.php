@@ -11,8 +11,9 @@ class Veiculos extends BaseController
     {
         $veiculoModel = new VeiculoModel();
 
-        // Listagem (mais recente primeiro)
+        $empresaId = get_empresa_id();
         $veiculos = $veiculoModel
+            ->where('vei_empresa_id', $empresaId)
             ->orderBy('created_at', 'DESC')
             ->findAll();
 
@@ -45,7 +46,10 @@ class Veiculos extends BaseController
     {
         try {
             $veiculoModel = new VeiculoModel();
-            $veiculos = $veiculoModel->orderBy('created_at', 'DESC')->findAll();
+            $veiculos = $veiculoModel
+                ->where('vei_empresa_id', get_empresa_id())
+                ->orderBy('created_at', 'DESC')
+                ->findAll();
             return $this->response->setJSON([
                 'success' => true,
                 'data' => $veiculos,
@@ -95,7 +99,7 @@ class Veiculos extends BaseController
                 ]);
             }
 
-            $data['vei_empresa_id'] = 1; // fixo (por enquanto)
+            $data['vei_empresa_id'] = get_empresa_id();
 
             $veiculoModel = new VeiculoModel();
             $id = $veiculoModel->insert($data, true);
@@ -142,8 +146,7 @@ class Veiculos extends BaseController
                 ]);
             }
 
-            // manter empresa fixa
-            $data['vei_empresa_id'] = 1;
+            $data['vei_empresa_id'] = get_empresa_id();
 
             $ok = $veiculoModel->update((int) $id, $data);
             if (!$ok) {

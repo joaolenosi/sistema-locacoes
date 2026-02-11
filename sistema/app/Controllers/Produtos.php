@@ -11,6 +11,7 @@ class Produtos extends BaseController
         $produtoModel = new ProdutoModel();
 
         $produtos = $produtoModel
+            ->where('pro_empresa_id', get_empresa_id())
             ->orderBy('created_at', 'DESC')
             ->findAll();
 
@@ -30,7 +31,10 @@ class Produtos extends BaseController
     {
         try {
             $produtoModel = new ProdutoModel();
-            $produtos = $produtoModel->orderBy('created_at', 'DESC')->findAll();
+            $produtos = $produtoModel
+                ->where('pro_empresa_id', get_empresa_id())
+                ->orderBy('created_at', 'DESC')
+                ->findAll();
             return $this->response->setJSON(['success' => true, 'data' => $produtos]);
         } catch (\Throwable $e) {
             return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Erro ao listar produtos.']);
@@ -61,7 +65,7 @@ class Produtos extends BaseController
                 return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => $err]);
             }
 
-            $data['pro_empresa_id'] = 1;
+            $data['pro_empresa_id'] = get_empresa_id();
 
             $produtoModel = new ProdutoModel();
             $id = $produtoModel->insert($data, true);
@@ -91,7 +95,7 @@ class Produtos extends BaseController
                 return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => $err]);
             }
 
-            $data['pro_empresa_id'] = 1;
+            $data['pro_empresa_id'] = get_empresa_id();
 
             $ok = $produtoModel->update((int) $id, $data);
             if (!$ok) {

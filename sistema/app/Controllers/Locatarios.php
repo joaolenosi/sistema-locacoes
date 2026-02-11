@@ -10,8 +10,9 @@ class Locatarios extends BaseController
     {
         $clienteModel = new ClienteModel();
 
-        // Listagem (mais recente primeiro)
+        $empresaId = get_empresa_id();
         $locatarios = $clienteModel
+            ->where('cli_empresa_id', $empresaId)
             ->orderBy('created_at', 'DESC')
             ->findAll();
 
@@ -32,7 +33,10 @@ class Locatarios extends BaseController
     {
         try {
             $clienteModel = new ClienteModel();
-            $locatarios = $clienteModel->orderBy('created_at', 'DESC')->findAll();
+            $locatarios = $clienteModel
+                ->where('cli_empresa_id', get_empresa_id())
+                ->orderBy('created_at', 'DESC')
+                ->findAll();
             return $this->response->setJSON([
                 'success' => true,
                 'data' => $locatarios,
@@ -83,7 +87,7 @@ class Locatarios extends BaseController
                 ]);
             }
 
-            $data['cli_empresa_id'] = 1; // fixo (por enquanto)
+            $data['cli_empresa_id'] = get_empresa_id();
             if (!array_key_exists('cli_ativo', $data) || $data['cli_ativo'] === null || $data['cli_ativo'] === '') {
                 $data['cli_ativo'] = 1;
             }
@@ -133,8 +137,7 @@ class Locatarios extends BaseController
                 ]);
             }
 
-            // manter empresa fixa
-            $data['cli_empresa_id'] = 1;
+            $data['cli_empresa_id'] = get_empresa_id();
 
             $ok = $clienteModel->update((int) $id, $data);
             if (!$ok) {
