@@ -18,21 +18,22 @@ jobs:
             rm -rf ./sistema/.cursor
           fi
       
-      - name: Create directories on FTP server
-        run: |
-          apt-get update && apt-get install -y lftp
-          lftp -u guinesoftware,${{ secrets.FTP_PASSWORD }} ftp.guinesoftware.com.br <<EOF
-          cd /www/sistema
-          mkdir -p app
-          mkdir -p public
-          mkdir -p writable
-          mkdir -p writable/cache
-          mkdir -p writable/logs
-          mkdir -p writable/session
-          mkdir -p writable/uploads
-          quit
-          EOF
+      - name: Create directories on server via SSH
         continue-on-error: true
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ftp.web15f10.uni5.net
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            mkdir -p /www/sistema/app
+            mkdir -p /www/sistema/public
+            mkdir -p /www/sistema/writable/cache
+            mkdir -p /www/sistema/writable/logs
+            mkdir -p /www/sistema/writable/session
+            mkdir -p /www/sistema/writable/uploads
+            chmod -R 755 /www/sistema
       
       - name: Deploy to FTP
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
@@ -45,7 +46,6 @@ jobs:
           dangerous-clean-slate: false
           dry-run: false
           log-level: verbose
-          ftp-timeout: 300
           exclude: |
             **/.git*
             **/.github*
