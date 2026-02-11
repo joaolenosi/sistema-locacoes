@@ -12,6 +12,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Remove .cursor directory
+        run: |
+          if [ -d "./sistema/.cursor" ]; then
+            rm -rf ./sistema/.cursor
+          fi
+      
       - name: Deploy to FTP
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
@@ -23,6 +29,8 @@ jobs:
           exclude: |
             **/.git*
             **/.github*
+            .cursor/
+            **/.cursor/**
             **/.cursor*
             **/tests*
             **/.env*
