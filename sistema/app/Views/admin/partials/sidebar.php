@@ -204,7 +204,7 @@
                         </li>
                         <li class="sub-nav-item">
                             <a class="sub-nav-link" href="<?= base_url('admin/empresa') ?>">
-                                <iconify-icon icon="iconamoon:building-duotone" class="me-1"></iconify-icon>
+                                <iconify-icon icon="iconamoon:briefcase-duotone" class="me-1"></iconify-icon>
                                 Empresa
                             </a>
                         </li>
