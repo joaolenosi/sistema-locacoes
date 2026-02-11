@@ -24,7 +24,7 @@ jobs:
           server: ftp.web21f90.uni5.net
           port: 21
           username: mobilelocacoes
-          password: Senha100Teste1
+          password: ${{ secrets.FTP_PASSWORD_MOBILE }}
           local-dir: ./sistema/
           server-dir: /painel/
           dangerous-clean-slate: false
