@@ -42,5 +42,5 @@ jobs:
             **/node_modules*
             **/.DS_Store*
             **/README.md
-          **/phpunit.xml.dist
-          **/vendor*
+            **/phpunit.xml.dist
+            **/vendor*
