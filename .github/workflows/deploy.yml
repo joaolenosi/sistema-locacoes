@@ -18,6 +18,16 @@ jobs:
             rm -rf ./sistema/.cursor
           fi
       
+      - name: Create directory on server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ftp.web15f10.uni5.net
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            mkdir -p /www/sistema
+      
       - name: Deploy to FTP
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
@@ -25,7 +35,9 @@ jobs:
           username: guinesoftware
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./sistema/
-          server-dir: /www/sistema/
+          server-dir: /www/sistema
+          dangerous-clean-slate: false
+          dry-run: false
           exclude: |
             **/.git*
             **/.github*
