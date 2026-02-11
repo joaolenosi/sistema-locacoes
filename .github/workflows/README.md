@@ -28,8 +28,8 @@ Antes de usar o workflow, você precisa configurar os secrets do GitHub:
 2. **Etapas do Deploy**:
    - Checkout do código do repositório
    - Configuração do ambiente PHP 8.0
-   - Instalação das dependências do Composer (apenas produção)
-   - Upload dos arquivos para o servidor FTP em `/www/sistema/`
+   - Instalação das dependências do Composer na pasta `sistema/` (apenas produção)
+   - Upload dos arquivos da pasta `sistema/` para o servidor FTP em `/www/sistema/`
 
 3. **Arquivos Excluídos**: O workflow exclui automaticamente:
    - Arquivos do Git (`.git/`, `.github/`)

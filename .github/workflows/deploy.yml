@@ -18,6 +18,7 @@ jobs:
           php-version: '8.0'
       
       - name: Install Composer dependencies
+        working-directory: ./sistema
         run: composer install --no-dev --optimize-autoloader
       
       - name: Deploy to FTP
@@ -26,7 +27,7 @@ jobs:
           server: ftp.guinesoftware.com.br
           username: guinesoftware
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./
+          local-dir: ./sistema/
           server-dir: /www/sistema/
           exclude: |
             **/.git*
