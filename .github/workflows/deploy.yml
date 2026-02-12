@@ -28,3 +28,4 @@ jobs:
           local_path: "./sistema/*"
           remote_path: "/painel"
           sftp_only: true
+  
