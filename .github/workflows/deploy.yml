@@ -1,48 +1,26 @@
-name: Deploy to FTP
+name: Deploy via FTP
 
 on:
   push:
     branches:
-      - main
+      - main   # troque se sua branch principal for master
 
 jobs:
-  deploy:
+  ftp-deploy:
+    name: Upload to FTP
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout do código
         uses: actions/checkout@v4
-      
-      - name: Remove .cursor directory
-        run: |
-          if [ -d "./sistema/.cursor" ]; then
-            rm -rf ./sistema/.cursor
-          fi
-      
-      - name: Deploy to FTP
-        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+
+      - name: Deploy para FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ftp.web21f90.uni5.net
           username: mobilelocacoes
-          password: ${{ secrets.FTP_PASSWORD_MOBILE }}
-          local-dir: ./sistema/
+          password: Senha100Teste1
+          protocol: ftp      # ou ftps se seu servidor suportar
+          port: 21
+          local-dir: ./
           server-dir: /www/painel/
-          dangerous-clean-slate: false
-          dry-run: false
-          log-level: verbose
-          protocol: ftp
-          exclude: |
-            **/.git*
-            **/.github*
-            .cursor/
-            **/.cursor/**
-            **/.cursor*
-            **/tests*
-            **/.env*
-            **/.vscode*
-            **/.idea*
-            **/node_modules*
-            **/.DS_Store*
-            **/README.md
-            **/phpunit.xml.dist
-            **/vendor*
-  
