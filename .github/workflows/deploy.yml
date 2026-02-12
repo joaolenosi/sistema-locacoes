@@ -1,4 +1,4 @@
-name: Deploy via SFTP
+name: Deploy to FTP
 
 on:
   push:
@@ -18,14 +18,30 @@ jobs:
             rm -rf ./sistema/.cursor
           fi
       
-      - name: Upload files via SFTP
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+      - name: Deploy to FTP
+        uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
-          username: mobilelocacoes
           server: ftp.web21f90.uni5.net
-          port: 22
+          username: mobilelocacoes
           password: ${{ secrets.FTP_PASSWORD_MOBILE }}
-          local_path: "./sistema/*"
-          remote_path: "/painel"
-          sftp_only: true
+          local-dir: ./sistema/
+          server-dir: /painel/
+          dangerous-clean-slate: false
+          dry-run: false
+          log-level: verbose
+          exclude: |
+            **/.git*
+            **/.github*
+            .cursor/
+            **/.cursor/**
+            **/.cursor*
+            **/tests*
+            **/.env*
+            **/.vscode*
+            **/.idea*
+            **/node_modules*
+            **/.DS_Store*
+            **/README.md
+            **/phpunit.xml.dist
+            **/vendor*
   
