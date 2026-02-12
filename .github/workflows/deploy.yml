@@ -17,10 +17,10 @@ jobs:
       - name: Deploy para FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          server: ftp.web21f90.uni5.net
+          server: web21f90.uni5.net
           username: mobilelocacoes
           password: Senha100Teste1
-          protocol: ftp      # ou ftps se seu servidor suportar
-          port: 21
+          protocol: sftp      # ou ftps se seu servidor suportar
+          port: 22
           local-dir: ./
           server-dir: /www/painel/
