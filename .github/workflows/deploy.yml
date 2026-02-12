@@ -25,10 +25,11 @@ jobs:
           username: mobilelocacoes
           password: ${{ secrets.FTP_PASSWORD_MOBILE }}
           local-dir: ./sistema/
-          server-dir: ./painel/
+          server-dir: /www/painel/
           dangerous-clean-slate: false
           dry-run: false
           log-level: verbose
+          protocol: ftp
           exclude: |
             **/.git*
             **/.github*
