@@ -1,0 +1,33 @@
+name: Deploy via Script PHP
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:  # Permite executar manualmente
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps: 
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: ftp, openssl
+
+      - name: Remover pastas desnecessárias antes do deploy
+        run: |
+          rm -rf .git .github .cursor vendor node_modules tests
+          rm -f .env .env.* README.md phpunit.xml.dist INSTALACAO_IIS.md SOLUCAO_403_14.md DIAGNOSTICO_FTP.md
+          find . -name ".DS_Store" -delete 2>/dev/null || true
+          find . -name "Thumbs.db" -delete 2>/dev/null || true
+
+      - name: Executar script de deploy PHP
+        env:
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          php scripts/deploy-ftp.php
