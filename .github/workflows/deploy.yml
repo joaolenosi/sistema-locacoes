@@ -30,7 +30,7 @@ jobs:
           protocol: ftps
           port: 21
           local-dir: ./
-          server-dir: /www/painel/
+          server-dir: ./painel/
           dangerous-clean-slate: false
           dry-run: false
           log-level: verbose
