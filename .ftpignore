@@ -1,0 +1,52 @@
+# Git
+.git
+.git/
+.git/**
+.gitignore
+.gitattributes
+
+# GitHub
+.github
+.github/
+.github/**
+
+# Cursor IDE
+.cursor
+.cursor/
+.cursor/**
+
+# Environment
+.env
+.env.*
+
+# Dependencies
+vendor
+vendor/
+vendor/**
+node_modules
+node_modules/
+node_modules/**
+
+# IDE
+.vscode
+.vscode/
+.vscode/**
+.idea
+.idea/
+.idea/**
+
+# Tests
+tests
+tests/
+tests/**
+
+# OS
+.DS_Store
+.DS_Store*
+Thumbs.db
+
+# Documentation
+README.md
+INSTALACAO_IIS.md
+SOLUCAO_403_14.md
+phpunit.xml.dist

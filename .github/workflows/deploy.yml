@@ -21,21 +21,21 @@ jobs:
           protocol: ftps
           port: 21
           local-dir: ./
-          server-dir: /www/sistema/
+          server-dir: /www/painel/
           dangerous-clean-slate: false
           exclude: |
-            **/.git*
-            **/.github*
-            **/.cursor*
-            **/.cursor/**
-            **/.env*
-            **/vendor*
-            **/node_modules*
-            **/.vscode*
-            **/.idea*
-            **/tests*
-            **/.DS_Store*
-            **/README.md
-            **/phpunit.xml.dist
-            **/INSTALACAO_IIS.md
-            **/SOLUCAO_403_14.md
+            .git/
+            .github/
+            .cursor/
+            .env
+            .env.*
+            vendor/
+            node_modules/
+            .vscode/
+            .idea/
+            tests/
+            .DS_Store
+            README.md
+            phpunit.xml.dist
+            INSTALACAO_IIS.md
+            SOLUCAO_403_14.md
