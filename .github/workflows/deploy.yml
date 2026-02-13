@@ -1,4 +1,4 @@
-name: Deploy SSH Simples
+name: Deploy SFTP
 
 on:
   push:
@@ -12,13 +12,22 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Enviar arquivos via SSH
-        uses: appleboy/scp-action@v0.1.7
+      - name: Deploy via SFTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          host: guinesoftware.com.br
+          server: web21f90.uni5.net
           username: guinesoftware
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: sftp
           port: 22
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "."
-          target: "/www/painel/"
-          rm: false
+          local-dir: ./
+          server-dir: /www/painel/
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.github*
+            **/.env*
+            **/vendor*
+            **/node_modules*
+            **/.vscode*
+            **/.idea*
