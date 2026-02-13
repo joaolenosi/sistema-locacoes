@@ -6,11 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-    <link rel="shortcut icon" href="<?= base_url('assets/admin/images/favicon.ico') ?>" />
-    <link href="<?= base_url('assets/admin/css/vendor.min.css') ?>" rel="stylesheet" type="text/css" />
-    <link href="<?= base_url('assets/admin/css/icons.min.css') ?>" rel="stylesheet" type="text/css" />
-    <link href="<?= base_url('assets/admin/css/app.min.css') ?>" rel="stylesheet" type="text/css" />
-    <script src="<?= base_url('assets/admin/js/config.js') ?>"></script>
+    <link rel="shortcut icon" href="<?= asset_url('assets/admin/images/favicon.ico') ?>" />
+    <link href="<?= asset_url('assets/admin/css/vendor.min.css') ?>" rel="stylesheet" type="text/css" />
+    <link href="<?= asset_url('assets/admin/css/icons.min.css') ?>" rel="stylesheet" type="text/css" />
+    <link href="<?= asset_url('assets/admin/css/app.min.css') ?>" rel="stylesheet" type="text/css" />
+    <script src="<?= asset_url('assets/admin/js/config.js') ?>"></script>
     <style>
         body.login-page { background-color: #e9ecef; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
         .login-card { max-width: 420px; width: 100%; }

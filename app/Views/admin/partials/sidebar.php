@@ -3,12 +3,12 @@
     <div class="logo-box">
         <a href="<?= base_url() ?>" class="logo-dark">
             <img
-                src="<?= base_url('assets/admin/images/logo-sm.png') ?>"
+                src="<?= asset_url('assets/admin/images/logo-sm.png') ?>"
                 class="logo-sm"
                 alt="logo sm"
             />
             <img
-                src="<?= base_url('assets/admin/images/logo-dark.png') ?>"
+                src="<?= asset_url('assets/admin/images/logo-dark.png') ?>"
                 class="logo-lg"
                 alt="logo dark"
             />
@@ -16,12 +16,12 @@
 
         <a href="<?= base_url() ?>" class="logo-light">
             <img
-                src="<?= base_url('assets/admin/images/logo-sm.png') ?>"
+                src="<?= asset_url('assets/admin/images/logo-sm.png') ?>"
                 class="logo-sm"
                 alt="logo sm"
             />
             <img
-                src="<?= base_url('assets/admin/images/logo-light.png') ?>"
+                src="<?= asset_url('assets/admin/images/logo-light.png') ?>"
                 class="logo-lg"
                 alt="logo light"
             />

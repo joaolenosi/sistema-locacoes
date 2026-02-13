@@ -109,7 +109,7 @@ if (!function_exists('empresa_iniciais')) {
                                             <div class="d-flex">
                                                 <div class="flex-shrink-0">
                                                     <img
-                                                        src="<?= base_url('assets/admin/images/users/avatar-1.jpg') ?>"
+                                                        src="<?= asset_url('assets/admin/images/users/avatar-1.jpg') ?>"
                                                         class="img-fluid me-2 avatar-sm rounded-circle"
                                                         alt="avatar-1"
                                                     />
@@ -161,7 +161,7 @@ if (!function_exists('empresa_iniciais')) {
                                             <div class="d-flex">
                                                 <div class="flex-shrink-0">
                                                     <img
-                                                        src="<?= base_url('assets/admin/images/users/avatar-3.jpg') ?>"
+                                                        src="<?= asset_url('assets/admin/images/users/avatar-3.jpg') ?>"
                                                         class="img-fluid me-2 avatar-sm rounded-circle"
                                                         alt="avatar-3"
                                                     />
@@ -210,7 +210,7 @@ if (!function_exists('empresa_iniciais')) {
                                             <div class="d-flex">
                                                 <div class="flex-shrink-0">
                                                     <img
-                                                        src="<?= base_url('assets/admin/images/users/avatar-5.jpg') ?>"
+                                                        src="<?= asset_url('assets/admin/images/users/avatar-5.jpg') ?>"
                                                         class="img-fluid me-2 avatar-sm rounded-circle"
                                                         alt="avatar-5"
                                                     />
@@ -504,7 +504,7 @@ if (!function_exists('empresa_iniciais')) {
                                         <span
                                             class="position-absolute start-0 translate-middle-x bg-success bg-gradient d-inline-flex align-items-center justify-content-center rounded-circle text-light fs-20"
                                             ><img
-                                                src="<?= base_url('assets/admin/images/users/avatar-7.jpg') ?>"
+                                                src="<?= asset_url('assets/admin/images/users/avatar-7.jpg') ?>"
                                                 alt="avatar-5"
                                                 class="avatar-sm rounded-circle"
                                         /></span>
@@ -518,7 +518,7 @@ if (!function_exists('empresa_iniciais')) {
                                                 <div class="col-lg-4">
                                                     <a href="#!">
                                                         <img
-                                                            src="<?= base_url('assets/admin/images/small/img-6.jpg') ?>"
+                                                            src="<?= asset_url('assets/admin/images/small/img-6.jpg') ?>"
                                                             alt=""
                                                             class="img-fluid rounded"
                                                         />
@@ -527,7 +527,7 @@ if (!function_exists('empresa_iniciais')) {
                                                 <div class="col-lg-4">
                                                     <a href="#!">
                                                         <img
-                                                            src="<?= base_url('assets/admin/images/small/img-3.jpg') ?>"
+                                                            src="<?= asset_url('assets/admin/images/small/img-3.jpg') ?>"
                                                             alt=""
                                                             class="img-fluid rounded"
                                                         />
@@ -536,7 +536,7 @@ if (!function_exists('empresa_iniciais')) {
                                                 <div class="col-lg-4">
                                                     <a href="#!">
                                                         <img
-                                                            src="<?= base_url('assets/admin/images/small/img-4.jpg') ?>"
+                                                            src="<?= asset_url('assets/admin/images/small/img-4.jpg') ?>"
                                                             alt=""
                                                             class="img-fluid rounded"
                                                         />
@@ -552,7 +552,7 @@ if (!function_exists('empresa_iniciais')) {
                                         <span
                                             class="position-absolute start-0 translate-middle-x bg-success bg-gradient d-inline-flex align-items-center justify-content-center rounded-circle text-light fs-20"
                                             ><img
-                                                src="<?= base_url('assets/admin/images/users/avatar-6.jpg') ?>"
+                                                src="<?= asset_url('assets/admin/images/users/avatar-6.jpg') ?>"
                                                 alt="avatar-5"
                                                 class="avatar-sm rounded-circle"
                                         /></span>
