@@ -1,0 +1,28 @@
+name: Deploy Test - Um arquivo apenas
+
+on:
+  workflow_dispatch:  # Permite executar manualmente
+
+jobs:
+  deploy-test:
+    runs-on: ubuntu-latest
+
+    steps: 
+      - name: Criar arquivo de teste
+        run: |
+          mkdir -p deploy-test
+          echo "<?php echo 'Teste de deploy funcionando! Data: ' . date('Y-m-d H:i:s'); ?>" > deploy-test/test-deploy.php
+
+      - name: Deploy teste - Um arquivo apenas
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: mobilelocacoes.com
+          username: mobilelocacoes
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ./deploy-test/
+          server-dir: /www/painel/
+          dangerous-clean-slate: false
+          dry-run: false
+          log-level: verbose
