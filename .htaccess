@@ -1,0 +1,22 @@
+# Redireciona tudo para public/index.php quando o DocumentRoot aponta para a raiz
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Se é um arquivo ou diretório que existe na raiz, serve ele diretamente
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+    
+    # Verifica se o arquivo existe em public/ e serve ele
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f [OR]
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -d
+    RewriteRule ^(.*)$ public/$1 [L]
+    
+    # Caso contrário, redireciona para public/index.php (rewrite interno)
+    RewriteRule ^(.*)$ public/index.php/$1 [L]
+</IfModule>
+
+# Se mod_rewrite não estiver disponível, usa index.php da raiz
+<IfModule !mod_rewrite.c>
+    ErrorDocument 404 /sistema/index.php
+</IfModule>
