@@ -20,3 +20,4 @@ if (file_exists($publicIndexPath)) {
     http_response_code(500);
     die('Erro: Arquivo public/index.php não encontrado. Verifique a estrutura do projeto.');
 }
+   
