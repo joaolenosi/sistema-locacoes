@@ -15,13 +15,13 @@ jobs:
       - name: Deploy via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          server: guinesoftware.com.br
-          username: guinesoftware
+          server: mobilelocacoes.com.br
+          username: mobilelocacoes
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftps
           port: 21
           local-dir: ./
-          server-dir: /home/guinesoftware/www/painel/
+          server-dir: /www/sistema/
           dangerous-clean-slate: false
           exclude: |
             **/.git*
