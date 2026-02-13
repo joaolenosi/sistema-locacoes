@@ -15,7 +15,7 @@ jobs:
       - name: Deploy via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          server: mobilelocacoes.com.br
+          server: mobilelocacoes.com
           username: mobilelocacoes
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftps
