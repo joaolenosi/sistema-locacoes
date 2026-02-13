@@ -122,6 +122,9 @@ nb-configuration.xml
 # Visual Studio Code
 .vscode/
 
+# Cursor IDE
+.cursor/
+
 /results/
 /phpunit*.xml
 /.phpunit.*.cache
