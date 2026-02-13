@@ -15,7 +15,7 @@ jobs:
       - name: Deploy via SFTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          server: web21f90.uni5.net
+          server: guinesoftware.com.br
           username: guinesoftware
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: sftp
