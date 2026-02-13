@@ -1,6 +1,6 @@
 <?php
 /**
- * Entry point quando o IIS aponta para a raiz do projeto
+ * Entry point quando o DocumentRoot aponta para a raiz do projeto
  * Este arquivo inclui o public/index.php diretamente
  */
 
