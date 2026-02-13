@@ -16,13 +16,20 @@ $ftpConfig = [
     'passive' => true,
     // Tentará estes caminhos em ordem até encontrar um que funcione
     'serverDirOptions' => [
-        'painel/',
         '/www/painel/',
-        'public_html/painel/',
-        'htdocs/painel/',
+        '/www/sistema/',
         'www/painel/',
+        'www/sistema/',
+        'painel/',
+        'sistema/',
+        'public_html/painel/',
+        'public_html/sistema/',
+        'htdocs/painel/',
+        'htdocs/sistema/',
         './painel/',
-        '/home/mobilelocacoes/www/sistema/'
+        './sistema/',
+        '/home/mobilelocacoes/www/sistema/',
+        '/home/mobilelocacoes/www/painel/',
     ],
 ];
 
@@ -193,38 +200,108 @@ logMessage("Diretório atual do FTP: " . ($currentDir ?: '/'), 'blue');
 
 // Listar conteúdo do diretório atual para diagnóstico
 logMessage("\nConteúdo do diretório atual:", 'yellow');
+
+// Tentar diferentes métodos de listagem
 $files = @ftp_nlist($ftp, '.');
-if ($files) {
-    foreach (array_slice($files, 0, 10) as $file) {
-        logMessage("  - " . basename($file), 'blue');
-    }
-    if (count($files) > 10) {
-        logMessage("  ... e mais " . (count($files) - 10) . " itens", 'blue');
+if (!$files || empty($files)) {
+    // Tentar com rawlist para obter mais detalhes
+    $rawList = @ftp_rawlist($ftp, '.');
+    if ($rawList) {
+        logMessage("Encontrados " . count($rawList) . " itens:", 'blue');
+        foreach (array_slice($rawList, 0, 20) as $item) {
+            logMessage("  " . $item, 'blue');
+        }
+        if (count($rawList) > 20) {
+            logMessage("  ... e mais " . (count($rawList) - 20) . " itens", 'blue');
+        }
+        
+        // Extrair apenas nomes de diretórios
+        $dirs = [];
+        foreach ($rawList as $item) {
+            if (preg_match('/^d/', $item) || strpos($item, '<DIR>') !== false) {
+                $parts = preg_split('/\s+/', $item);
+                $name = end($parts);
+                if ($name !== '.' && $name !== '..') {
+                    $dirs[] = $name;
+                }
+            }
+        }
+        if (!empty($dirs)) {
+            logMessage("\nDiretórios encontrados:", 'green');
+            foreach ($dirs as $dir) {
+                logMessage("  📁 " . $dir, 'green');
+            }
+        }
+    } else {
+        logMessage("  (Não foi possível listar - tentando método alternativo)", 'yellow');
+        
+        // Tentar listar diretórios comuns
+        $commonDirs = ['www', 'public_html', 'htdocs', 'wwwroot', 'web', 'html', 'sistema', 'painel'];
+        logMessage("\nVerificando diretórios comuns:", 'yellow');
+        foreach ($commonDirs as $dir) {
+            if (@ftp_chdir($ftp, $dir)) {
+                logMessage("  ✓ Encontrado: {$dir}", 'green');
+                @ftp_chdir($ftp, $currentDir ?: '/');
+            }
+        }
     }
 } else {
-    logMessage("  (Não foi possível listar)", 'yellow');
+    logMessage("Encontrados " . count($files) . " itens:", 'blue');
+    foreach (array_slice($files, 0, 20) as $file) {
+        $name = basename($file);
+        if ($name !== '.' && $name !== '..') {
+            // Verificar se é diretório
+            $isDir = false;
+            $pwd = @ftp_pwd($ftp);
+            if (@ftp_chdir($ftp, $name)) {
+                $isDir = true;
+                @ftp_chdir($ftp, $pwd);
+            }
+            $icon = $isDir ? '📁' : '📄';
+            logMessage("  {$icon} " . $name, 'blue');
+        }
+    }
+    if (count($files) > 20) {
+        logMessage("  ... e mais " . (count($files) - 20) . " itens", 'blue');
+    }
 }
 
 // Tentar encontrar o caminho correto
-logMessage("\nTentando encontrar/criar o diretório 'painel'...", 'yellow');
+logMessage("\nTentando encontrar/criar o diretório de destino...", 'yellow');
 $serverDir = null;
 
-// Primeiro, tentar criar "painel" diretamente no diretório atual
-if (@ftp_mkdir($ftp, 'painel')) {
-    if (@ftp_chdir($ftp, 'painel')) {
-        $serverDir = 'painel/';
-        logMessage("✓ Diretório 'painel' criado e acessado no diretório atual!", 'green');
-    }
-} else {
-    // Tentar entrar se já existe
-    if (@ftp_chdir($ftp, 'painel')) {
-        $serverDir = 'painel/';
-        logMessage("✓ Diretório 'painel' já existe e foi acessado!", 'green');
+// Primeiro, tentar navegar pelos diretórios comuns que podem existir
+$commonBaseDirs = ['www', 'public_html', 'htdocs', 'wwwroot', 'web', 'html'];
+$baseDir = null;
+
+logMessage("Procurando diretório base (www, public_html, etc)...", 'yellow');
+foreach ($commonBaseDirs as $base) {
+    if (@ftp_chdir($ftp, $base)) {
+        $baseDir = $base;
+        logMessage("✓ Encontrado diretório base: {$base}", 'green');
+        $currentDir = @ftp_pwd($ftp);
+        
+        // Tentar encontrar painel ou sistema dentro deste diretório
+        if (@ftp_chdir($ftp, 'painel')) {
+            $serverDir = $base . '/painel/';
+            logMessage("✓ Encontrado: {$serverDir}", 'green');
+            break;
+        } elseif (@ftp_chdir($ftp, 'sistema')) {
+            $serverDir = $base . '/sistema/';
+            logMessage("✓ Encontrado: {$serverDir}", 'green');
+            break;
+        }
+        
+        // Voltar para o base
+        @ftp_chdir($ftp, $base);
     }
 }
 
-// Se não funcionou, tentar outros caminhos
+// Se não encontrou, tentar caminhos absolutos e relativos
 if (!$serverDir) {
+    // Voltar para raiz
+    @ftp_chdir($ftp, '/');
+    
     foreach ($ftpConfig['serverDirOptions'] as $dirOption) {
         logMessage("Tentando: {$dirOption}", 'blue');
         
@@ -236,6 +313,7 @@ if (!$serverDir) {
         }
         
         // Tentar criar e depois entrar
+        $pwdBefore = @ftp_pwd($ftp);
         if (createRemoteDir($ftp, $dirOption)) {
             if (@ftp_chdir($ftp, $dirOption)) {
                 $serverDir = $dirOption;
@@ -244,8 +322,24 @@ if (!$serverDir) {
             }
         }
         
-        // Voltar para o diretório atual
-        @ftp_chdir($ftp, $currentDir ?: '/');
+        // Voltar para onde estava
+        @ftp_chdir($ftp, $pwdBefore ?: '/');
+    }
+}
+
+// Última tentativa: criar "painel" no diretório atual
+if (!$serverDir) {
+    @ftp_chdir($ftp, $currentDir ?: '/');
+    logMessage("Tentando criar 'painel' no diretório atual...", 'yellow');
+    
+    if (@ftp_mkdir($ftp, 'painel')) {
+        if (@ftp_chdir($ftp, 'painel')) {
+            $serverDir = 'painel/';
+            logMessage("✓ Diretório 'painel' criado e acessado!", 'green');
+        }
+    } elseif (@ftp_chdir($ftp, 'painel')) {
+        $serverDir = 'painel/';
+        logMessage("✓ Diretório 'painel' já existe!", 'green');
     }
 }
 
