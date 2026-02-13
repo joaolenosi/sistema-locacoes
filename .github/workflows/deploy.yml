@@ -21,7 +21,7 @@ jobs:
           protocol: ftps
           port: 21
           local-dir: ./
-          server-dir: /www/painel/
+          server-dir: /home/guinesoftware/www/painel/
           dangerous-clean-slate: false
           exclude: |
             **/.git*
