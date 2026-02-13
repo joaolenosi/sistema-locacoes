@@ -20,9 +20,19 @@ if (getcwd() . DIRECTORY_SEPARATOR !== FCPATH) {
     chdir(FCPATH);
 }
 
+// Limpar qualquer output buffer existente antes de começar
+while (ob_get_level() > 0) {
+    ob_end_clean();
+}
+
 // Desabilitar zlib.output_compression se estiver habilitado (necessário para CodeIgniter)
 if (ini_get('zlib.output_compression')) {
     ini_set('zlib.output_compression', 'Off');
+}
+
+// Garantir que não há output antes de iniciar
+if (ob_get_level() === 0) {
+    ob_start();
 }
 
 /*
@@ -45,8 +55,9 @@ $paths = new Config\Paths();
 require rtrim($paths->systemDirectory, '\\/ ') . DIRECTORY_SEPARATOR . 'bootstrap.php';
 
 // Load environment settings from .env files into $_SERVER and $_ENV
-require_once SYSTEMPATH . 'Config/DotEnv.php';
-(new CodeIgniter\Config\DotEnv(ROOTPATH))->load();
+// Use custom DotEnv class that doesn't require putenv()
+require_once APPPATH . 'Config/DotEnv.php';
+(new Config\DotEnv(ROOTPATH))->load();
 
 // Define ENVIRONMENT
 if (! defined('ENVIRONMENT')) {

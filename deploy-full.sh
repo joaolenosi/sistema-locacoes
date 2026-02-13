@@ -4,9 +4,9 @@ echo "=============================="
 echo "🚀 INICIANDO DEPLOY COMPLETO"
 echo "=============================="
 
-echo ""
-echo "📦 Rodando composer local..."
-composer install --no-dev
+# echo ""
+# echo "📦 Rodando composer local..."
+#composer install --no-dev
 
 echo ""
 echo "🗜 Compactando projeto..."

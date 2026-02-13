@@ -25,6 +25,11 @@ use CodeIgniter\HotReloader\HotReloader;
 
 Events::on('pre_system', static function () {
     if (ENVIRONMENT !== 'testing') {
+        // Limpar qualquer output buffer existente primeiro
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        
         // Tentar desabilitar zlib.output_compression antes de verificar
         if (ini_get('zlib.output_compression')) {
             ini_set('zlib.output_compression', 'Off');
@@ -35,11 +40,10 @@ Events::on('pre_system', static function () {
             throw FrameworkException::forEnabledZlibOutputCompression();
         }
 
-        while (ob_get_level() > 0) {
-            ob_end_flush();
+        // Iniciar novo output buffer
+        if (ob_get_level() === 0) {
+            ob_start(static fn ($buffer) => $buffer);
         }
-
-        ob_start(static fn ($buffer) => $buffer);
     }
 
     /*
