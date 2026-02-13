@@ -32,3 +32,21 @@ jobs:
           local-dir: ./
           server-dir: /www/painel/
           dangerous-clean-slate: false
+          dry-run: false
+          log-level: verbose
+          exclude: |
+            .git/
+            .github/
+            .cursor/
+            .env
+            .env.*
+            vendor/
+            node_modules/
+            .vscode/
+            .idea/
+            tests/
+            .DS_Store
+            README.md
+            phpunit.xml.dist
+            INSTALACAO_IIS.md
+            SOLUCAO_403_14.md
