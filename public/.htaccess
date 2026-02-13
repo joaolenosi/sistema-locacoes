@@ -47,3 +47,7 @@ Options -Indexes
 # Disable server signature start
 ServerSignature Off
 # Disable server signature end
+
+# Disable zlib.output_compression (required for CodeIgniter)
+php_flag zlib.output_compression Off
+php_value zlib.output_compression 0

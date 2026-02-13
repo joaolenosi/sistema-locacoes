@@ -20,6 +20,11 @@ if (getcwd() . DIRECTORY_SEPARATOR !== FCPATH) {
     chdir(FCPATH);
 }
 
+// Desabilitar zlib.output_compression se estiver habilitado (necessário para CodeIgniter)
+if (ini_get('zlib.output_compression')) {
+    ini_set('zlib.output_compression', 'Off');
+}
+
 /*
  *---------------------------------------------------------------
  * BOOTSTRAP THE APPLICATION

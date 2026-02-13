@@ -25,6 +25,12 @@ use CodeIgniter\HotReloader\HotReloader;
 
 Events::on('pre_system', static function () {
     if (ENVIRONMENT !== 'testing') {
+        // Tentar desabilitar zlib.output_compression antes de verificar
+        if (ini_get('zlib.output_compression')) {
+            ini_set('zlib.output_compression', 'Off');
+        }
+        
+        // Se ainda estiver habilitado após tentar desabilitar, lançar exceção
         if (ini_get('zlib.output_compression')) {
             throw FrameworkException::forEnabledZlibOutputCompression();
         }
