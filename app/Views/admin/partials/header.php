@@ -1,4 +1,14 @@
-<?php helper('empresa'); ?>
+<?php 
+// Garantir que o helper empresa está carregado
+if (!function_exists('empresa_iniciais')) {
+    $helperPath = APPPATH . 'Helpers/Empresa_helper.php';
+    if (file_exists($helperPath)) {
+        require_once $helperPath;
+    } else {
+        helper('empresa');
+    }
+}
+?>
 <header class="topbar">
     <div class="container-xxl">
         <div class="navbar-header">

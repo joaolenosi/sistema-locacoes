@@ -4,7 +4,16 @@ DirectoryIndex index.php
 # Redireciona tudo para index.php quando não for arquivo/diretório
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
+    
+    # Se é um arquivo ou diretório que existe na raiz, serve ele diretamente
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+    
+    # Se a requisição é para assets/, redireciona para public/assets/
+    RewriteCond %{REQUEST_URI} ^/sistema/assets/
+    RewriteRule ^assets/(.*)$ public/assets/$1 [L]
+    
+    # Caso contrário, redireciona para index.php
     RewriteRule . index.php [L]
 </IfModule>
