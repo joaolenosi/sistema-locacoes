@@ -26,7 +26,7 @@ class DotEnv extends BaseDotEnv
         // Use $_SERVER and $_ENV directly instead of putenv()
         // This works even when putenv() is disabled
         $_SERVER[$name] = $value;
-        $_ENV[$name]    = $value;
+        $_ENV[$name]    = $value;  
         
         // Try putenv() if available, but don't fail if it's disabled
         // Check if putenv is not in disabled_functions list

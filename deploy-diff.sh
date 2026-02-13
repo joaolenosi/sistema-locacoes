@@ -4,26 +4,40 @@ echo "=============================="
 echo "🚀 DEPLOY SOMENTE ALTERAÇÕES"
 echo "=============================="
 
-# Lista arquivos modificados (não commitados)
 FILES=$(git diff --name-only)
 
 if [ -z "$FILES" ]; then
-    echo "⚠ Nenhum arquivo modificado para enviar."
+    echo "⚠ Nenhum arquivo modificado."
     exit 0
 fi
 
 echo ""
-echo "📂 Arquivos que serão enviados:"
+echo "📂 Arquivos alterados:"
 echo "$FILES"
 
 echo ""
-echo "📤 Enviando arquivos..."
+echo "🗜 Compactando arquivos alterados..."
 
-for FILE in $FILES
-do
-    echo "Enviando $FILE"
-    scp "$FILE" mobilelocacoes@mobilelocacoes.com:/home/mobilelocacoes/www/sistema/"$FILE"
-done
+tar -czf deploy-diff.tar.gz $FILES
 
 echo ""
-echo "✅ Deploy de alterações concluído!"
+echo "📤 Enviando pacote..."
+
+scp deploy-diff.tar.gz mobilelocacoes@mobilelocacoes.com:/home/mobilelocacoes/
+
+echo ""
+echo "🔐 Extraindo no servidor..."
+
+ssh mobilelocacoes@mobilelocacoes.com << 'EOF'
+
+tar -xzf ~/deploy-diff.tar.gz -C /home/mobilelocacoes/www/sistema
+rm ~/deploy-diff.tar.gz
+
+echo "✅ Arquivos atualizados!"
+
+EOF
+
+rm deploy-diff.tar.gz
+
+echo ""
+echo "🎉 Deploy concluído!"

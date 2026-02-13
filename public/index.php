@@ -55,9 +55,29 @@ $paths = new Config\Paths();
 require rtrim($paths->systemDirectory, '\\/ ') . DIRECTORY_SEPARATOR . 'bootstrap.php';
 
 // Load environment settings from .env files into $_SERVER and $_ENV
-// Use custom DotEnv class that doesn't require putenv()
-require_once APPPATH . 'Config/DotEnv.php';
-(new Config\DotEnv(ROOTPATH))->load();
+require_once SYSTEMPATH . 'Config/DotEnv.php';
+
+// Create a wrapper to suppress putenv() warnings if it's disabled
+$dotEnv = new class(ROOTPATH) extends CodeIgniter\Config\DotEnv {
+    protected function setVariable(string $name, $value = null): void
+    {
+        // Always set in $_SERVER and $_ENV first
+        $_SERVER[$name] = $value;
+        $_ENV[$name]    = $value;
+        
+        // Try putenv() with error suppression if available
+        if (function_exists('putenv')) {
+            $disabledFunctions = ini_get('disable_functions');
+            $isPutenvDisabled = $disabledFunctions && in_array('putenv', explode(',', $disabledFunctions), true);
+            if (!$isPutenvDisabled) {
+                @putenv("{$name}={$value}");
+            }
+        }
+    }
+};
+
+// Load .env file
+$dotEnv->load();
 
 // Define ENVIRONMENT
 if (! defined('ENVIRONMENT')) {
