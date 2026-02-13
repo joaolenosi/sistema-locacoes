@@ -1,3 +1,4 @@
+<?php helper('asset'); ?>
 <!doctype html>
 <html lang="pt-BR">
 <head>

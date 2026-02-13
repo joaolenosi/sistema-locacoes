@@ -1,3 +1,4 @@
+<?php helper('asset'); ?>
 <!-- Vendor Javascript (Require in all Page) -->
 <script src="<?= asset_url('assets/admin/js/vendor.js') ?>"></script>
 

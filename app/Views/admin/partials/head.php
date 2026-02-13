@@ -1,3 +1,4 @@
+<?php helper('asset'); ?>
 <!-- Title Meta -->
 <meta charset="utf-8" />
 <title><?= esc($title ?? 'Dashboard') ?> | Sistema Agenda Miau</title>

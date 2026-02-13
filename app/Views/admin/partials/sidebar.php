@@ -1,3 +1,4 @@
+<?php helper('asset'); ?>
 <div class="main-nav">
     <!-- Sidebar Logo -->
     <div class="logo-box">

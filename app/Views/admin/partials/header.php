@@ -1,4 +1,5 @@
 <?php 
+helper('asset');
 // Garantir que o helper empresa está carregado
 if (!function_exists('empresa_iniciais')) {
     $helperPath = APPPATH . 'Helpers/Empresa_helper.php';
