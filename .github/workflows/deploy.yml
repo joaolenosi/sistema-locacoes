@@ -1,0 +1,24 @@
+name: Deploy SSH Simples
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Enviar arquivos via SSH
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: guinesoftware.com.br
+          username: guinesoftware
+          port: 22
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "."
+          target: "/www/painel/"
+          rm: false
