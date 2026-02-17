@@ -297,10 +297,11 @@
 
 <script>
 window.__LOCATARIOS__ = <?= json_encode($locatarios ?? []) ?>;
+window.__BASE_URL__ = '<?= base_url() ?>';
 </script>
 
 <!-- Gridjs Locatários js -->
-<script src="<?= base_url('assets/admin/js/pages/locatarios.js') ?>"></script>
+<script src="<?= asset_url('assets/admin/js/pages/locatarios.js') ?>"></script>
 
 <!-- Script para controle de filtros -->
 <script>
