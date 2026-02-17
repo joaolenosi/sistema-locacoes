@@ -117,6 +117,43 @@
         margin-bottom: 0;
         font-size: 0.875rem;
     }
+    
+    /* Modal: Footer sempre visível */
+    #modalLocatario .modal-dialog {
+        display: flex;
+        flex-direction: column;
+        max-height: 90vh;
+        margin: 1.75rem auto;
+    }
+    
+    #modalLocatario .modal-content {
+        display: flex;
+        flex-direction: column;
+        max-height: 90vh;
+        overflow: hidden;
+    }
+    
+    #modalLocatario .modal-header {
+        flex-shrink: 0;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    #modalLocatario .modal-body {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        overflow-x: hidden;
+        min-height: 0;
+    }
+    
+    #modalLocatario .modal-footer {
+        flex-shrink: 0;
+        border-top: 1px solid #dee2e6;
+        padding: 1rem;
+        background-color: #fff;
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+    }
 </style>
 
 <!-- ========== Page Title Start ========== -->
