@@ -1,15 +1,3 @@
-<?php 
-if (!function_exists('asset_url')) {
-    helper('asset');
-    // Se ainda não existir, carrega manualmente
-    if (!function_exists('asset_url')) {
-        $helperPath = APPPATH . 'Helpers/Asset_helper.php';
-        if (file_exists($helperPath)) {
-            require_once $helperPath;
-        }
-    }
-}
-?>
 <!-- Title Meta -->
 <meta charset="utf-8" />
 <title><?= esc($title ?? 'Dashboard') ?> | Sistema Agenda Miau</title>
