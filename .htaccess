@@ -1,0 +1,19 @@
+# Define index.php como documento padrão
+DirectoryIndex index.php
+
+# Redireciona tudo para index.php quando não for arquivo/diretório
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Se é um arquivo ou diretório que existe na raiz, serve ele diretamente (PRIMEIRO)
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+    
+    # Se a requisição é para public/, permite acesso direto (não faz rewrite)
+    RewriteCond %{REQUEST_URI} ^/sistema/public/
+    RewriteRule ^ - [L]
+    
+    # Caso contrário, redireciona para index.php
+    RewriteRule . index.php [L]
+</IfModule>

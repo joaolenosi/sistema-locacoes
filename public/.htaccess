@@ -29,6 +29,11 @@ Options -Indexes
 	# Checks to see if the user is attempting to access a valid file,
 	# such as an image or css document, if this isn't true it sends the
 	# request to the front controller, index.php
+	# IMPORTANTE: Se é um arquivo estático (CSS, JS, imagens), serve diretamente
+	RewriteCond %{REQUEST_FILENAME} -f
+	RewriteRule ^ - [L]
+	
+	# Se não é arquivo nem diretório, redireciona para index.php
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
 	RewriteRule ^([\s\S]*)$ index.php/$1 [L,NC,QSA]
