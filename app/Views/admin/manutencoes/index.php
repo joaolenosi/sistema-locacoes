@@ -3,7 +3,7 @@
 <?= $this->section('content') ?>
 <!-- Gridjs Plugin css -->
 <link
-    href="<?= base_url('assets/admin/vendor/gridjs/theme/mermaid.min.css') ?>"
+    href="https://cdn.jsdelivr.net/npm/gridjs/dist/theme/mermaid.min.css"
     rel="stylesheet"
     type="text/css"
 />
@@ -176,7 +176,7 @@
 <!-- end row -->
 
 <!-- Gridjs Plugin js -->
-<script src="<?= base_url('assets/admin/vendor/gridjs/gridjs.umd.js') ?>"></script>
+<script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
 
 <!-- Gridjs Manutenções js -->
 <script src="<?= base_url('assets/admin/js/pages/manutencao.js') ?>"></script>

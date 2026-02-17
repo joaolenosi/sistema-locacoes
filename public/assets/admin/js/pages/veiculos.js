@@ -2,6 +2,12 @@
   const tableEl = document.getElementById("table-veiculos");
   if (!tableEl) return;
 
+  // Helper para garantir base URL com barra final
+  const getBaseUrl = () => {
+    const base = window.__BASE_URL__ || window.location.origin;
+    return base.endsWith('/') ? base : base + '/';
+  };
+
   const ptBR = {
     search: { placeholder: "Digite uma palavra-chave..." },
     pagination: {
@@ -136,7 +142,7 @@
   };
 
   const reload = async () => {
-    const json = await fetchJson(`${window.location.origin}/admin/veiculos/listar`);
+    const json = await fetchJson(`${getBaseUrl()}admin/veiculos/listar`);
     renderGrid(json.data || []);
   };
 
@@ -266,7 +272,7 @@
     resetForm();
     lockButton(true, "Carregando...");
     try {
-      const json = await fetchJson(`${window.location.origin}/admin/veiculos/editar/${id}`);
+      const json = await fetchJson(`${getBaseUrl()}admin/veiculos/editar/${id}`);
       fillForm(json.data);
       getBsModal()?.show();
       setTimeout(() => document.getElementById("vei_tipo")?.focus?.(), 150);
@@ -316,7 +322,7 @@
     setAlert("");
     setPlacaLoading(true);
     try {
-      const json = await fetchJson(`${window.location.origin}/admin/veiculos/consultar-placa/${placa}`);
+      const json = await fetchJson(`${getBaseUrl()}admin/veiculos/consultar-placa/${placa}`);
       const data = json?.data || {};
 
       // Mapeamento API -> form (preenche todos os campos disponíveis)
@@ -398,8 +404,8 @@
     lockButton(true, id ? "Salvando..." : "Adicionando...");
     try {
       const url = id
-        ? `${window.location.origin}/admin/veiculos/atualizar/${id}`
-        : `${window.location.origin}/admin/veiculos/criar`;
+        ? `${getBaseUrl()}admin/veiculos/atualizar/${id}`
+        : `${getBaseUrl()}admin/veiculos/criar`;
 
       const json = await fetchJson(url, { method: "POST", body: fd });
       getBsModal()?.hide();

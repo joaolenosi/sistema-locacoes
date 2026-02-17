@@ -3,7 +3,7 @@
 <?= $this->section('content') ?>
 <!-- Gridjs Plugin css -->
 <link
-    href="<?= base_url('assets/admin/vendor/gridjs/theme/mermaid.min.css') ?>"
+    href="https://cdn.jsdelivr.net/npm/gridjs/dist/theme/mermaid.min.css"
     rel="stylesheet"
     type="text/css"
 />
@@ -377,7 +377,7 @@
 </div>
 
 <!-- Gridjs Plugin js -->
-<script src="<?= base_url('assets/admin/vendor/gridjs/gridjs.umd.js') ?>"></script>
+<script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
 
 <!-- jQuery Mask Plugin (padrão usado no Financeiro) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
@@ -385,10 +385,14 @@
 
 <script>
 window.__VEICULOS__ = <?= json_encode($veiculos ?? []) ?>;
+window.__BASE_URL__ = '<?= base_url() ?>';
+// Debug: verificar se os dados estão sendo passados
+console.log('Veículos carregados:', window.__VEICULOS__);
+console.log('Total de veículos:', window.__VEICULOS__?.length || 0);
 </script>
 
 <!-- Gridjs Veículos js -->
-<script src="<?= base_url('assets/admin/js/pages/veiculos.js') ?>"></script>
+<script src="<?= asset_url('assets/admin/js/pages/veiculos.js') ?>"></script>
 
 <!-- Script para controle de filtros -->
 <script>

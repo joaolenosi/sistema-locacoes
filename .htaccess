@@ -16,6 +16,17 @@ Options -Indexes
 	# http://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritebase
 	# RewriteBase /
 
+	# PRIMEIRO: Permite acesso direto a arquivos em public/ (assets, CSS, JS, imagens)
+	# Isso deve vir ANTES de qualquer outra regra de rewrite
+	RewriteCond %{REQUEST_URI} ^/sistema/public/
+	RewriteCond %{REQUEST_FILENAME} -f
+	RewriteRule ^ - [L]
+
+	# PRIMEIRO: Permite acesso direto a arquivos e diretórios existentes na raiz
+	RewriteCond %{REQUEST_FILENAME} -f [OR]
+	RewriteCond %{REQUEST_FILENAME} -d
+	RewriteRule ^ - [L]
+
 	# Redirect Trailing Slashes...
 	RewriteCond %{REQUEST_FILENAME} !-d
 	RewriteCond %{REQUEST_URI} (.+)/$
