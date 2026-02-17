@@ -2,6 +2,12 @@
   const formEl = document.getElementById("form-locadora");
   if (!formEl) return;
 
+  // Helper para garantir base URL com barra final
+  const getBaseUrl = () => {
+    const base = window.__BASE_URL__ || window.location.origin;
+    return base.endsWith('/') ? base : base + '/';
+  };
+
   const alertEl = document.getElementById("empresa-form-alert");
   const btnSave = document.getElementById("btnSalvarEmpresa");
   const cpfCnpjInput = document.getElementById("cpf_cnpj");
@@ -216,7 +222,7 @@
 
     lockButton(true, "Salvando...");
     try {
-      const json = await fetchJson(`${window.location.origin}/admin/configuracoes/atualizar-empresa`, {
+      const json = await fetchJson(`${getBaseUrl()}admin/configuracoes/atualizar-empresa`, {
         method: "POST",
         body: fd,
       });

@@ -2,6 +2,12 @@
   const tableEl = document.getElementById("table-locacoes");
   if (!tableEl) return;
 
+  // Helper para garantir base URL com barra final
+  const getBaseUrl = () => {
+    const base = window.__BASE_URL__ || window.location.origin;
+    return base.endsWith('/') ? base : base + '/';
+  };
+
   const ptBR = {
     search: { placeholder: "Digite uma palavra-chave..." },
     pagination: {
@@ -272,7 +278,7 @@
   };
 
   const reload = async () => {
-    const json = await fetchJson(`${window.location.origin}/admin/locacoes/listar`);
+    const json = await fetchJson(`${getBaseUrl()}admin/locacoes/listar`);
     allData = json.data || [];
     applyFilters();
   };
@@ -343,7 +349,7 @@
     }
 
     setLocacaoModalMode("edit");
-    const json = await fetchJson(`${window.location.origin}/admin/locacoes/editar/${id}`);
+    const json = await fetchJson(`${getBaseUrl()}admin/locacoes/editar/${id}`);
     preencherLocacaoModal(json.data || {});
     bootstrap.Modal.getOrCreateInstance(modalEl).show();
   };
@@ -384,8 +390,8 @@
 
     const id = document.getElementById("locacao_id")?.value || "";
     const url = id
-      ? `${window.location.origin}/admin/locacoes/atualizar/${id}`
-      : `${window.location.origin}/admin/locacoes/criar`;
+      ? `${getBaseUrl()}admin/locacoes/atualizar/${id}`
+      : `${getBaseUrl()}admin/locacoes/criar`;
 
     try {
       setButtonLoading(btn, true);
@@ -564,7 +570,7 @@
     if (!modalEl) return;
 
     if (!veiculosData) {
-      const json = await fetchJson(`${window.location.origin}/admin/veiculos/listar`);
+      const json = await fetchJson(`${getBaseUrl()}admin/veiculos/listar`);
       veiculosData = json.data || [];
     }
 
@@ -579,7 +585,7 @@
     if (!modalEl) return;
 
     if (!locatariosData) {
-      const json = await fetchJson(`${window.location.origin}/admin/locatarios/listar`);
+      const json = await fetchJson(`${getBaseUrl()}admin/locatarios/listar`);
       locatariosData = json.data || [];
     }
 

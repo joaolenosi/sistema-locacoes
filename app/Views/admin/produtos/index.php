@@ -268,11 +268,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 
 <script>
+window.__BASE_URL__ = '<?= base_url() ?>';
 window.__PRODUTOS__ = <?= json_encode($produtos ?? []) ?>;
 </script>
 
 <!-- Gridjs Produtos js -->
-<script src="<?= base_url('assets/admin/js/pages/produtos.js') ?>"></script>
+<script src="<?= asset_url('assets/admin/js/pages/produtos.js') ?>"></script>
 
 <!-- Script para controle de filtros -->
 <script>

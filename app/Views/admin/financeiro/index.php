@@ -223,11 +223,11 @@
                             <iconify-icon icon="iconamoon:arrow-repeat-2-duotone" class="fs-18"></iconify-icon>
                             Movimentações
                         </a>
-                        <button type="button" class="btn btn-success" onclick="abrirModalReceita()">
+                        <button type="button" class="btn btn-success" id="btn-abrir-receita">
                             <iconify-icon icon="iconamoon:plus-duotone" class="fs-18"></iconify-icon>
                             Receita
                         </button>
-                        <button type="button" class="btn btn-danger" onclick="abrirModalDespesa()">
+                        <button type="button" class="btn btn-danger" id="btn-abrir-despesa">
                             <iconify-icon icon="iconamoon:minus-duotone" class="fs-18"></iconify-icon>
                             Despesa
                         </button>
@@ -269,6 +269,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 
 <script>
+window.__BASE_URL__ = '<?= base_url() ?>';
 window.__FINANCEIRO_BOOTSTRAP__ = {
   lancamentos: <?= json_encode($lancamentos ?? []) ?>,
   categoriasReceita: <?= json_encode($categorias_receita ?? []) ?>,
@@ -283,7 +284,65 @@ window.__FINANCEIRO_BOOTSTRAP__ = {
 </script>
 
 <!-- Gridjs Financeiro js -->
-<script src="<?= base_url('assets/admin/js/pages/financeiro.js') ?>"></script>
+<script src="<?= asset_url('assets/admin/js/pages/financeiro.js') ?>" onerror="console.error('Erro ao carregar financeiro.js')"></script>
+
+<!-- Script para garantir que os botões funcionem após o carregamento -->
+<script>
+(function() {
+    function setupButtons() {
+        // Botões para abrir modais
+        const btnReceita = document.getElementById('btn-abrir-receita');
+        const btnDespesa = document.getElementById('btn-abrir-despesa');
+        
+        if (btnReceita && typeof window.abrirModalReceita === 'function') {
+            btnReceita.addEventListener('click', function() {
+                window.abrirModalReceita();
+            });
+        }
+        
+        if (btnDespesa && typeof window.abrirModalDespesa === 'function') {
+            btnDespesa.addEventListener('click', function() {
+                window.abrirModalDespesa();
+            });
+        }
+        
+        // Botões para salvar
+        const btnSalvarReceita = document.getElementById('btnSalvarReceita');
+        const btnSalvarDespesa = document.getElementById('btnSalvarDespesa');
+        
+        if (btnSalvarReceita && typeof window.salvarReceita === 'function') {
+            btnSalvarReceita.addEventListener('click', function() {
+                window.salvarReceita();
+            });
+        }
+        
+        if (btnSalvarDespesa && typeof window.salvarDespesa === 'function') {
+            btnSalvarDespesa.addEventListener('click', function() {
+                window.salvarDespesa();
+            });
+        }
+    }
+    
+    // Tentar configurar imediatamente se já estiver pronto
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            // Aguardar um pouco para garantir que o financeiro.js foi carregado
+            setTimeout(setupButtons, 200);
+        });
+    } else {
+        // DOM já está pronto, aguardar um pouco para o script carregar
+        setTimeout(setupButtons, 200);
+    }
+    
+    // Fallback: tentar novamente após um tempo maior caso ainda não tenha carregado
+    setTimeout(function() {
+        if (typeof window.abrirModalReceita !== 'function' || typeof window.abrirModalDespesa !== 'function') {
+            console.warn('Funções do financeiro ainda não estão disponíveis, tentando novamente...');
+            setupButtons();
+        }
+    }, 1000);
+})();
+</script>
 
 <!-- Modal Receita -->
 <div class="modal fade" id="modalReceita" tabindex="-1" aria-labelledby="modalReceitaLabel" aria-hidden="true">
@@ -418,7 +477,7 @@ window.__FINANCEIRO_BOOTSTRAP__ = {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-success" id="btnSalvarReceita" onclick="salvarReceita()">
+                <button type="button" class="btn btn-success" id="btnSalvarReceita">
                     <iconify-icon icon="iconamoon:plus-duotone"></iconify-icon>
                     <span class="btn-label">+ Receita</span>
                 </button>
@@ -560,7 +619,7 @@ window.__FINANCEIRO_BOOTSTRAP__ = {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="btnSalvarDespesa" onclick="salvarDespesa()">
+                <button type="button" class="btn btn-danger" id="btnSalvarDespesa">
                     <iconify-icon icon="iconamoon:minus-duotone"></iconify-icon>
                     <span class="btn-label">- Despesa</span>
                 </button>

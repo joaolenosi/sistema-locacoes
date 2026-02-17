@@ -2,8 +2,14 @@
   const tableEl = document.getElementById("table-financeiro");
   if (!tableEl) return;
 
-    // Tradução para Português do Brasil
-    const ptBR = {
+  // Helper para garantir base URL com barra final
+  const getBaseUrl = () => {
+    const base = window.__BASE_URL__ || window.location.origin;
+    return base.endsWith('/') ? base : base + '/';
+  };
+
+  // Tradução para Português do Brasil
+  const ptBR = {
     search: { placeholder: "Digite uma palavra-chave..." },
     pagination: {
       previous: "Anterior",
@@ -241,7 +247,7 @@
     }
 
     setModalMode(tipo, "edit");
-    const json = await fetchJson(`${window.location.origin}/admin/financeiro/editar/${id}`);
+    const json = await fetchJson(`${getBaseUrl()}admin/financeiro/editar/${id}`);
     preencherModal(tipo, json.data || {});
 
     const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
@@ -285,8 +291,8 @@
 
     const id = idInput?.value ? String(idInput.value) : "";
     const url = id
-      ? `${window.location.origin}/admin/financeiro/atualizar/${id}`
-      : `${window.location.origin}/admin/financeiro/criar`;
+      ? `${getBaseUrl()}admin/financeiro/atualizar/${id}`
+      : `${getBaseUrl()}admin/financeiro/criar`;
 
     try {
       setButtonLoading(btn, true);
@@ -323,8 +329,8 @@
         width: "120px",
         formatter: (cell) =>
           gridjs.html(`<span class="badge ${tipoBadge(cell)}">${tipoLabel(cell)}</span>`),
-            },
-            "Categoria",
+      },
+      "Categoria",
       { name: "Descrição", width: "250px" },
       {
         name: "Valor",
@@ -418,7 +424,7 @@
   };
 
   const reload = async () => {
-    const json = await fetchJson(`${window.location.origin}/admin/financeiro/listar`);
+    const json = await fetchJson(`${getBaseUrl()}admin/financeiro/listar`);
     allData = json.data || [];
     updateCards(allData);
     applyFilters();

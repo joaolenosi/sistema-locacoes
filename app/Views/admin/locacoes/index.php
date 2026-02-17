@@ -252,6 +252,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 
 <script>
+window.__BASE_URL__ = '<?= base_url() ?>';
 window.__LOCACOES_BOOTSTRAP__ = {
   locacoes: <?= json_encode($locacoes ?? []) ?>,
   kpis: {
@@ -263,7 +264,7 @@ window.__LOCACOES_BOOTSTRAP__ = {
 </script>
 
 <!-- Gridjs Locações js -->
-<script src="<?= base_url('assets/admin/js/pages/locacoes.js') ?>"></script>
+<script src="<?= asset_url('assets/admin/js/pages/locacoes.js') ?>"></script>
 
 <!-- Modal Locação (Cadastro/Edição) -->
 <div class="modal fade" id="modalLocacao" tabindex="-1" aria-labelledby="modalLocacaoLabel" aria-hidden="true">

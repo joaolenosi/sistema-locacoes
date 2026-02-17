@@ -2,6 +2,12 @@
   const tableEl = document.getElementById("table-servicos");
   if (!tableEl) return;
 
+  // Helper para garantir base URL com barra final
+  const getBaseUrl = () => {
+    const base = window.__BASE_URL__ || window.location.origin;
+    return base.endsWith('/') ? base : base + '/';
+  };
+
   const ptBR = {
     search: { placeholder: "Digite uma palavra-chave..." },
     pagination: {
@@ -89,7 +95,7 @@
   };
 
   const reload = async () => {
-    const json = await fetchJson(`${window.location.origin}/admin/cadastro/servicos/listar`);
+    const json = await fetchJson(`${getBaseUrl()}admin/cadastro/servicos/listar`);
     renderGrid(json.data || []);
   };
 
@@ -192,7 +198,7 @@
     resetForm();
     lockButton(true, "Carregando...");
     try {
-      const json = await fetchJson(`${window.location.origin}/admin/cadastro/servicos/editar/${id}`);
+      const json = await fetchJson(`${getBaseUrl()}admin/cadastro/servicos/editar/${id}`);
       fillForm(json.data);
       getBsModal()?.show();
       setTimeout(() => document.getElementById("ser_nome")?.focus?.(), 150);
@@ -226,8 +232,8 @@
     lockButton(true, id ? "Salvando..." : "Adicionando...");
     try {
       const url = id
-        ? `${window.location.origin}/admin/cadastro/servicos/atualizar/${id}`
-        : `${window.location.origin}/admin/cadastro/servicos/criar`;
+        ? `${getBaseUrl()}admin/cadastro/servicos/atualizar/${id}`
+        : `${getBaseUrl()}admin/cadastro/servicos/criar`;
 
       await fetchJson(url, { method: "POST", body: fd });
       getBsModal()?.hide();

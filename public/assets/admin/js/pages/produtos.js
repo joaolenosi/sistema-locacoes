@@ -2,6 +2,12 @@
   const tableEl = document.getElementById("table-produtos");
   if (!tableEl) return;
 
+  // Helper para garantir base URL com barra final
+  const getBaseUrl = () => {
+    const base = window.__BASE_URL__ || window.location.origin;
+    return base.endsWith('/') ? base : base + '/';
+  };
+
   const ptBR = {
     search: { placeholder: "Digite uma palavra-chave..." },
     pagination: {
@@ -112,7 +118,7 @@
   };
 
   const reload = async () => {
-    const json = await fetchJson(`${window.location.origin}/admin/cadastro/produtos/listar`);
+    const json = await fetchJson(`${getBaseUrl()}admin/cadastro/produtos/listar`);
     renderGrid(json.data || []);
   };
 
@@ -219,7 +225,7 @@
     resetForm();
     lockButton(true, "Carregando...");
     try {
-      const json = await fetchJson(`${window.location.origin}/admin/cadastro/produtos/editar/${id}`);
+      const json = await fetchJson(`${getBaseUrl()}admin/cadastro/produtos/editar/${id}`);
       fillForm(json.data);
       getBsModal()?.show();
       setTimeout(() => document.getElementById("pro_nome")?.focus?.(), 150);
@@ -256,8 +262,8 @@
     lockButton(true, id ? "Salvando..." : "Adicionando...");
     try {
       const url = id
-        ? `${window.location.origin}/admin/cadastro/produtos/atualizar/${id}`
-        : `${window.location.origin}/admin/cadastro/produtos/criar`;
+        ? `${getBaseUrl()}admin/cadastro/produtos/atualizar/${id}`
+        : `${getBaseUrl()}admin/cadastro/produtos/criar`;
 
       await fetchJson(url, { method: "POST", body: fd });
       getBsModal()?.hide();
