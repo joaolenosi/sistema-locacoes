@@ -118,6 +118,12 @@
         margin-bottom: 0;
         font-size: 0.875rem;
     }
+
+    /* Melhor leitura no modal */
+    #modalCategoria .form-control,
+    #modalCategoria .form-select {
+        color: #111827;
+    }
 </style>
 
 <!-- ========== Page Title Start ========== -->
@@ -150,7 +156,7 @@
                             <iconify-icon icon="iconamoon:filter-duotone" class="fs-18"></iconify-icon>
                             Filtros
                         </button>
-                        <button type="button" class="btn btn-primary">
+                        <button type="button" class="btn btn-primary" id="btn-add-categoria" data-bs-toggle="modal" data-bs-target="#modalCategoria">
                             <iconify-icon icon="iconamoon:plus-duotone" class="fs-18"></iconify-icon>
                             Adicionar Categoria
                         </button>
@@ -183,8 +189,62 @@
 </div>
 <!-- end row -->
 
+<!-- Modal: Cadastro/Edição de Categoria Financeira -->
+<div class="modal fade" id="modalCategoria" tabindex="-1" aria-labelledby="modalCategoriaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCategoriaLabel">Cadastrar categoria</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formCategoria" novalidate>
+                    <input type="hidden" id="cat_id" name="cat_id" value="">
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label" for="cat_nome">Nome <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="cat_nome" name="cat_nome" placeholder="Ex.: Locação de veículos" required>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label" for="cat_tipo">Tipo <span class="text-danger">*</span></label>
+                            <select class="form-select" id="cat_tipo" name="cat_tipo" required>
+                                <option value="">Selecione o tipo</option>
+                                <option value="receita">Receita</option>
+                                <option value="despesa">Despesa</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label" for="cat_padrao">Categoria Padrão</label>
+                            <select class="form-select" id="cat_padrao" name="cat_padrao">
+                                <option value="0">Não</option>
+                                <option value="1">Sim</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+
+                <div id="cat-form-alert" class="alert alert-danger mt-3 d-none" role="alert"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnSalvarCategoria">
+                    <span class="btn-text">Adicionar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Gridjs Plugin js -->
 <script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
+
+<script>
+window.__BASE_URL__ = '<?= base_url() ?>';
+window.__CATEGORIAS__ = <?= json_encode($categorias ?? []) ?>;
+</script>
 
 <!-- Gridjs Categorias Financeiras js -->
 <script src="<?= asset_url('assets/admin/js/pages/categorias-financeiras.js') ?>"></script>

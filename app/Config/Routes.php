@@ -55,3 +55,7 @@ $routes->post('admin/cadastro/servicos/criar', 'Servicos::criar');
 $routes->get('admin/cadastro/servicos/editar/(:num)', 'Servicos::editar/$1');
 $routes->post('admin/cadastro/servicos/atualizar/(:num)', 'Servicos::atualizar/$1');
 $routes->get('admin/cadastro/categorias-financeiras', 'CategoriasFinanceiras::index');
+$routes->get('admin/cadastro/categorias-financeiras/listar', 'CategoriasFinanceiras::listar');
+$routes->post('admin/cadastro/categorias-financeiras/criar', 'CategoriasFinanceiras::criar');
+$routes->get('admin/cadastro/categorias-financeiras/editar/(:num)', 'CategoriasFinanceiras::editar/$1');
+$routes->post('admin/cadastro/categorias-financeiras/atualizar/(:num)', 'CategoriasFinanceiras::atualizar/$1');

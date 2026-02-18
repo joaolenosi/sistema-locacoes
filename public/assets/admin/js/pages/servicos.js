@@ -27,7 +27,7 @@
 
   const statusLabel = (ativo) => (String(ativo) === "1" ? "Ativo" : "Inativo");
   const statusBadge = (label) =>
-    label === "Ativo" ? "bg-success-subtle text-success" : "bg-secondary-subtle text-secondary";
+    label === "Ativo" ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger";
 
   const toRows = (items) =>
     (items || []).map((s) => [
