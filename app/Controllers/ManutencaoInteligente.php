@@ -135,7 +135,23 @@ class ManutencaoInteligente extends BaseController
                 return 0;
             });
 
-            return $this->response->setJSON(['success' => true, 'data' => $resultados]);
+            // Resumo para os cards (atrasadas, agendadas, total)
+            $atrasadas = 0;
+            $agendadas = 0;
+            foreach ($resultados as $r) {
+                if (($r['status'] ?? '') === 'atrasada') {
+                    $atrasadas++;
+                } else {
+                    $agendadas++;
+                }
+            }
+            $resumo = [
+                'atrasadas' => $atrasadas,
+                'agendadas' => $agendadas,
+                'total' => count($resultados),
+            ];
+
+            return $this->response->setJSON(['success' => true, 'data' => $resultados, 'resumo' => $resumo]);
         } catch (\Throwable $e) {
             log_message('error', 'Erro ao listar manutenções inteligentes: ' . $e->getMessage());
             return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Erro ao listar manutenções inteligentes.']);

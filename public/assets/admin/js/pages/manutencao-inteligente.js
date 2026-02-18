@@ -214,13 +214,26 @@
       return json;
     };
 
+    const updateCards = (resumo) => {
+      const r = resumo || { atrasadas: 0, agendadas: 0, total: 0 };
+      const elAtrasadas = document.getElementById('kpi-manutencao-atrasadas');
+      const elAgendadas = document.getElementById('kpi-manutencao-agendadas');
+      const elTotal = document.getElementById('kpi-manutencao-total');
+      if (elAtrasadas) elAtrasadas.textContent = r.atrasadas ?? 0;
+      if (elAgendadas) elAgendadas.textContent = r.agendadas ?? 0;
+      if (elTotal) elTotal.textContent = r.total ?? 0;
+    };
+
     const reload = async () => {
       try {
         const json = await fetchJson(`${getBaseUrl()}admin/manutencao-inteligente/listar`);
-        renderGrid(Array.isArray(json?.data) ? json.data : []);
+        const data = Array.isArray(json?.data) ? json.data : [];
+        renderGrid(data);
+        updateCards(json?.resumo);
       } catch (e) {
         console.error('Erro ao recarregar dados:', e);
         renderGrid([]);
+        updateCards({ atrasadas: 0, agendadas: 0, total: 0 });
       }
     };
 

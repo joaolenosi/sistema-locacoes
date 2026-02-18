@@ -125,6 +125,25 @@
     #modalManutencao .form-select {
         color: #111827;
     }
+
+    /* Cards resumo (Manutenção Inteligente) */
+    .man-kpi-card {
+        border: 0;
+        border-radius: 16px;
+        color: #fff;
+        overflow: hidden;
+        min-height: 110px;
+    }
+
+    .man-kpi-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.22);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
 </style>
 
 <!-- ========== Page Title Start ========== -->
@@ -142,6 +161,58 @@
     </div>
 </div>
 <!-- ========== Page Title End ========== -->
+
+<!-- Cards resumo -->
+<div class="row g-3 mb-3">
+    <div class="col-12 col-md-4">
+        <div class="card man-kpi-card" style="background: #ef4444;">
+            <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="fw-medium" style="opacity: .95;">Atrasadas</div>
+                    <div class="fw-semibold" style="font-size: 2rem; line-height: 1.1;">
+                        <span id="kpi-manutencao-atrasadas">0</span>
+                    </div>
+                    <small style="opacity: .9;">Manutenções em atraso</small>
+                </div>
+                <div class="man-kpi-icon" aria-hidden="true">
+                    <iconify-icon icon="iconamoon:warning-duotone" class="fs-22 text-white"></iconify-icon>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card man-kpi-card" style="background: #2d7ef7;">
+            <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="fw-medium" style="opacity: .95;">Agendadas</div>
+                    <div class="fw-semibold" style="font-size: 2rem; line-height: 1.1;">
+                        <span id="kpi-manutencao-agendadas">0</span>
+                    </div>
+                    <small style="opacity: .9;">Em dia ou programadas</small>
+                </div>
+                <div class="man-kpi-icon" aria-hidden="true">
+                    <iconify-icon icon="iconamoon:calendar-duotone" class="fs-22 text-white"></iconify-icon>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card man-kpi-card" style="background: #64748b;">
+            <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="fw-medium" style="opacity: .95;">Total em acompanhamento</div>
+                    <div class="fw-semibold" style="font-size: 2rem; line-height: 1.1;">
+                        <span id="kpi-manutencao-total">0</span>
+                    </div>
+                    <small style="opacity: .9;">Alertas e agendamentos</small>
+                </div>
+                <div class="man-kpi-icon" aria-hidden="true">
+                    <iconify-icon icon="iconamoon:car-duotone" class="fs-22 text-white"></iconify-icon>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="row">
     <div class="col-12">
