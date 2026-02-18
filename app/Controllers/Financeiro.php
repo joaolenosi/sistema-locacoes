@@ -112,14 +112,24 @@ class Financeiro extends BaseController
                 ]);
             }
 
-            $data['lan_empresa_id'] = get_empresa_id();
+            $empresaId = get_empresa_id();
+            if ($empresaId <= 0) {
+                return $this->response->setStatusCode(401)->setJSON([
+                    'success' => false,
+                    'message' => 'Sessão inválida. Faça login novamente.',
+                ]);
+            }
+
+            $data['lan_empresa_id'] = $empresaId;
 
             $lancamentoModel = new LancamentoFinanceiroModel();
             $id = $lancamentoModel->insert($data, true);
             if (!$id) {
+                $errors = $lancamentoModel->errors();
                 return $this->response->setStatusCode(500)->setJSON([
                     'success' => false,
                     'message' => 'Não foi possível cadastrar o lançamento.',
+                    'errors' => $errors,
                 ]);
             }
 
@@ -129,9 +139,14 @@ class Financeiro extends BaseController
                 'id' => $id,
             ]);
         } catch (\Throwable $e) {
+            log_message('error', 'Erro ao cadastrar lançamento: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            $errorMessage = ENVIRONMENT === 'development' 
+                ? 'Erro ao cadastrar lançamento: ' . $e->getMessage()
+                : 'Erro ao cadastrar lançamento. Verifique os logs para mais detalhes.';
             return $this->response->setStatusCode(500)->setJSON([
                 'success' => false,
-                'message' => 'Erro ao cadastrar lançamento.',
+                'message' => $errorMessage,
             ]);
         }
     }

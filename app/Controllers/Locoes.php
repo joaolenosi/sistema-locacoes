@@ -97,6 +97,12 @@ class Locoes extends BaseController
     {
         try {
             $payload = (array) $this->request->getPost();
+            
+            // Remover campos que não devem ser processados
+            unset($payload['locacao_id']); // Não está no allowedFields
+            unset($payload['loc_cli_display']); // Campo apenas para exibição
+            unset($payload['loc_vei_display']); // Campo apenas para exibição
+            unset($payload['loc_tempo_minimo']); // Campo apenas para cálculo
 
             $data = $this->normalizeLocacaoPayload($payload);
             $validationError = $this->validateLocacaoPayload($data);
@@ -115,11 +121,17 @@ class Locoes extends BaseController
             }
 
             $locacaoModel = new LocacaoModel();
+            
+            // Tentar inserir
             $id = $locacaoModel->insert($data, true);
+            
             if (!$id) {
+                $errors = $locacaoModel->errors();
+                $errorMessage = !empty($errors) ? implode(', ', $errors) : 'Não foi possível cadastrar a locação.';
                 return $this->response->setStatusCode(500)->setJSON([
                     'success' => false,
-                    'message' => 'Não foi possível cadastrar a locação.',
+                    'message' => $errorMessage,
+                    'errors' => $errors,
                 ]);
             }
 
@@ -129,9 +141,19 @@ class Locoes extends BaseController
                 'id' => $id,
             ]);
         } catch (\Throwable $e) {
+            // Em desenvolvimento, retornar mensagem de erro detalhada
+            $errorMessage = 'Erro ao cadastrar locação.';
+            if (ENVIRONMENT !== 'production') {
+                $errorMessage .= ' ' . $e->getMessage();
+            }
             return $this->response->setStatusCode(500)->setJSON([
                 'success' => false,
-                'message' => 'Erro ao cadastrar locação.',
+                'message' => $errorMessage,
+                'error' => ENVIRONMENT !== 'production' ? [
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ] : null,
             ]);
         }
     }
@@ -230,25 +252,35 @@ class Locoes extends BaseController
             $valoresRecebidos = ($raw === 'on' || $raw === '1' || $raw === 1 || $raw === true) ? 1 : 0;
         }
 
+        // Normalizar valores monetários - garantir que sejam float ou null
+        $valorLocacao = $this->parseMoney($payload['loc_valor_locacao'] ?? null);
+        $valorCaucao = $this->parseMoney($payload['loc_valor_caucao'] ?? null);
+        $valorTotal = $this->parseMoney($payload['loc_valor_total'] ?? null);
+        $taxaJuros = $this->parseMoney($payload['loc_taxa_juros'] ?? null);
+        $taxaMulta = $this->parseMoney($payload['loc_taxa_multa'] ?? null);
+
         return [
             'loc_cli_id' => (int) ($payload['loc_cli_id'] ?? 0),
             'loc_vei_id' => (int) ($payload['loc_vei_id'] ?? 0),
             'loc_data_inicio' => (string) ($payload['loc_data_inicio'] ?? ''),
             'loc_data_fim_prevista' => (string) ($payload['loc_data_fim_prevista'] ?? ''),
-            'loc_data_fim_real' => ($payload['loc_data_fim_real'] ?? '') ?: null,
+            'loc_data_fim_real' => (!empty($payload['loc_data_fim_real']) ? (string) $payload['loc_data_fim_real'] : null),
             'loc_status' => $status,
-            'loc_valor_locacao' => $this->parseMoney($payload['loc_valor_locacao'] ?? null) ?? 0,
-            'loc_valor_caucao' => $this->parseMoney($payload['loc_valor_caucao'] ?? null),
-            'loc_valor_total' => $this->parseMoney($payload['loc_valor_total'] ?? null),
+            'loc_valor_locacao' => $valorLocacao !== null ? (float) $valorLocacao : 0.0,
+            'loc_valor_caucao' => $valorCaucao !== null ? (float) $valorCaucao : null,
+            'loc_valor_total' => $valorTotal !== null ? (float) $valorTotal : null,
             'loc_recorrencia_pagamento' => $rec !== '' ? $rec : null,
-            'loc_data_inicio_pagamento' => ($payload['loc_data_inicio_pagamento'] ?? '') ?: null,
-            'loc_taxa_juros' => $this->parseMoney($payload['loc_taxa_juros'] ?? null),
-            'loc_taxa_multa' => $this->parseMoney($payload['loc_taxa_multa'] ?? null),
-            'loc_km_retirada' => ($payload['loc_km_retirada'] !== '' && $payload['loc_km_retirada'] !== null)
+            'loc_data_inicio_pagamento' => (!empty($payload['loc_data_inicio_pagamento']) ? (string) $payload['loc_data_inicio_pagamento'] : null),
+            'loc_taxa_juros' => $taxaJuros !== null ? (float) $taxaJuros : null,
+            'loc_taxa_multa' => $taxaMulta !== null ? (float) $taxaMulta : null,
+            'loc_km_retirada' => (!empty($payload['loc_km_retirada']) && $payload['loc_km_retirada'] !== null)
                 ? (int) preg_replace('/\D/', '', (string) $payload['loc_km_retirada'])
                 : null,
-            'loc_obs_operacionais' => trim((string) ($payload['loc_obs_operacionais'] ?? '')) ?: null,
-            'loc_obs_financeiras' => trim((string) ($payload['loc_obs_financeiras'] ?? '')) ?: null,
+            'loc_km_devolucao' => null, // Sempre null na criação
+            'loc_responsavel_entrega' => null, // Sempre null na criação
+            'loc_responsavel_devolucao' => null, // Sempre null na criação
+            'loc_obs_operacionais' => (!empty($payload['loc_obs_operacionais']) ? trim((string) $payload['loc_obs_operacionais']) : null),
+            'loc_obs_financeiras' => (!empty($payload['loc_obs_financeiras']) ? trim((string) $payload['loc_obs_financeiras']) : null),
             'loc_valores_recebidos' => $valoresRecebidos,
         ];
     }

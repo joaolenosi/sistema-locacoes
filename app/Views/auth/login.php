@@ -22,8 +22,7 @@
         <div class="card-body p-5">
             <div class="text-center mb-4">
                 <a href="<?= base_url() ?>" class="text-decoration-none">
-                    <img src="<?= base_url('assets/admin/images/logo-sm.png') ?>" height="34" class="me-1" alt="" />
-                    <img src="<?= base_url('assets/admin/images/logo-dark.png') ?>" height="28" alt="Sistema" />
+                    <img src="<?= asset_url('assets/admin/images/logo-rentix-car.png') ?>" height="60" alt="Rentix Car" style="max-width: 100%;" />
                 </a>
             </div>
             <h4 class="text-center fw-semibold mb-1">Entrar</h4>

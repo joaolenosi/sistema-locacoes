@@ -269,6 +269,9 @@
 
     const fd = new FormData(formEl);
 
+    // Garantir que lan_tipo seja enviado explicitamente
+    fd.set("lan_tipo", tipo);
+
     // Normalizar dinheiro (BR -> decimal)
     const stripMoney = (s) => String(s || "").replace(/[^\d,]/g, "").replace(",", ".");
     const valorInput = document.getElementById(isReceita ? "receita_valor" : "despesa_valor");
@@ -304,7 +307,9 @@
       await reload();
       alert(json?.message || "Salvo com sucesso.");
     } catch (e) {
-      alert(e?.message || "Erro ao salvar.");
+      const errorMsg = e?.message || "Erro ao salvar.";
+      console.error("Erro ao salvar lançamento:", e);
+      alert(errorMsg);
     } finally {
       setButtonLoading(btn, false);
     }

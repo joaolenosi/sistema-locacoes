@@ -397,6 +397,13 @@
     }
 
     const fd = new FormData(form);
+    
+    // Remover campos que não devem ser enviados
+    fd.delete("locacao_id"); // Não está no allowedFields do modelo
+    fd.delete("loc_cli_display"); // Campo apenas para exibição
+    fd.delete("loc_vei_display"); // Campo apenas para exibição
+    fd.delete("loc_tempo_minimo"); // Campo apenas para cálculo, não é salvo
+    
     // garantir ids
     fd.set("loc_cli_id", cliId);
     fd.set("loc_vei_id", veiId);

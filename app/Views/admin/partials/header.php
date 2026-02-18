@@ -14,6 +14,18 @@ if (!function_exists('empresa_iniciais')) {
     <div class="container-xxl">
         <div class="navbar-header">
             <div class="d-flex align-items-center gap-2">
+                            <!-- Logo -->
+                            <div class="topbar-item d-none d-md-block">
+                                <a href="<?= base_url() ?>" class="text-decoration-none">
+                                    <img
+                                        src="<?= asset_url('assets/admin/images/logo-rentix-car.png') ?>"
+                                        height="40"
+                                        alt="Rentix Car"
+                                        style="max-width: 180px; height: auto;"
+                                    />
+                                </a>
+                            </div>
+                            
                             <!-- Menu Toggle Button -->
                             <div class="topbar-item">
                                 <button type="button" class="button-toggle-menu">
