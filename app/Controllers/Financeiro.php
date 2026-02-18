@@ -479,7 +479,7 @@ class Financeiro extends BaseController
         $raw = str_replace([' ', 'R$', 'r$'], '', $raw);
 
         // Aceita tanto "1234.56" quanto "1.234,56"
-        if (str_contains($raw, ',')) {
+        if (strpos($raw, ',') !== false) {
             $raw = str_replace('.', '', $raw);
             $raw = str_replace(',', '.', $raw);
         }

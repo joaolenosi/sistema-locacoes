@@ -238,7 +238,7 @@ class Veiculos extends BaseController
             $raw = trim((string) $payload['vei_valor_compra']);
             // Aceita tanto "1234.56" quanto "1.234,56"
             $raw = str_replace([' ', 'R$', 'r$'], '', $raw);
-            if (str_contains($raw, ',')) {
+            if (strpos($raw, ',') !== false) {
                 $raw = str_replace('.', '', $raw);
                 $raw = str_replace(',', '.', $raw);
             }

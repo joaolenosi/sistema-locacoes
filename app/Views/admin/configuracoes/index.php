@@ -194,7 +194,7 @@
 window.__CONFIG_PLANOS__ = <?= json_encode($planos ?? []) ?>;
 window.__CONFIG_EMPRESA__ = <?= json_encode($empresa ?? []) ?>;
 </script>
-<script src="<?= base_url('assets/admin/js/pages/empresa.js') ?>"></script>
-<script src="<?= base_url('assets/admin/js/pages/configuracoes.js') ?>"></script>
+<script src="<?= asset_url('assets/admin/js/pages/empresa.js') ?>"></script>
+<script src="<?= asset_url('assets/admin/js/pages/configuracoes.js') ?>"></script>
 
 <?= $this->endSection() ?>

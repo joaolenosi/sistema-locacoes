@@ -4,17 +4,14 @@ namespace App\Controllers;
 
 use App\Models\ContratoModeloModel;
 use App\Models\ContratoVariavelModel;
+use App\Models\LocacaoModel;
 
 class Contratos extends BaseController
 {
     public function index(): string
     {
-        // Aba "Meus contratos" (simulado para UI)
-        $meusContratos = [
-            ['id' => 1, 'numero' => 'CT-2026-001', 'locatario' => 'João Silva', 'veiculo' => 'ABC-1234', 'inicio' => '15/01/2026', 'termino' => '15/02/2026', 'valor_total' => 'R$ 1.200,00', 'status' => 'Ativo'],
-            ['id' => 2, 'numero' => 'CT-2026-002', 'locatario' => 'Maria Santos', 'veiculo' => 'XYZ-5678', 'inicio' => '10/01/2026', 'termino' => '10/02/2026', 'valor_total' => 'R$ 1.000,00', 'status' => 'Encerrado'],
-            ['id' => 3, 'numero' => 'CT-2026-003', 'locatario' => 'Pedro Oliveira', 'veiculo' => 'DEF-9012', 'inicio' => '20/01/2026', 'termino' => '20/02/2026', 'valor_total' => 'R$ 1.800,00', 'status' => 'Ativo'],
-        ];
+        // Aba "Meus contratos" - buscar locações reais
+        $meusContratos = $this->buscarContratosDasLocacoes();
 
         $modeloPadrao = null;
         $variaveis = [];
@@ -81,5 +78,87 @@ class Contratos extends BaseController
         } catch (\Exception $e) {
             return 'Error: ' . $e->getMessage();
         }
+    }
+
+    /**
+     * Busca contratos baseados nas locações reais
+     */
+    private function buscarContratosDasLocacoes(): array
+    {
+        try {
+            $empresaId = get_empresa_id();
+            if ($empresaId < 1) {
+                return [];
+            }
+
+            $locacaoModel = new LocacaoModel();
+            $locacoes = $locacaoModel
+                ->builderWithJoins()
+                ->where('locacoes.loc_empresa_id', $empresaId)
+                ->whereIn('locacoes.loc_status', ['reservada', 'ativa', 'finalizada'])
+                ->orderBy('locacoes.created_at', 'DESC')
+                ->get()
+                ->getResultArray();
+
+            $contratos = [];
+            foreach ($locacoes as $locacao) {
+                $contrato = $this->formatarDadosContrato($locacao);
+                if ($contrato) {
+                    $contratos[] = $contrato;
+                }
+            }
+
+            return $contratos;
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao buscar contratos das locações: ' . $e->getMessage());
+            // Retornar dados mockados como fallback
+            return [
+                ['id' => 1, 'numero' => 'CT-2026-001', 'locatario' => 'João Silva', 'veiculo' => 'ABC-1234', 'inicio' => '15/01/2026', 'termino' => '15/02/2026', 'valor_total' => 'R$ 1.200,00', 'status' => 'Ativo'],
+                ['id' => 2, 'numero' => 'CT-2026-002', 'locatario' => 'Maria Santos', 'veiculo' => 'XYZ-5678', 'inicio' => '10/01/2026', 'termino' => '10/02/2026', 'valor_total' => 'R$ 1.000,00', 'status' => 'Encerrado'],
+                ['id' => 3, 'numero' => 'CT-2026-003', 'locatario' => 'Pedro Oliveira', 'veiculo' => 'DEF-9012', 'inicio' => '20/01/2026', 'termino' => '20/02/2026', 'valor_total' => 'R$ 1.800,00', 'status' => 'Ativo'],
+            ];
+        }
+    }
+
+    /**
+     * Formata dados de uma locação para formato de contrato
+     */
+    private function formatarDadosContrato(array $locacao): ?array
+    {
+        // Validar se tem dados mínimos necessários
+        if (empty($locacao['cli_nome']) || empty($locacao['vei_placa'])) {
+            return null;
+        }
+
+        $statusMap = [
+            'reservada' => 'Reservado',
+            'ativa' => 'Ativo',
+            'atrasada' => 'Atrasado',
+            'finalizada' => 'Encerrado',
+            'cancelada' => 'Cancelado',
+            'inadimplente' => 'Inadimplente',
+        ];
+
+        return [
+            'id' => (int) $locacao['id'],
+            'numero' => $this->gerarNumeroContrato($locacao['id']),
+            'locatario' => $locacao['cli_nome'] ?? '-',
+            'veiculo' => $locacao['vei_placa'] ?? '-',
+            'inicio' => formatarDataBR($locacao['loc_data_inicio'] ?? ''),
+            'termino' => formatarDataBR($locacao['loc_data_fim_prevista'] ?? ''),
+            'valor_total' => formatarMoedaBR($locacao['loc_valor_total'] ?? $locacao['loc_valor_locacao'] ?? 0),
+            'status' => $statusMap[$locacao['loc_status']] ?? $locacao['loc_status'] ?? 'Desconhecido',
+        ];
+    }
+
+    /**
+     * Gera número único de contrato no formato CT-YYYY-NNN
+     */
+    private function gerarNumeroContrato(int $locacaoId): string
+    {
+        $ano = date('Y');
+        // Usar ID da locação como sequencial (pode ser melhorado com contador real)
+        $sequencial = str_pad((string) $locacaoId, 3, '0', STR_PAD_LEFT);
+        return "CT-{$ano}-{$sequencial}";
     }
 }

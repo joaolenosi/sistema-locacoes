@@ -76,3 +76,78 @@ if (!function_exists('empresa_iniciais')) {
         return mb_strtoupper(mb_substr($nome, 0, 2));
     }
 }
+
+/**
+ * Formata data para formato brasileiro (DD/MM/YYYY)
+ * 
+ * @param string|null $data Data no formato YYYY-MM-DD ou datetime
+ * @return string Data formatada ou '-' se vazia
+ */
+if (!function_exists('formatarDataBR')) {
+    function formatarDataBR(?string $data): string
+    {
+        if (empty($data)) {
+            return '-';
+        }
+        
+        // Se já está no formato brasileiro, retorna como está
+        if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $data)) {
+            return $data;
+        }
+        
+        // Extrair apenas a parte da data (ignorar hora se presente)
+        $dataParte = substr($data, 0, 10);
+        
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $dataParte, $matches)) {
+            return $matches[3] . '/' . $matches[2] . '/' . $matches[1];
+        }
+        
+        return $data;
+    }
+}
+
+/**
+ * Formata valor monetário para formato brasileiro (R$ X.XXX,XX)
+ * 
+ * @param float|string|null $valor Valor numérico
+ * @return string Valor formatado ou 'R$ 0,00' se vazio
+ */
+if (!function_exists('formatarMoedaBR')) {
+    function formatarMoedaBR($valor): string
+    {
+        if ($valor === null || $valor === '' || $valor === false) {
+            return 'R$ 0,00';
+        }
+        
+        $numero = (float) $valor;
+        return 'R$ ' . number_format($numero, 2, ',', '.');
+    }
+}
+
+/**
+ * Formata CPF/CNPJ
+ * 
+ * @param string|null $cpfcnpj CPF ou CNPJ sem formatação
+ * @return string CPF/CNPJ formatado ou '-' se vazio
+ */
+if (!function_exists('formatarCPFCNPJ')) {
+    function formatarCPFCNPJ(?string $cpfcnpj): string
+    {
+        if (empty($cpfcnpj)) {
+            return '-';
+        }
+        
+        // Remove formatação existente
+        $digitos = preg_replace('/\D/', '', $cpfcnpj);
+        
+        if (strlen($digitos) === 11) {
+            // CPF: XXX.XXX.XXX-XX
+            return preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', $digitos);
+        } elseif (strlen($digitos) === 14) {
+            // CNPJ: XX.XXX.XXX/XXXX-XX
+            return preg_replace('/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/', '$1.$2.$3/$4-$5', $digitos);
+        }
+        
+        return $cpfcnpj;
+    }
+}

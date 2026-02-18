@@ -137,7 +137,7 @@ class Produtos extends BaseController
             if ($v === '' || $v === null) return null;
             $raw = trim((string) $v);
             $raw = str_replace([' ', 'R$', 'r$'], '', $raw);
-            if (str_contains($raw, ',')) {
+            if (strpos($raw, ',') !== false) {
                 $raw = str_replace('.', '', $raw);
                 $raw = str_replace(',', '.', $raw);
             }

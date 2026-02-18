@@ -179,7 +179,7 @@
 <script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
 
 <!-- Gridjs Manutenções js -->
-<script src="<?= base_url('assets/admin/js/pages/manutencao.js') ?>"></script>
+<script src="<?= asset_url('assets/admin/js/pages/manutencao.js') ?>"></script>
 
 <!-- Script para controle de filtros -->
 <script>
