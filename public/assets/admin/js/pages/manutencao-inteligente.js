@@ -174,14 +174,14 @@
         },
         {
           name: 'Ações',
-          width: '160px',
+          width: '180px',
           formatter: (_cell, row) => {
             const id = row.cells[0].data;
             const origem = row.cells[7].data;
             return gridjs.html(`
-              <div class="d-flex gap-2 flex-wrap">
+              <div class="d-flex gap-1 align-items-center flex-nowrap">
                 <button type="button" class="btn btn-sm btn-outline-success btn-completar-manutencao" data-id="${id}" data-origem="${origem}" title="Marcar como realizada">
-                  <iconify-icon icon="iconamoon:check-circle-duotone" class="fs-18"></iconify-icon>
+                  <iconify-icon icon="mdi:check-circle" class="fs-18"></iconify-icon>
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-primary btn-detalhes-manutencao" data-id="${id}" title="Detalhes">
                   <iconify-icon icon="iconamoon:eye-duotone" class="fs-18"></iconify-icon>
@@ -548,7 +548,7 @@
       const item = currentData.find((r) => String(r.id) === String(id));
       if (kmEl) kmEl.value = item?.km_atual ?? '';
       if (switchEl) switchEl.checked = origem === 'controle';
-      if (wrapSwitch) wrapSwitch.style.display = origem === 'controle' ? 'block' : 'none';
+      if (wrapSwitch) wrapSwitch.style.display = 'block';
       setCompletarAlert('');
       if (window.bootstrap?.Modal && modalCompletar) {
         window.bootstrap.Modal.getOrCreateInstance(modalCompletar).show();

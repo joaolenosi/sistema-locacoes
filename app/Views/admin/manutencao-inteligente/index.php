@@ -350,10 +350,10 @@
                             <label class="form-label" for="completar_km_atual">KM atual <span class="text-danger">*</span></label>
                             <input type="number" class="form-control" id="completar_km_atual" name="km_atual" min="0" placeholder="Ex.: 45000" required>
                         </div>
-                        <div class="col-12" id="completar-wrap-switch" style="display: none;">
+                        <div class="col-12" id="completar-wrap-switch">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="completar_atualizar_proxima" name="atualizar_proxima" value="1">
-                                <label class="form-check-label" for="completar_atualizar_proxima">Atualizar próxima manutenção preventiva (recalcular KM)</label>
+                                <label class="form-check-label" for="completar_atualizar_proxima">Deseja agendar a próxima manutenção com base nos dados desta? (recalcula o próximo KM)</label>
                             </div>
                         </div>
                     </div>
