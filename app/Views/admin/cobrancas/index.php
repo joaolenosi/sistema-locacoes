@@ -137,10 +137,9 @@
                         </select>
                         <select class="form-select form-select-sm" id="filtro-locatario" style="width: 220px;">
                             <option value="">Locatário</option>
-                            <option value="João Silva">João Silva</option>
-                            <option value="Maria Santos">Maria Santos</option>
-                            <option value="Pedro Oliveira">Pedro Oliveira</option>
-                            <option value="Transportes ABC Ltda">Transportes ABC Ltda</option>
+                            <?php foreach (($locatarios ?? []) as $locatario): ?>
+                                <option value="<?= esc($locatario['cli_nome'] ?? '') ?>"><?= esc($locatario['cli_nome'] ?? '') ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                 </div>

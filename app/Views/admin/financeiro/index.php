@@ -136,6 +136,33 @@
         align-items: center;
         justify-content: center;
     }
+
+    /* Garantir que o texto digitado seja totalmente preto */
+    #formReceita input[type="text"],
+    #formReceita input[type="date"],
+    #formReceita input[type="number"],
+    #formReceita select,
+    #formReceita textarea,
+    #formDespesa input[type="text"],
+    #formDespesa input[type="date"],
+    #formDespesa input[type="number"],
+    #formDespesa select,
+    #formDespesa textarea {
+        color: #000000 !important;
+    }
+
+    /* Placeholder mais claro */
+    #formReceita input::placeholder,
+    #formDespesa input::placeholder,
+    #formReceita input::-webkit-input-placeholder,
+    #formDespesa input::-webkit-input-placeholder,
+    #formReceita input::-moz-placeholder,
+    #formDespesa input::-moz-placeholder,
+    #formReceita input:-ms-input-placeholder,
+    #formDespesa input:-ms-input-placeholder {
+        color: #adb5bd !important;
+        opacity: 1 !important;
+    }
 </style>
 
 <!-- ========== Page Title Start ========== -->
@@ -768,6 +795,77 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleDespesa.innerHTML = '<iconify-icon icon="iconamoon:arrow-down-2-duotone"></iconify-icon> Ver mais';
         });
     }
+
+    // Navegação com Enter entre campos dos formulários
+    function setupEnterNavigation(formId, saveButtonId) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+
+        // Obter todos os campos focáveis em ordem
+        const getFocusableFields = () => {
+            const fields = [];
+            const inputs = form.querySelectorAll('input:not([type="hidden"]):not([type="checkbox"]), select, textarea');
+            inputs.forEach(field => {
+                // Verificar se o campo está visível
+                const style = window.getComputedStyle(field);
+                if (style.display !== 'none' && style.visibility !== 'hidden') {
+                    fields.push(field);
+                }
+            });
+            return fields;
+        };
+
+        // Adicionar listener de Enter em todos os campos
+        form.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                
+                const fields = getFocusableFields();
+                const currentIndex = fields.indexOf(e.target);
+                
+                if (currentIndex !== -1) {
+                    // Tentar focar no próximo campo
+                    let nextIndex = currentIndex + 1;
+                    
+                    // Se não há próximo campo, focar no botão de salvar
+                    if (nextIndex >= fields.length) {
+                        const saveBtn = document.getElementById(saveButtonId);
+                        if (saveBtn) {
+                            saveBtn.focus();
+                            return;
+                        }
+                    }
+                    
+                    // Focar no próximo campo visível
+                    while (nextIndex < fields.length) {
+                        const nextField = fields[nextIndex];
+                        const style = window.getComputedStyle(nextField);
+                        if (style.display !== 'none' && style.visibility !== 'hidden') {
+                            nextField.focus();
+                            // Se for select, abrir o dropdown
+                            if (nextField.tagName === 'SELECT') {
+                                setTimeout(() => {
+                                    nextField.click();
+                                }, 50);
+                            }
+                            return;
+                        }
+                        nextIndex++;
+                    }
+                    
+                    // Se não encontrou próximo campo, focar no botão de salvar
+                    const saveBtn = document.getElementById(saveButtonId);
+                    if (saveBtn) {
+                        saveBtn.focus();
+                    }
+                }
+            }
+        });
+    }
+
+    // Configurar navegação para ambos os formulários
+    setupEnterNavigation('formReceita', 'btnSalvarReceita');
+    setupEnterNavigation('formDespesa', 'btnSalvarDespesa');
 });
 </script>
 <?= $this->endSection() ?>

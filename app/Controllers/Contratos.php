@@ -111,12 +111,9 @@ class Contratos extends BaseController
             return $contratos;
         } catch (\Throwable $e) {
             log_message('error', 'Erro ao buscar contratos das locações: ' . $e->getMessage());
-            // Retornar dados mockados como fallback
-            return [
-                ['id' => 1, 'numero' => 'CT-2026-001', 'locatario' => 'João Silva', 'veiculo' => 'ABC-1234', 'inicio' => '15/01/2026', 'termino' => '15/02/2026', 'valor_total' => 'R$ 1.200,00', 'status' => 'Ativo'],
-                ['id' => 2, 'numero' => 'CT-2026-002', 'locatario' => 'Maria Santos', 'veiculo' => 'XYZ-5678', 'inicio' => '10/01/2026', 'termino' => '10/02/2026', 'valor_total' => 'R$ 1.000,00', 'status' => 'Encerrado'],
-                ['id' => 3, 'numero' => 'CT-2026-003', 'locatario' => 'Pedro Oliveira', 'veiculo' => 'DEF-9012', 'inicio' => '20/01/2026', 'termino' => '20/02/2026', 'valor_total' => 'R$ 1.800,00', 'status' => 'Ativo'],
-            ];
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            // Retornar array vazio em caso de erro ao invés de dados mockados
+            return [];
         }
     }
 
