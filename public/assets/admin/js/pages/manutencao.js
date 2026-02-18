@@ -89,3 +89,107 @@ if (document.getElementById("table-manutencoes")) {
         ]
     }).render(document.getElementById("table-manutencoes"));
 }
+
+// Modal Nova Manutenção (usa API da Manutenção Inteligente)
+(function () {
+    const modalEl = document.getElementById('modalManutencao');
+    const formEl = document.getElementById('formManutencao');
+    const alertEl = document.getElementById('man-form-alert');
+    const btnSave = document.getElementById('btnSalvarManutencao');
+
+    if (!modalEl || !formEl) return;
+
+    const getBaseUrl = () => {
+        const base = window.__BASE_URL__ || window.location.origin + '/';
+        return base.endsWith('/') ? base : base + '/';
+    };
+
+    const fetchJson = async (url, options = {}) => {
+        const res = await fetch(url, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            ...options
+        });
+        const json = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(json?.message || 'Erro na requisição.');
+        return json;
+    };
+
+    const setAlert = (msg) => {
+        if (!alertEl) return;
+        if (!msg) {
+            alertEl.classList.add('d-none');
+            alertEl.textContent = '';
+            return;
+        }
+        alertEl.textContent = msg;
+        alertEl.classList.remove('d-none');
+    };
+
+    const carregarVeiculos = async () => {
+        try {
+            const json = await fetchJson(getBaseUrl() + 'admin/veiculos/listar');
+            const data = Array.isArray(json?.data) ? json.data : [];
+            const select = document.getElementById('man_veiculo_id');
+            if (select) {
+                select.innerHTML = '<option value="">Selecione um veículo</option>';
+                data.forEach(function (v) {
+                    const opt = document.createElement('option');
+                    opt.value = v.id;
+                    opt.textContent = (v.vei_placa || '') + ' - ' + (v.vei_modelo || '');
+                    select.appendChild(opt);
+                });
+            }
+        } catch (e) {
+            console.error('Erro ao carregar veículos:', e);
+        }
+    };
+
+    const getBsModal = () => {
+        if (!window.bootstrap || !window.bootstrap.Modal) return null;
+        return window.bootstrap.Modal.getOrCreateInstance(modalEl);
+    };
+
+    const resetForm = () => {
+        setAlert('');
+        formEl.reset();
+    };
+
+    const submit = async () => {
+        setAlert('');
+        const required = ['man_veiculo_id', 'man_tipo', 'man_data'];
+        for (let i = 0; i < required.length; i++) {
+            const el = document.getElementById(required[i]);
+            if (el && !String(el.value || '').trim()) {
+                setAlert('Preencha os campos obrigatórios.');
+                return;
+            }
+        }
+
+        const fd = new FormData(formEl);
+        btnSave.disabled = true;
+        const span = btnSave.querySelector('.btn-text');
+        if (span) span.textContent = 'Salvando...';
+
+        try {
+            await fetchJson(getBaseUrl() + 'admin/manutencao-inteligente/criar', { method: 'POST', body: fd });
+            getBsModal().hide();
+            resetForm();
+            if (typeof window.toastr !== 'undefined') {
+                window.toastr.success('Manutenção cadastrada com sucesso.');
+            } else {
+                alert('Manutenção cadastrada com sucesso.');
+            }
+        } catch (e) {
+            setAlert(e.message || 'Erro ao salvar manutenção.');
+        } finally {
+            btnSave.disabled = false;
+            if (span) span.textContent = 'Adicionar';
+        }
+    };
+
+    modalEl.addEventListener('shown.bs.modal', resetForm);
+    modalEl.addEventListener('hidden.bs.modal', resetForm);
+    btnSave.addEventListener('click', submit);
+
+    carregarVeiculos();
+})();

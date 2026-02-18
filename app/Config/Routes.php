@@ -31,6 +31,8 @@ $routes->get('admin/locacoes/veiculos-por-cliente/(:num)', 'Locoes::veiculosPorC
 $routes->get('admin/locacoes/cliente-por-veiculo/(:num)', 'Locoes::clientePorVeiculo/$1');
 $routes->get('admin/contratos', 'Contratos::index');
 $routes->get('admin/cobrancas', 'Cobrancas::index');
+$routes->get('admin/cobrancas/listar', 'Cobrancas::listar');
+$routes->post('admin/cobrancas/quitar/(:num)', 'Cobrancas::quitar/$1');
 $routes->get('admin/financeiro', 'Financeiro::index');
 $routes->get('admin/financeiro/movimentacoes', 'Financeiro::movimentacoes');
 $routes->get('admin/financeiro/listar', 'Financeiro::listar');
@@ -45,6 +47,7 @@ $routes->post('admin/manutencao-inteligente/criar', 'ManutencaoInteligente::cria
 $routes->get('admin/manutencao-inteligente/editar/(:num)', 'ManutencaoInteligente::editar/$1');
 $routes->post('admin/manutencao-inteligente/atualizar/(:num)', 'ManutencaoInteligente::atualizar/$1');
 $routes->get('admin/manutencao-inteligente/detalhes/(:num)', 'ManutencaoInteligente::detalhes/$1');
+$routes->post('admin/manutencao-inteligente/completar/(:num)', 'ManutencaoInteligente::completar/$1');
 $routes->get('admin/empresa', 'Empresa::index');
 $routes->get('admin/configuracoes', 'Configuracoes::index');
 $routes->get('admin/configuracoes/listar-planos', 'Configuracoes::listarPlanos');

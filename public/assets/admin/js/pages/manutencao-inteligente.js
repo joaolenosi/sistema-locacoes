@@ -111,6 +111,7 @@
           item.servico_nome || '-',
           formatDate(item.data_prevista),
           status,
+          item.origem || 'manutencao',
           String(item.id || ''),
         ];
       }).filter(row => row !== null);
@@ -167,12 +168,21 @@
           }
         },
         {
+          name: '',
+          width: '1px',
+          formatter: () => ''
+        },
+        {
           name: 'Ações',
-          width: '120px',
+          width: '160px',
           formatter: (_cell, row) => {
             const id = row.cells[0].data;
+            const origem = row.cells[7].data;
             return gridjs.html(`
-              <div class="d-flex gap-2">
+              <div class="d-flex gap-2 flex-wrap">
+                <button type="button" class="btn btn-sm btn-outline-success btn-completar-manutencao" data-id="${id}" data-origem="${origem}" title="Marcar como realizada">
+                  <iconify-icon icon="iconamoon:check-circle-duotone" class="fs-18"></iconify-icon>
+                </button>
                 <button type="button" class="btn btn-sm btn-outline-primary btn-detalhes-manutencao" data-id="${id}" title="Detalhes">
                   <iconify-icon icon="iconamoon:eye-duotone" class="fs-18"></iconify-icon>
                 </button>
@@ -368,24 +378,83 @@
       }
     };
 
+    const buildDetalhesHtml = (m) => {
+      const veiculo = (m.vei_placa || m.veiculo_placa || '-') + ' — ' + (m.vei_modelo || m.veiculo_modelo || '-');
+      const tipo = tipoLabel(m.man_tipo || m.tipo);
+      const data = formatDate(m.man_data || m.data_prevista);
+      const km = formatKm(m.man_km || m.km_previsto);
+      const statusCalc = calcularStatus(m);
+      const status = statusLabel(statusCalc);
+      const obs = m.man_obs || m.observacoes || '';
+      const servico = m.servico_nome || 'Manutenção agendada';
+      const obsEscaped = obs ? obs.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') : '';
+
+      let html = `
+        <div class="d-flex flex-column gap-3">
+          <div class="d-flex align-items-center">
+            <span class="text-muted me-2" style="min-width: 120px;">Veículo</span>
+            <span class="fw-medium">${veiculo}</span>
+          </div>
+          <div class="d-flex align-items-center">
+            <span class="text-muted me-2" style="min-width: 120px;">Serviço / Item</span>
+            <span>${servico}</span>
+          </div>
+          <div class="d-flex align-items-center">
+            <span class="text-muted me-2" style="min-width: 120px;">Tipo</span>
+            <span class="badge ${tipoBadge(m.man_tipo || m.tipo)}">${tipo}</span>
+          </div>
+          <div class="d-flex align-items-center">
+            <span class="text-muted me-2" style="min-width: 120px;">Data prevista</span>
+            <span>${data}</span>
+          </div>
+          <div class="d-flex align-items-center">
+            <span class="text-muted me-2" style="min-width: 120px;">KM previsto</span>
+            <span>${km}</span>
+          </div>
+          <div class="d-flex align-items-center">
+            <span class="text-muted me-2" style="min-width: 120px;">Status</span>
+            <span class="badge ${statusBadge(statusCalc)}">${status}</span>
+          </div>
+          ${obsEscaped ? `
+          <div class="pt-2 border-top">
+            <span class="text-muted d-block small mb-1">Observações</span>
+            <p class="mb-0 text-break">${obsEscaped}</p>
+          </div>
+          ` : ''}
+        </div>
+      `;
+      return html;
+    };
+
     const openDetalhes = async (id) => {
-      lockButton(true, 'Carregando...');
+      const modalEl = document.getElementById('modalDetalhesManutencao');
+      const bodyEl = document.getElementById('detalhes-manutencao-body');
+      if (!modalEl || !bodyEl) return;
+
+      const showLoading = () => {
+        bodyEl.innerHTML = '<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Carregando...</div>';
+      };
+
+      const escapeHtml = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const showError = (msg) => {
+        bodyEl.innerHTML = '<div class="alert alert-danger mb-0">' + escapeHtml(msg || 'Erro ao carregar detalhes.') + '</div>';
+      };
+
+      const modalInstance = window.bootstrap?.Modal ? window.bootstrap.Modal.getOrCreateInstance(modalEl) : null;
+      if (modalInstance) modalInstance.show();
+      showLoading();
+
       try {
         const json = await fetchJson(`${getBaseUrl()}admin/manutencao-inteligente/detalhes/${id}`);
         const m = json.data;
-        let detalhes = `Veículo: ${m.vei_placa || '-'} - ${m.vei_modelo || '-'}\n`;
-        detalhes += `Tipo: ${tipoLabel(m.man_tipo || m.tipo)}\n`;
-        detalhes += `Data: ${formatDate(m.man_data || m.data_prevista)}\n`;
-        detalhes += `KM: ${formatKm(m.man_km || m.km_previsto)}\n`;
-        detalhes += `Status: ${statusLabel(m.man_status || calcularStatus(m))}\n`;
-        if (m.man_obs || m.observacoes) {
-          detalhes += `\nObservações:\n${m.man_obs || m.observacoes}`;
-        }
-        alert(detalhes);
+        bodyEl.innerHTML = buildDetalhesHtml(m);
       } catch (e) {
-        alert('Erro ao carregar detalhes: ' + (e.message || 'Erro desconhecido'));
-      } finally {
-        lockButton(false);
+        const item = currentData.find((row) => String(row.id) === String(id));
+        if (item) {
+          bodyEl.innerHTML = buildDetalhesHtml(item);
+        } else {
+          showError(e.message || 'Erro ao carregar detalhes.');
+        }
       }
     };
 
@@ -451,7 +520,87 @@
     btnAdd?.addEventListener('click', openCreate);
     btnSave?.addEventListener('click', submit);
 
+    const modalCompletar = document.getElementById('modalCompletarManutencao');
+    const formCompletar = document.getElementById('formCompletarManutencao');
+    const alertCompletar = document.getElementById('completar-form-alert');
+    const wrapSwitch = document.getElementById('completar-wrap-switch');
+    const btnConfirmarCompletar = document.getElementById('btnConfirmarCompletar');
+
+    const setCompletarAlert = (msg) => {
+      if (!alertCompletar) return;
+      if (!msg) {
+        alertCompletar.classList.add('d-none');
+        alertCompletar.textContent = '';
+        return;
+      }
+      alertCompletar.textContent = msg;
+      alertCompletar.classList.remove('d-none');
+    };
+
+    const openCompletar = (id, origem) => {
+      const idEl = document.getElementById('completar_id');
+      const dataEl = document.getElementById('completar_data_realizacao');
+      const kmEl = document.getElementById('completar_km_atual');
+      const switchEl = document.getElementById('completar_atualizar_proxima');
+      if (idEl) idEl.value = id;
+      const hoje = new Date().toISOString().slice(0, 10);
+      if (dataEl) dataEl.value = hoje;
+      const item = currentData.find((r) => String(r.id) === String(id));
+      if (kmEl) kmEl.value = item?.km_atual ?? '';
+      if (switchEl) switchEl.checked = origem === 'controle';
+      if (wrapSwitch) wrapSwitch.style.display = origem === 'controle' ? 'block' : 'none';
+      setCompletarAlert('');
+      if (window.bootstrap?.Modal && modalCompletar) {
+        window.bootstrap.Modal.getOrCreateInstance(modalCompletar).show();
+      }
+    };
+
+    const submitCompletar = async () => {
+      setCompletarAlert('');
+      const id = document.getElementById('completar_id')?.value;
+      const dataRealizacao = document.getElementById('completar_data_realizacao')?.value;
+      const kmAtual = document.getElementById('completar_km_atual')?.value;
+      if (!id || !dataRealizacao || !kmAtual || Number(kmAtual) < 0) {
+        setCompletarAlert('Preencha a data e o KM atual.');
+        return;
+      }
+      const atualizarProxima = document.getElementById('completar_atualizar_proxima')?.checked ? 1 : 0;
+      if (!btnConfirmarCompletar) return;
+      btnConfirmarCompletar.disabled = true;
+      try {
+        await fetchJson(`${getBaseUrl()}admin/manutencao-inteligente/completar/${id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+          body: JSON.stringify({
+            data_realizacao: dataRealizacao,
+            km_atual: Number(kmAtual),
+            atualizar_proxima: atualizarProxima
+          })
+        });
+        if (window.bootstrap?.Modal && modalCompletar) {
+          window.bootstrap.Modal.getOrCreateInstance(modalCompletar).hide();
+        }
+        await reload();
+      } catch (e) {
+        setCompletarAlert(e.message || 'Erro ao marcar como realizada.');
+      } finally {
+        btnConfirmarCompletar.disabled = false;
+      }
+    };
+
+    btnConfirmarCompletar?.addEventListener('click', submitCompletar);
+
     document.addEventListener('click', (e) => {
+      const btnCompletar = e.target.closest?.('.btn-completar-manutencao');
+      if (btnCompletar) {
+        const id = btnCompletar.getAttribute('data-id');
+        const origem = btnCompletar.getAttribute('data-origem') || 'manutencao';
+        if (id) {
+          e.preventDefault();
+          openCompletar(id, origem);
+        }
+      }
+
       const btnEdit = e.target.closest?.('.btn-edit-manutencao');
       if (btnEdit) {
         const id = btnEdit.getAttribute('data-id');

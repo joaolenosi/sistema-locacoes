@@ -303,6 +303,73 @@
     </div>
 </div>
 
+<!-- Modal: Detalhes da Manutenção -->
+<div class="modal fade" id="modalDetalhesManutencao" tabindex="-1" aria-labelledby="modalDetalhesManutencaoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalDetalhesManutencaoLabel">
+                    <iconify-icon icon="iconamoon:info-duotone" class="me-2"></iconify-icon>
+                    Detalhes da manutenção
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body" id="detalhes-manutencao-body">
+                <div class="text-center py-4 text-muted">
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Carregando...
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Marcar como realizada -->
+<div class="modal fade" id="modalCompletarManutencao" tabindex="-1" aria-labelledby="modalCompletarManutencaoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCompletarManutencaoLabel">
+                    <iconify-icon icon="iconamoon:check-circle-duotone" class="me-2"></iconify-icon>
+                    Marcar como realizada
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formCompletarManutencao" novalidate>
+                    <input type="hidden" id="completar_id" name="completar_id" value="">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label" for="completar_data_realizacao">Data da realização <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="completar_data_realizacao" name="data_realizacao" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="completar_km_atual">KM atual <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="completar_km_atual" name="km_atual" min="0" placeholder="Ex.: 45000" required>
+                        </div>
+                        <div class="col-12" id="completar-wrap-switch" style="display: none;">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="completar_atualizar_proxima" name="atualizar_proxima" value="1">
+                                <label class="form-check-label" for="completar_atualizar_proxima">Atualizar próxima manutenção preventiva (recalcular KM)</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                <div id="completar-form-alert" class="alert alert-danger mt-3 d-none" role="alert"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btnConfirmarCompletar">
+                    <span class="btn-text">Marcar como realizada</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Gridjs Plugin js -->
 <script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
 

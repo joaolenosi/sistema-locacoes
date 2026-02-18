@@ -151,6 +151,10 @@
 <!-- Gridjs Plugin js -->
 <script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
 
+<script>
+window.__BASE_URL__ = '<?= base_url() ?>';
+</script>
+
 <!-- Gridjs Cobranças js -->
 <script src="<?= asset_url('assets/admin/js/pages/cobrancas.js') ?>"></script>
 

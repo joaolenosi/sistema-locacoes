@@ -276,6 +276,92 @@ class ManutencaoInteligente extends BaseController
         }
     }
 
+    public function completar($id)
+    {
+        try {
+            $empresaId = get_empresa_id();
+            if ($empresaId < 1) {
+                return $this->response->setStatusCode(401)->setJSON(['success' => false, 'message' => 'Sessão inválida.']);
+            }
+
+            $id = (int) $id;
+            $payload = $this->request->getJSON(true) ?? $this->request->getPost();
+            $payload = is_array($payload) ? $payload : [];
+
+            $dataRealizacao = trim((string) ($payload['data_realizacao'] ?? ''));
+            $kmAtual = isset($payload['km_atual']) ? (int) preg_replace('/\D/', '', (string) $payload['km_atual']) : null;
+            $atualizarProxima = (int) ($payload['atualizar_proxima'] ?? 0);
+
+            if ($dataRealizacao === '') {
+                return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => 'Informe a data da realização.']);
+            }
+            if ($kmAtual === null || $kmAtual < 0) {
+                return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => 'Informe o KM atual.']);
+            }
+
+            $manutencaoModel = new ManutencaoModel();
+            $veiculoControleModel = new VeiculoControleModel();
+
+            // Resolver origem: primeiro tenta manutenção aberta, depois controle
+            $manutencao = $manutencaoModel
+                ->where('id', $id)
+                ->where('man_empresa_id', $empresaId)
+                ->where('man_status', 'aberta')
+                ->first();
+
+            if ($manutencao) {
+                // Origem = manutencao: apenas finalizar o registro
+                $ok = $manutencaoModel->update($id, [
+                    'man_status' => 'finalizada',
+                    'man_data' => $dataRealizacao,
+                    'man_km' => $kmAtual,
+                ]);
+                if (!$ok) {
+                    return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Não foi possível marcar a manutenção como realizada.']);
+                }
+                return $this->response->setJSON(['success' => true, 'message' => 'Manutenção marcada como realizada.']);
+            }
+
+            $controle = $veiculoControleModel
+                ->where('id', $id)
+                ->where('vec_empresa_id', $empresaId)
+                ->first();
+
+            if (!$controle) {
+                return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'Registro não encontrado.']);
+            }
+
+            // Origem = controle: criar manutenção finalizada e opcionalmente atualizar controle
+            $manId = $manutencaoModel->insert([
+                'man_empresa_id' => $empresaId,
+                'man_veiculo_id' => $controle['vec_veiculo_id'],
+                'man_data' => $dataRealizacao,
+                'man_km' => $kmAtual,
+                'man_tipo' => 'preventiva',
+                'man_status' => 'finalizada',
+            ], true);
+
+            if (!$manId) {
+                return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Não foi possível registrar a manutenção.']);
+            }
+
+            if ($atualizarProxima === 1) {
+                $intervalo = (int) ($controle['vec_intervalo_km'] ?? 0);
+                $proximoKm = $intervalo > 0 ? $kmAtual + $intervalo : null;
+                $veiculoControleModel->update($id, [
+                    'vec_ultimo_km' => $kmAtual,
+                    'vec_proximo_km' => $proximoKm,
+                    'vec_ultima_manutencao_id' => $manId,
+                ]);
+            }
+
+            return $this->response->setJSON(['success' => true, 'message' => 'Manutenção marcada como realizada.']);
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao completar manutenção: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Erro ao marcar manutenção como realizada.']);
+        }
+    }
+
     private function normalizeManutencaoPayload(array $payload): array
     {
         $toIntOrNull = static function ($v) {

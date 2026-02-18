@@ -146,7 +146,7 @@
                             <iconify-icon icon="iconamoon:filter-duotone" class="fs-18"></iconify-icon>
                             Filtros
                         </button>
-                        <button type="button" class="btn btn-primary">
+                        <button type="button" class="btn btn-primary" id="btn-add-manutencao" data-bs-toggle="modal" data-bs-target="#modalManutencao">
                             <iconify-icon icon="iconamoon:plus-duotone" class="fs-18"></iconify-icon>
                             Nova Manutenção
                         </button>
@@ -175,9 +175,62 @@
 </div>
 <!-- end row -->
 
+<!-- Modal: Cadastro de Manutenção -->
+<div class="modal fade" id="modalManutencao" tabindex="-1" aria-labelledby="modalManutencaoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalManutencaoLabel">Cadastrar manutenção</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formManutencao" novalidate>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="man_veiculo_id">Veículo <span class="text-danger">*</span></label>
+                            <select class="form-select" id="man_veiculo_id" name="man_veiculo_id" required>
+                                <option value="">Selecione um veículo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="man_tipo">Tipo <span class="text-danger">*</span></label>
+                            <select class="form-select" id="man_tipo" name="man_tipo" required>
+                                <option value="">Selecione o tipo</option>
+                                <option value="preventiva">Preventiva</option>
+                                <option value="corretiva">Corretiva</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="man_data">Data Prevista <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="man_data" name="man_data" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="man_km">KM Previsto</label>
+                            <input type="number" class="form-control" id="man_km" name="man_km" placeholder="Ex.: 50000" min="0">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="man_obs">Observações</label>
+                            <textarea class="form-control" id="man_obs" name="man_obs" rows="3" placeholder="Observações sobre a manutenção..."></textarea>
+                        </div>
+                    </div>
+                </form>
+                <div id="man-form-alert" class="alert alert-danger mt-3 d-none" role="alert"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnSalvarManutencao">
+                    <span class="btn-text">Adicionar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Gridjs Plugin js -->
 <script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
-
+<script>
+window.__BASE_URL__ = '<?= base_url() ?>';
+</script>
 <!-- Gridjs Manutenções js -->
 <script src="<?= asset_url('assets/admin/js/pages/manutencao.js') ?>"></script>
 

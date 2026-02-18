@@ -131,7 +131,7 @@
                 </a>
             </li>
 
-            <li class="nav-item">
+          <!--   <li class="nav-item">
                 <a class="nav-link" href="<?= base_url('admin/relatorios') ?>">
                     <span class="nav-icon">
                         <iconify-icon
@@ -142,7 +142,7 @@
                     <span class="badge badge-pill text-end bg-success">Novo</span>
                 </a>
             </li>
-
+ -->
             <li class="menu-title">Cadastro</li>
 
             <li class="nav-item">
