@@ -248,6 +248,17 @@
     };
 
     // Carregar veículos para o select
+    const buscarKmAtualVeiculo = async (veiculoId) => {
+      if (!veiculoId || veiculoId < 1) return null;
+      try {
+        const json = await fetchJson(`${getBaseUrl()}admin/manutencao-inteligente/km-atual/${veiculoId}`);
+        return json?.km_atual || null;
+      } catch (e) {
+        console.error('Erro ao buscar KM atual do veículo:', e);
+        return null;
+      }
+    };
+
     const carregarVeiculos = async () => {
       try {
         const json = await fetchJson(`${getBaseUrl()}admin/veiculos/listar`);
@@ -260,6 +271,18 @@
             option.value = v.id;
             option.textContent = `${v.vei_placa} - ${v.vei_modelo}`;
             selectVeiculo.appendChild(option);
+          });
+          
+          // Adicionar listener para buscar KM atual ao selecionar veículo
+          selectVeiculo.addEventListener('change', async function() {
+            const veiculoId = this.value;
+            const kmAtualEl = document.getElementById('man_km_atual');
+            if (veiculoId && kmAtualEl && !kmAtualEl.value) {
+              const kmAtual = await buscarKmAtualVeiculo(veiculoId);
+              if (kmAtual !== null) {
+                kmAtualEl.value = kmAtual;
+              }
+            }
           });
         }
       } catch (e) {
@@ -313,6 +336,10 @@
       formEl?.reset();
       const idEl = document.getElementById('man_id');
       if (idEl) idEl.value = '';
+      const triggerTipoEl = document.getElementById('man_trigger_tipo');
+      if (triggerTipoEl) triggerTipoEl.value = 'qualquer';
+      const triggerCheckbox = document.getElementById('man_trigger_qualquer');
+      if (triggerCheckbox) triggerCheckbox.checked = true;
       if (titleEl) titleEl.textContent = 'Cadastrar manutenção';
       btnSave?.querySelector('.btn-text') && (btnSave.querySelector('.btn-text').textContent = 'Adicionar');
     };
@@ -327,7 +354,15 @@
       setVal('man_tipo', m.tipo || m.man_tipo);
       setVal('man_data', m.data_prevista || m.man_data);
       setVal('man_km', m.km_previsto || m.man_km);
+      setVal('man_km_atual', m.man_km_atual || m.km_atual || '');
       setVal('man_obs', m.observacoes || m.man_obs);
+      
+      // Preencher switch baseado em man_trigger_tipo
+      const triggerTipo = m.man_trigger_tipo || 'qualquer';
+      const triggerCheckbox = document.getElementById('man_trigger_qualquer');
+      const triggerTipoEl = document.getElementById('man_trigger_tipo');
+      if (triggerCheckbox) triggerCheckbox.checked = (triggerTipo === 'qualquer');
+      if (triggerTipoEl) triggerTipoEl.value = triggerTipo;
 
       if (titleEl) titleEl.textContent = 'Editar manutenção';
       btnSave?.querySelector('.btn-text') && (btnSave.querySelector('.btn-text').textContent = 'Salvar alterações');
@@ -472,6 +507,14 @@
       }
 
       const id = document.getElementById('man_id')?.value || '';
+      
+      // Atualizar campo hidden man_trigger_tipo baseado no checkbox
+      const triggerCheckbox = document.getElementById('man_trigger_qualquer');
+      const triggerTipoEl = document.getElementById('man_trigger_tipo');
+      if (triggerCheckbox && triggerTipoEl) {
+        triggerTipoEl.value = triggerCheckbox.checked ? 'qualquer' : 'data';
+      }
+      
       const fd = new FormData(formEl);
 
       lockButton(true, id ? 'Salvando...' : 'Adicionando...');

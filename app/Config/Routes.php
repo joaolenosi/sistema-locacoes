@@ -22,6 +22,7 @@ $routes->get('admin/locatarios/listar', 'Locatarios::listar');
 $routes->post('admin/locatarios/criar', 'Locatarios::criar');
 $routes->get('admin/locatarios/editar/(:num)', 'Locatarios::editar/$1');
 $routes->post('admin/locatarios/atualizar/(:num)', 'Locatarios::atualizar/$1');
+$routes->get('admin/locatarios/detalhes/(:num)', 'Locatarios::detalhes/$1');
 $routes->get('admin/locacoes', 'Locoes::index');
 $routes->get('admin/locacoes/listar', 'Locoes::listar');
 $routes->post('admin/locacoes/criar', 'Locoes::criar');
@@ -47,6 +48,7 @@ $routes->post('admin/manutencao-inteligente/criar', 'ManutencaoInteligente::cria
 $routes->get('admin/manutencao-inteligente/editar/(:num)', 'ManutencaoInteligente::editar/$1');
 $routes->post('admin/manutencao-inteligente/atualizar/(:num)', 'ManutencaoInteligente::atualizar/$1');
 $routes->get('admin/manutencao-inteligente/detalhes/(:num)', 'ManutencaoInteligente::detalhes/$1');
+$routes->get('admin/manutencao-inteligente/km-atual/(:num)', 'ManutencaoInteligente::kmAtual/$1');
 $routes->post('admin/manutencao-inteligente/completar/(:num)', 'ManutencaoInteligente::completar/$1');
 $routes->get('admin/empresa', 'Empresa::index');
 $routes->get('admin/configuracoes', 'Configuracoes::index');

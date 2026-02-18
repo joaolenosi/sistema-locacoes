@@ -3,6 +3,8 @@
 namespace App\Controllers;
 
 use App\Models\ClienteModel;
+use App\Models\LancamentoFinanceiroModel;
+use App\Models\LocacaoModel;
 
 class Locatarios extends BaseController
 {
@@ -27,6 +29,151 @@ class Locatarios extends BaseController
         } catch (\Exception $e) {
             return 'Error: ' . $e->getMessage();
         }
+    }
+
+    /**
+     * Ficha do cliente (detalhes do locatário): cards resumo, contas a receber, histórico de locações, infrações (placeholder).
+     */
+    public function detalhes($id)
+    {
+        $empresaId = get_empresa_id();
+        $cliId = (int) $id;
+        if ($cliId < 1) {
+            return redirect()->to(base_url('admin/locatarios'))->with('error', 'Locatário inválido.');
+        }
+
+        $clienteModel = new ClienteModel();
+        $cliente = $clienteModel
+            ->where('id', $cliId)
+            ->where('cli_empresa_id', $empresaId)
+            ->first();
+
+        if (!$cliente) {
+            return redirect()->to(base_url('admin/locatarios'))->with('error', 'Locatário não encontrado.');
+        }
+
+        $lancamentoModel = new LancamentoFinanceiroModel();
+        $locacaoModel = new LocacaoModel();
+
+        // Total em aberto: receita pendente vinculada a locações deste cliente
+        $totalAberto = $lancamentoModel
+            ->selectSum('lancamentos_financeiros.lan_valor')
+            ->join('locacoes', 'locacoes.id = lancamentos_financeiros.lan_locacao_id', 'inner')
+            ->where('lancamentos_financeiros.lan_empresa_id', $empresaId)
+            ->where('lancamentos_financeiros.lan_tipo', 'receita')
+            ->where('lancamentos_financeiros.lan_status', 'pendente')
+            ->where('locacoes.loc_cli_id', $cliId)
+            ->where('locacoes.loc_empresa_id', $empresaId)
+            ->first();
+        $totalAberto = (float) ($totalAberto['lan_valor'] ?? 0);
+
+        // Total de veículos alugados (histórico: todas as locações)
+        $totalLocacoes = $locacaoModel
+            ->where('loc_cli_id', $cliId)
+            ->where('loc_empresa_id', $empresaId)
+            ->countAllResults();
+
+        // Locação ativa (ativa, reservada ou atrasada)
+        $locacaoAtiva = $locacaoModel
+            ->builderWithJoins()
+            ->where('locacoes.loc_cli_id', $cliId)
+            ->where('locacoes.loc_empresa_id', $empresaId)
+            ->whereIn('locacoes.loc_status', ['ativa', 'reservada', 'atrasada'])
+            ->orderBy('locacoes.loc_data_inicio', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+
+        // Contas a receber do cliente (lista)
+        $lancamentos = $lancamentoModel
+            ->select('lancamentos_financeiros.*')
+            ->select('locacoes.id as loc_id, locacoes.loc_recorrencia_pagamento')
+            ->select('veiculos.vei_placa, veiculos.vei_modelo')
+            ->join('locacoes', 'locacoes.id = lancamentos_financeiros.lan_locacao_id', 'left')
+            ->join('veiculos', 'veiculos.id = locacoes.loc_vei_id', 'left')
+            ->where('lancamentos_financeiros.lan_empresa_id', $empresaId)
+            ->where('lancamentos_financeiros.lan_tipo', 'receita')
+            ->where('lancamentos_financeiros.lan_status', 'pendente')
+            ->where('locacoes.loc_cli_id', $cliId)
+            ->where('locacoes.loc_empresa_id', $empresaId)
+            ->orderBy('lancamentos_financeiros.lan_data_vencimento', 'ASC')
+            ->findAll();
+
+        $contasReceber = [];
+        $hoje = date('Y-m-d');
+        foreach ($lancamentos as $lan) {
+            $competencia = $this->calcularCompetencia($lan['lan_data_vencimento'], $lan['loc_recorrencia_pagamento'] ?? 'mensal');
+            $recorrencia = $this->formatarRecorrencia($lan['loc_recorrencia_pagamento'] ?? 'mensal');
+            $status = $lan['lan_data_vencimento'] < $hoje ? 'Em atraso' : 'Pendente';
+            $locacaoNum = 'LC-' . date('Y', strtotime($lan['lan_data_vencimento'])) . '-' . str_pad($lan['loc_id'] ?? 0, 3, '0', STR_PAD_LEFT);
+            $contasReceber[] = [
+                'id' => $lan['id'],
+                'locacao' => $locacaoNum,
+                'veiculo' => ($lan['vei_placa'] ?? '-') . ' (' . ($lan['vei_modelo'] ?? '-') . ')',
+                'recorrencia' => $recorrencia,
+                'competencia' => $competencia,
+                'vencimento' => date('d/m/Y', strtotime($lan['lan_data_vencimento'])),
+                'vencimento_raw' => $lan['lan_data_vencimento'],
+                'valor' => (float) ($lan['lan_valor'] ?? 0),
+                'descricao' => $lan['lan_descricao'] ?? '',
+                'status' => $status,
+            ];
+        }
+
+        // Histórico de veículos locados
+        $historicoLocacoes = $locacaoModel
+            ->builderWithJoins()
+            ->where('locacoes.loc_cli_id', $cliId)
+            ->where('locacoes.loc_empresa_id', $empresaId)
+            ->orderBy('locacoes.loc_data_inicio', 'DESC')
+            ->get()
+            ->getResultArray();
+
+        $data = [
+            'title' => 'Ficha do cliente - ' . ($cliente['cli_nome'] ?? 'Locatário'),
+            'cliente' => $cliente,
+            'total_aberto' => $totalAberto,
+            'total_locacoes' => $totalLocacoes,
+            'locacao_ativa' => $locacaoAtiva,
+            'tem_veiculo_locado' => !empty($locacaoAtiva),
+            'contas_receber' => $contasReceber,
+            'historico_locacoes' => $historicoLocacoes,
+        ];
+
+        return view('admin/locatarios/detalhes', $data);
+    }
+
+    private function calcularCompetencia($dataVencimento, $recorrencia)
+    {
+        if (!$dataVencimento) return '-';
+        $data = date_create($dataVencimento);
+        if (!$data) return '-';
+        switch ($recorrencia) {
+            case 'diaria':
+                return date_format($data, 'd/m/Y');
+            case 'semanal':
+                $semana = date('W', strtotime($dataVencimento));
+                $ano = date('y', strtotime($dataVencimento));
+                return "Semana {$semana}/{$ano}";
+            case 'quinzenal':
+            case 'mensal':
+            default:
+                $meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                $mes = (int) date('m', strtotime($dataVencimento)) - 1;
+                $ano = date('y', strtotime($dataVencimento));
+                return $meses[$mes] . '/' . $ano;
+        }
+    }
+
+    private function formatarRecorrencia($recorrencia)
+    {
+        $map = [
+            'diaria' => 'Diária',
+            'semanal' => 'Semanal',
+            'quinzenal' => 'Quinzenal',
+            'mensal' => 'Mensal',
+        ];
+        return $map[$recorrencia] ?? 'Mensal';
     }
 
     public function listar()

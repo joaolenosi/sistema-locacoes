@@ -7,6 +7,7 @@ use App\Models\VeiculoControleModel;
 use App\Models\VeiculoModel;
 use App\Models\ServicoModel;
 use App\Models\ProdutoModel;
+use App\Models\LocacaoModel;
 
 class ManutencaoInteligente extends BaseController
 {
@@ -46,14 +47,29 @@ class ManutencaoInteligente extends BaseController
 
             foreach ($manutencoes as $man) {
                 $hoje = date('Y-m-d');
-                $kmAtual = (int) ($man['vei_km_atual'] ?? 0);
                 $kmPrevisto = (int) ($man['man_km'] ?? 0);
                 $dataPrevista = $man['man_data'] ?? $hoje;
+                $triggerTipo = $man['man_trigger_tipo'] ?? 'qualquer';
+                
+                // Buscar KM atual: usar man_km_atual se existir, senão buscar do histórico
+                $kmAtual = null;
+                if (!empty($man['man_km_atual'])) {
+                    $kmAtual = (int) $man['man_km_atual'];
+                } else {
+                    $kmAtual = $this->obterUltimaKmVeiculo($man['man_veiculo_id']);
+                }
 
-                // Calcular status
+                // Calcular status baseado no trigger_tipo
                 $status = 'agendada';
-                if ($dataPrevista < $hoje || ($kmPrevisto > 0 && $kmPrevisto < $kmAtual)) {
-                    $status = 'atrasada';
+                $atrasadaPorData = ($dataPrevista < $hoje);
+                $atrasadaPorKm = ($kmPrevisto > 0 && $kmAtual > 0 && $kmAtual >= $kmPrevisto);
+                
+                if ($triggerTipo === 'data') {
+                    $status = $atrasadaPorData ? 'atrasada' : 'agendada';
+                } elseif ($triggerTipo === 'km') {
+                    $status = $atrasadaPorKm ? 'atrasada' : 'agendada';
+                } else { // 'qualquer' (padrão)
+                    $status = ($atrasadaPorData || $atrasadaPorKm) ? 'atrasada' : 'agendada';
                 }
 
                 $resultados[] = [
@@ -196,6 +212,11 @@ class ManutencaoInteligente extends BaseController
                 return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => $err]);
             }
 
+            // Se man_km_atual não foi informado, buscar automaticamente do histórico
+            if (empty($data['man_km_atual']) && !empty($data['man_veiculo_id'])) {
+                $data['man_km_atual'] = $this->obterUltimaKmVeiculo($data['man_veiculo_id']);
+            }
+
             $data['man_empresa_id'] = $empresaId;
             $data['man_status'] = 'aberta';
 
@@ -240,6 +261,11 @@ class ManutencaoInteligente extends BaseController
             
             if ($err) {
                 return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => $err]);
+            }
+
+            // Se man_km_atual não foi informado, buscar automaticamente do histórico
+            if (empty($data['man_km_atual']) && !empty($data['man_veiculo_id'])) {
+                $data['man_km_atual'] = $this->obterUltimaKmVeiculo($data['man_veiculo_id']);
             }
 
             $ok = $manutencaoModel->update((int) $id, $data);
@@ -369,10 +395,17 @@ class ManutencaoInteligente extends BaseController
             return (int) preg_replace('/\D/', '', (string) $v);
         };
 
+        $triggerTipo = strtolower(trim((string) ($payload['man_trigger_tipo'] ?? 'qualquer')));
+        if (!in_array($triggerTipo, ['data', 'km', 'qualquer'], true)) {
+            $triggerTipo = 'qualquer';
+        }
+
         return [
             'man_veiculo_id' => $toIntOrNull($payload['man_veiculo_id'] ?? null),
             'man_data' => trim((string) ($payload['man_data'] ?? '')),
             'man_km' => $toIntOrNull($payload['man_km'] ?? null),
+            'man_km_atual' => $toIntOrNull($payload['man_km_atual'] ?? null),
+            'man_trigger_tipo' => $triggerTipo,
             'man_tipo' => strtolower(trim((string) ($payload['man_tipo'] ?? 'corretiva'))),
             'man_obs' => trim((string) ($payload['man_obs'] ?? '')) ?: null,
         ];
@@ -390,5 +423,95 @@ class ManutencaoInteligente extends BaseController
             return 'Informe um tipo válido (preventiva ou corretiva).';
         }
         return null;
+    }
+
+    /**
+     * Busca a última KM do veículo do histórico de locações
+     * Prioriza loc_km_devolucao (última devolução), senão loc_km_retirada (última retirada)
+     * Se não houver locações, retorna vei_km_atual da tabela veiculos
+     */
+    private function obterUltimaKmVeiculo(int $veiculoId): ?int
+    {
+        try {
+            $locacaoModel = new LocacaoModel();
+            
+            // Buscar última devolução (mais precisa)
+            $ultimaDevolucao = $locacaoModel
+                ->where('loc_vei_id', $veiculoId)
+                ->where('loc_km_devolucao IS NOT NULL')
+                ->where('loc_km_devolucao >', 0)
+                ->orderBy('loc_data_fim_real', 'DESC')
+                ->orderBy('updated_at', 'DESC')
+                ->first();
+            
+            if ($ultimaDevolucao && !empty($ultimaDevolucao['loc_km_devolucao'])) {
+                return (int) $ultimaDevolucao['loc_km_devolucao'];
+            }
+            
+            // Se não houver devolução, buscar última retirada
+            $ultimaRetirada = $locacaoModel
+                ->where('loc_vei_id', $veiculoId)
+                ->where('loc_km_retirada IS NOT NULL')
+                ->where('loc_km_retirada >', 0)
+                ->orderBy('loc_data_inicio', 'DESC')
+                ->orderBy('created_at', 'DESC')
+                ->first();
+            
+            if ($ultimaRetirada && !empty($ultimaRetirada['loc_km_retirada'])) {
+                return (int) $ultimaRetirada['loc_km_retirada'];
+            }
+            
+            // Se não houver locações, buscar KM atual do veículo
+            $veiculoModel = new VeiculoModel();
+            $veiculo = $veiculoModel->find($veiculoId);
+            
+            if ($veiculo && !empty($veiculo['vei_km_atual'])) {
+                return (int) $veiculo['vei_km_atual'];
+            }
+            
+            return null;
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao obter última KM do veículo: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Endpoint para buscar KM atual do veículo via AJAX
+     */
+    public function kmAtual($veiculoId)
+    {
+        try {
+            $empresaId = get_empresa_id();
+            if ($empresaId < 1) {
+                return $this->response->setStatusCode(401)->setJSON(['success' => false, 'message' => 'Sessão inválida.']);
+            }
+
+            $veiculoId = (int) $veiculoId;
+            if ($veiculoId < 1) {
+                return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => 'ID do veículo inválido.']);
+            }
+
+            // Verificar se o veículo pertence à empresa
+            $veiculoModel = new VeiculoModel();
+            $veiculo = $veiculoModel
+                ->where('id', $veiculoId)
+                ->where('vei_empresa_id', $empresaId)
+                ->first();
+
+            if (!$veiculo) {
+                return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'Veículo não encontrado.']);
+            }
+
+            $kmAtual = $this->obterUltimaKmVeiculo($veiculoId);
+
+            return $this->response->setJSON([
+                'success' => true,
+                'km_atual' => $kmAtual,
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao buscar KM atual do veículo: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Erro ao buscar KM atual do veículo.']);
+        }
     }
 }

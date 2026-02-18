@@ -1,94 +1,103 @@
-// Listagem de Manutenções com GridJS
-if (document.getElementById("table-manutencoes")) {
-    // Tradução para Português do Brasil
+// Listagem de Manutenções com GridJS (dados da API Manutenção Inteligente)
+(function () {
+    const tableEl = document.getElementById("table-manutencoes");
+    if (!tableEl) return;
+
+    const getBaseUrl = () => {
+        const base = window.__BASE_URL__ || (window.location.origin + '/');
+        return base.endsWith('/') ? base : base + '/';
+    };
+
+    const fetchJson = (url, options) => {
+        return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, ...options })
+            .then(function (res) { return res.json().catch(function () { return null; }); })
+            .then(function (json) {
+                if (json && !json.success && json.message) throw new Error(json.message);
+                return json;
+            });
+    };
+
     const ptBR = {
-        search: {
-            placeholder: 'Digite uma palavra-chave...'
-        },
-        pagination: {
-            previous: 'Anterior',
-            next: 'Próximo',
-            showing: 'Mostrando',
-            to: 'a',
-            of: 'de',
-            results: 'resultados'
+        search: { placeholder: 'Digite uma palavra-chave...' },
+        pagination: { previous: 'Anterior', next: 'Próximo', showing: 'Mostrando', to: 'a', of: 'de', results: 'resultados' }
+    };
+
+    const formatDate = function (dateStr) {
+        if (!dateStr) return '—';
+        try {
+            return new Date(dateStr + 'T00:00:00').toLocaleDateString('pt-BR');
+        } catch (e) { return dateStr; }
+    };
+
+    const statusLabel = { 'agendada': 'Agendada', 'em-andamento': 'Em Andamento', 'concluida': 'Concluída', 'atrasada': 'Atrasada' };
+    const statusBadge = { 'agendada': 'bg-info-subtle text-info', 'em-andamento': 'bg-warning-subtle text-warning', 'concluida': 'bg-success-subtle text-success', 'atrasada': 'bg-danger-subtle text-danger' };
+
+    let gridInstance = null;
+
+    const renderGrid = function (items) {
+        var data = Array.isArray(items) ? items : [];
+        var rows = data
+            .filter(function (item) { return item && item.origem === 'manutencao'; })
+            .map(function (item) {
+                var status = item.status || 'agendada';
+                return [
+                    String(item.id || ''),
+                    item.veiculo_placa || '—',
+                    item.veiculo_modelo || '—',
+                    item.tipo || '—',
+                    formatDate(item.data_prevista),
+                    status,
+                    String(item.id || '')
+                ];
+            });
+
+        var columns = [
+            { name: 'ID', width: '70px', formatter: function (c) { return gridjs.html('<span class="fw-semibold">' + c + '</span>'); } },
+            { name: 'Placa', width: '110px', formatter: function (c) { return gridjs.html('<span class="badge bg-primary-subtle text-primary">' + c + '</span>'); } },
+            { name: 'Modelo', width: '140px' },
+            { name: 'Tipo', width: '100px' },
+            { name: 'Data Prevista', width: '120px' },
+            { name: 'Status', width: '120px', formatter: function (c) {
+                var cls = statusBadge[c] || 'bg-secondary-subtle text-secondary';
+                var label = statusLabel[c] || c;
+                return gridjs.html('<span class="badge ' + cls + '">' + label + '</span>');
+            }},
+            { name: 'Ações', width: '100px', formatter: function (cell, row) {
+                var id = row.cells[0].data;
+                return gridjs.html('<button type="button" class="btn btn-sm btn-outline-primary btn-edit-manutencao" data-id="' + id + '" title="Editar"><iconify-icon icon="iconamoon:edit-duotone" class="fs-18"></iconify-icon> Editar</button>');
+            }}
+        ];
+
+        if (!gridInstance) {
+            gridInstance = new gridjs.Grid({
+                columns: columns,
+                pagination: { limit: 10 },
+                sort: true,
+                search: true,
+                language: ptBR,
+                data: rows
+            });
+            gridInstance.render(tableEl);
+        } else {
+            gridInstance.updateConfig({ data: rows }).forceRender();
         }
     };
 
-    new gridjs.Grid({
-        columns: [
-            {
-                name: 'ID',
-                width: '80px',
-                formatter: (function (cell) {
-                    return gridjs.html('<span class="fw-semibold">' + cell + '</span>');
-                })
-            },
-            {
-                name: 'Veículo',
-                width: '140px'
-            },
-            {
-                name: 'Placa',
-                width: '120px',
-                formatter: (function (cell) {
-                    return gridjs.html('<span class="badge bg-primary-subtle text-primary">' + cell + '</span>');
-                })
-            },
-            {
-                name: 'Início',
-                width: '120px',
-                formatter: (function (cell) {
-                    return gridjs.html('<span class="text-muted">' + cell + '</span>');
-                })
-            },
-            {
-                name: 'Término',
-                width: '120px',
-                formatter: (function (cell) {
-                    return gridjs.html('<span class="text-muted">' + (cell === '—' ? '<span class="text-muted">—</span>' : cell) + '</span>');
-                })
-            },
-            {
-                name: 'Descrição',
-                width: '250px'
-            },
-            {
-                name: 'Status',
-                width: '130px',
-                formatter: (function (cell) {
-                    const badgeClass = cell === 'Ativa' ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success';
-                    return gridjs.html('<span class="badge ' + badgeClass + '">' + cell + '</span>');
-                })
-            },
-            {
-                name: 'Ações',
-                width: '120px',
-                formatter: (function (cell) {
-                    return gridjs.html("<a href='#' class='text-reset text-decoration-underline'>Detalhes</a>");
-                })
-            }
-        ],
-        pagination: {
-            limit: 5
-        },
-        sort: true,
-        search: true,
-        language: ptBR,
-        data: [
-            ["1", "Onix", "ABC-1234", "10/01/2026", "12/01/2026", "Revisão preventiva e troca de óleo", "Finalizada"],
-            ["2", "HB20", "XYZ-5678", "18/01/2026", "—", "Troca de pastilhas de freio", "Ativa"],
-            ["3", "Corolla", "DEF-9012", "22/01/2026", "25/01/2026", "Troca de pneus e alinhamento", "Finalizada"],
-            ["4", "Civic", "GHI-3456", "28/01/2026", "—", "Manutenção elétrica e bateria", "Ativa"],
-            ["5", "Fiesta", "JKL-7890", "05/01/2026", "07/01/2026", "Revisão completa", "Finalizada"],
-            ["6", "Gol", "MNO-2468", "15/01/2026", "17/01/2026", "Troca de correia dentada", "Finalizada"],
-            ["7", "Compass", "PQR-1357", "30/01/2026", "—", "Revisão de suspensão", "Ativa"],
-            ["8", "T-Cross", "STU-8024", "08/01/2026", "10/01/2026", "Troca de filtros", "Finalizada"],
-            ["9", "Renegade", "VWX-4680", "25/01/2026", "—", "Manutenção de ar condicionado", "Ativa"],
-            ["10", "Creta", "YZA-2468", "12/01/2026", "14/01/2026", "Revisão e balanceamento", "Finalizada"]
-        ]
-    }).render(document.getElementById("table-manutencoes"));
-}
+    const loadGrid = function () {
+        fetchJson(getBaseUrl() + 'admin/manutencao-inteligente/listar')
+            .then(function (json) {
+                renderGrid(Array.isArray(json && json.data) ? json.data : []);
+            })
+            .catch(function (err) {
+                console.error('Erro ao carregar manutenções:', err);
+                renderGrid([]);
+            });
+    };
+
+    renderGrid([]);
+    loadGrid();
+    window.addEventListener('manutencao-reload', loadGrid);
+})();
 
 // Modal Nova Manutenção (usa API da Manutenção Inteligente)
 (function () {
@@ -125,6 +134,17 @@ if (document.getElementById("table-manutencoes")) {
         alertEl.classList.remove('d-none');
     };
 
+    const buscarKmAtualVeiculo = async function (veiculoId) {
+        if (!veiculoId || veiculoId < 1) return null;
+        try {
+            const json = await fetchJson(getBaseUrl() + 'admin/manutencao-inteligente/km-atual/' + veiculoId);
+            return json && json.km_atual ? json.km_atual : null;
+        } catch (e) {
+            console.error('Erro ao buscar KM atual do veículo:', e);
+            return null;
+        }
+    };
+
     const carregarVeiculos = async () => {
         try {
             const json = await fetchJson(getBaseUrl() + 'admin/veiculos/listar');
@@ -138,6 +158,18 @@ if (document.getElementById("table-manutencoes")) {
                     opt.textContent = (v.vei_placa || '') + ' - ' + (v.vei_modelo || '');
                     select.appendChild(opt);
                 });
+                
+                // Adicionar listener para buscar KM atual ao selecionar veículo
+                select.addEventListener('change', async function() {
+                    const veiculoId = this.value;
+                    const kmAtualEl = document.getElementById('man_km_atual');
+                    if (veiculoId && kmAtualEl && !kmAtualEl.value) {
+                        const kmAtual = await buscarKmAtualVeiculo(veiculoId);
+                        if (kmAtual !== null) {
+                            kmAtualEl.value = kmAtual;
+                        }
+                    }
+                });
             }
         } catch (e) {
             console.error('Erro ao carregar veículos:', e);
@@ -149,9 +181,67 @@ if (document.getElementById("table-manutencoes")) {
         return window.bootstrap.Modal.getOrCreateInstance(modalEl);
     };
 
+    const titleEl = document.getElementById('modalManutencaoLabel');
+
     const resetForm = () => {
         setAlert('');
         formEl.reset();
+        var idEl = document.getElementById('man_id');
+        if (idEl) idEl.value = '';
+        var triggerTipoEl = document.getElementById('man_trigger_tipo');
+        if (triggerTipoEl) triggerTipoEl.value = 'qualquer';
+        var triggerCheckbox = document.getElementById('man_trigger_qualquer');
+        if (triggerCheckbox) triggerCheckbox.checked = true;
+        if (titleEl) titleEl.textContent = 'Cadastrar manutenção';
+        var span = btnSave && btnSave.querySelector('.btn-text');
+        if (span) span.textContent = 'Adicionar';
+    };
+
+    const fillForm = (m) => {
+        var setVal = function (id, val) {
+            var el = document.getElementById(id);
+            if (el) el.value = val !== undefined && val !== null ? val : '';
+        };
+        setVal('man_id', m.id);
+        setVal('man_veiculo_id', m.man_veiculo_id || m.veiculo_id);
+        setVal('man_tipo', m.man_tipo || m.tipo);
+        setVal('man_data', m.man_data || m.data_prevista);
+        setVal('man_km', m.man_km || m.km_previsto);
+        setVal('man_km_atual', m.man_km_atual || m.km_atual || '');
+        setVal('man_obs', m.man_obs || m.observacoes);
+        
+        // Preencher switch baseado em man_trigger_tipo
+        var triggerTipo = m.man_trigger_tipo || 'qualquer';
+        var triggerCheckbox = document.getElementById('man_trigger_qualquer');
+        var triggerTipoEl = document.getElementById('man_trigger_tipo');
+        if (triggerCheckbox) triggerCheckbox.checked = (triggerTipo === 'qualquer');
+        if (triggerTipoEl) triggerTipoEl.value = triggerTipo;
+        
+        if (titleEl) titleEl.textContent = 'Editar manutenção';
+        var span = btnSave && btnSave.querySelector('.btn-text');
+        if (span) span.textContent = 'Salvar alterações';
+    };
+
+    const openEdit = function (id) {
+        if (!id) return;
+        resetForm();
+        btnSave.disabled = true;
+        var span = btnSave.querySelector('.btn-text');
+        if (span) span.textContent = 'Carregando...';
+        fetchJson(getBaseUrl() + 'admin/manutencao-inteligente/editar/' + id)
+            .then(function (json) {
+                if (json && json.data) fillForm(json.data);
+                getBsModal().show();
+            })
+            .catch(function (e) {
+                setAlert(e.message || 'Erro ao carregar manutenção.');
+                getBsModal().show();
+            })
+            .finally(function () {
+                btnSave.disabled = false;
+                span = btnSave.querySelector('.btn-text');
+                if (span) span.textContent = document.getElementById('man_id').value ? 'Salvar alterações' : 'Adicionar';
+            });
     };
 
     const submit = async () => {
@@ -165,29 +255,52 @@ if (document.getElementById("table-manutencoes")) {
             }
         }
 
+        const id = document.getElementById('man_id').value || '';
+        
+        // Atualizar campo hidden man_trigger_tipo baseado no checkbox
+        const triggerCheckbox = document.getElementById('man_trigger_qualquer');
+        const triggerTipoEl = document.getElementById('man_trigger_tipo');
+        if (triggerCheckbox && triggerTipoEl) {
+            triggerTipoEl.value = triggerCheckbox.checked ? 'qualquer' : 'data';
+        }
+        
         const fd = new FormData(formEl);
         btnSave.disabled = true;
         const span = btnSave.querySelector('.btn-text');
         if (span) span.textContent = 'Salvando...';
 
         try {
-            await fetchJson(getBaseUrl() + 'admin/manutencao-inteligente/criar', { method: 'POST', body: fd });
+            const url = id
+                ? getBaseUrl() + 'admin/manutencao-inteligente/atualizar/' + id
+                : getBaseUrl() + 'admin/manutencao-inteligente/criar';
+            await fetchJson(url, { method: 'POST', body: fd });
             getBsModal().hide();
             resetForm();
             if (typeof window.toastr !== 'undefined') {
-                window.toastr.success('Manutenção cadastrada com sucesso.');
+                window.toastr.success(id ? 'Manutenção atualizada com sucesso.' : 'Manutenção cadastrada com sucesso.');
             } else {
-                alert('Manutenção cadastrada com sucesso.');
+                alert(id ? 'Manutenção atualizada com sucesso.' : 'Manutenção cadastrada com sucesso.');
             }
+            window.dispatchEvent(new CustomEvent('manutencao-reload'));
         } catch (e) {
             setAlert(e.message || 'Erro ao salvar manutenção.');
         } finally {
             btnSave.disabled = false;
-            if (span) span.textContent = 'Adicionar';
+            if (span) span.textContent = id ? 'Salvar alterações' : 'Adicionar';
         }
     };
 
-    modalEl.addEventListener('shown.bs.modal', resetForm);
+    document.addEventListener('click', function (e) {
+        var btn = e.target && e.target.closest && e.target.closest('.btn-edit-manutencao');
+        if (btn) {
+            e.preventDefault();
+            var id = btn.getAttribute('data-id');
+            if (id) openEdit(id);
+        }
+    });
+
+    var btnAdd = document.getElementById('btn-add-manutencao');
+    if (btnAdd) btnAdd.addEventListener('click', resetForm);
     modalEl.addEventListener('hidden.bs.modal', resetForm);
     btnSave.addEventListener('click', submit);
 

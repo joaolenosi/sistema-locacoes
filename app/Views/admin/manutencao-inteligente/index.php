@@ -284,9 +284,26 @@
                             <input type="number" class="form-control" id="man_km" name="man_km" placeholder="Ex.: 50000" min="0">
                         </div>
 
+                        <div class="col-md-6">
+                            <label class="form-label" for="man_km_atual">KM Atual</label>
+                            <input type="number" class="form-control" id="man_km_atual" name="man_km_atual" placeholder="Ex.: 45000" min="0">
+                            <small class="text-muted">KM atual do veículo (será buscada automaticamente do histórico se não informada)</small>
+                        </div>
+
                         <div class="col-12">
                             <label class="form-label" for="man_obs">Observações</label>
                             <textarea class="form-control" id="man_obs" name="man_obs" rows="3" placeholder="Observações sobre a manutenção..."></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="man_trigger_qualquer" name="man_trigger_qualquer" checked>
+                                <label class="form-check-label" for="man_trigger_qualquer">
+                                    Qualquer um que atingir primeiro (Data OU KM)
+                                </label>
+                            </div>
+                            <small class="text-muted">Se desmarcado, alertará apenas quando a data prevista passar</small>
+                            <input type="hidden" id="man_trigger_tipo" name="man_trigger_tipo" value="qualquer">
                         </div>
                     </div>
                 </form>

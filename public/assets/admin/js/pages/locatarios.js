@@ -79,11 +79,15 @@
       },
       {
         name: "Ações",
-        width: "120px",
+        width: "160px",
         formatter: (_cell, row) => {
           const id = row.cells[0].data;
+          const base = (window.__BASE_URL__ || "").replace(/\/$/, "") + "/";
           return gridjs.html(`
             <div class="d-flex gap-2">
+              <a href="${base}admin/locatarios/detalhes/${id}" class="btn btn-sm btn-outline-secondary" title="Detalhes">
+                <iconify-icon icon="iconamoon:info-circle-duotone" class="fs-18"></iconify-icon>
+              </a>
               <button type="button" class="btn btn-sm btn-outline-primary btn-edit-locatario" data-id="${id}" title="Editar">
                 <iconify-icon icon="iconamoon:edit-duotone" class="fs-18"></iconify-icon>
               </button>

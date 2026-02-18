@@ -19,6 +19,8 @@ class ManutencaoModel extends Model
         'man_locacao_id',
         'man_data',
         'man_km',
+        'man_km_atual',
+        'man_trigger_tipo',
         'man_tipo',
         'man_status',
         'man_total',
