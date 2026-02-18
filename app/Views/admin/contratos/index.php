@@ -1,3 +1,4 @@
+<?php helper('asset'); ?>
 <?= $this->extend('admin/layout') ?>
 
 <?= $this->section('content') ?>
@@ -313,10 +314,10 @@
 <script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
 
 <!-- Gridjs Contratos js -->
-<script src="<?= base_url('assets/admin/js/pages/contratos.js') ?>"></script>
+<script src="<?= asset_url('assets/admin/js/pages/contratos.js') ?>"></script>
 
 <!-- Contratos Modelos js (Quill + variáveis) -->
-<script src="<?= base_url('assets/admin/js/pages/contratos-modelos.js') ?>"></script>
+<script src="<?= asset_url('assets/admin/js/pages/contratos-modelos.js') ?>"></script>
 
 <script>
 // Dados do controller para a tabela "Meus contratos"

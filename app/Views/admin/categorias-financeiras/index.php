@@ -1,3 +1,4 @@
+<?php helper('asset'); ?>
 <?= $this->extend('admin/layout') ?>
 
 <?= $this->section('content') ?>
@@ -186,7 +187,7 @@
 <script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
 
 <!-- Gridjs Categorias Financeiras js -->
-<script src="<?= base_url('assets/admin/js/pages/categorias-financeiras.js') ?>"></script>
+<script src="<?= asset_url('assets/admin/js/pages/categorias-financeiras.js') ?>"></script>
 
 <!-- Script para controle de filtros -->
 <script>

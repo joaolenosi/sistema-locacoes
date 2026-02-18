@@ -58,6 +58,11 @@ class Servicos extends BaseController
     public function criar()
     {
         try {
+            $empresaId = get_empresa_id();
+            if ($empresaId < 1) {
+                return $this->response->setStatusCode(401)->setJSON(['success' => false, 'message' => 'Sessão inválida. Faça login novamente.']);
+            }
+
             $payload = (array) $this->request->getPost();
             $data = $this->normalizeServicoPayload($payload);
             $err = $this->validateServicoPayload($data);
@@ -65,16 +70,24 @@ class Servicos extends BaseController
                 return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => $err]);
             }
 
-            $data['ser_empresa_id'] = get_empresa_id();
+            $data['ser_empresa_id'] = $empresaId;
 
             $servicoModel = new ServicoModel();
             $id = $servicoModel->insert($data, true);
             if (!$id) {
+                $errors = $servicoModel->errors();
+                if ($errors) {
+                    log_message('error', 'Erros de validação ao cadastrar serviço: ' . json_encode($errors));
+                    return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => 'Erro de validação: ' . implode(', ', $errors)]);
+                }
+                log_message('error', 'Falha ao inserir serviço no banco de dados. Dados: ' . json_encode($data));
                 return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Não foi possível cadastrar o serviço.']);
             }
 
             return $this->response->setJSON(['success' => true, 'message' => 'Serviço cadastrado com sucesso.', 'id' => $id]);
         } catch (\Throwable $e) {
+            log_message('error', 'Erro ao cadastrar serviço: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
             return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Erro ao cadastrar serviço.']);
         }
     }
