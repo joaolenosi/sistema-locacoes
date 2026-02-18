@@ -404,7 +404,7 @@ window.__LOCACOES_BOOTSTRAP__ = {
           <div class="row g-3 mb-3">
             <div class="col-md-6">
               <label for="loc_status" class="form-label">
-                Status   sz
+                Status
                 <button type="button" class="btn btn-link p-0 ms-1" style="vertical-align: middle; text-decoration: none;" data-bs-toggle="modal" data-bs-target="#modalAjudaStatus" title="Ajuda sobre status">
                   <iconify-icon icon="iconamoon:question-duotone" class="text-primary" style="font-size: 18px;"></iconify-icon>
                 </button>

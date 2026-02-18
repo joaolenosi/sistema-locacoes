@@ -14,7 +14,7 @@
     <script src="<?= asset_url('assets/admin/js/config.js') ?>"></script>
     <style>
         body.login-page { background-color: #e9ecef; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
-        .login-card { max-width: 420px; width: 100%; }
+        .login-card { max-width: 480px; width: 100%; }
     </style>
 </head>
 <body class="login-page">
@@ -25,8 +25,8 @@
                     <img src="<?= asset_url('assets/admin/images/logo-rentix-car.png') ?>" height="60" alt="Rentix Car" style="max-width: 100%;" />
                 </a>
             </div>
-            <h4 class="text-center fw-semibold mb-1">Entrar</h4>
-            <p class="text-muted text-center mb-4">Telefone e senha</p>
+            <h3 class="text-center fw-semibold mb-1">Seja bem vindo ao sistema de locações</h3>
+            <p class="text-muted text-center mb-4">Informe seu telefone e senha para acessar o sistema</p>
 
             <?php if (session()->getFlashdata('error')): ?>
             <div class="alert alert-danger mb-3" role="alert">

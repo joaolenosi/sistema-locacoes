@@ -218,6 +218,11 @@
   };
 
   const renderGrid = (items) => {
+    // Garantir que items seja um array válido
+    if (!Array.isArray(items)) {
+      items = [];
+    }
+    
     const rows = toGridRows(items);
 
     const columns = [
@@ -261,26 +266,58 @@
     ];
 
     if (!grid) {
-      grid = new gridjs.Grid({
-        columns,
-        pagination: { limit: 5 },
-        sort: true,
-        search: true,
-        language: ptBR,
-        data: rows,
-      }).render(tableEl);
+      try {
+        // GridJS precisa de pelo menos uma linha vazia se não houver dados
+        const gridData = rows.length > 0 ? rows : [];
+        
+        grid = new gridjs.Grid({
+          columns,
+          pagination: { limit: 5 },
+          sort: true,
+          search: true,
+          language: ptBR,
+          data: gridData,
+        }).render(tableEl);
 
-      setupFiltrosUI();
-      return;
+        setupFiltrosUI();
+        return;
+      } catch (error) {
+        console.error('Erro ao renderizar grid:', error);
+        if (tableEl) {
+          tableEl.innerHTML = '<div class="alert alert-danger">Erro ao carregar a tabela. Por favor, recarregue a página.</div>';
+        }
+        return;
+      }
     }
 
-    grid.updateConfig({ columns, data: rows }).forceRender();
+    try {
+      const gridData = rows.length > 0 ? rows : [];
+      grid.updateConfig({ columns, data: gridData }).forceRender();
+    } catch (error) {
+      console.error('Erro ao atualizar grid:', error);
+      // Tentar recriar o grid em caso de erro
+      try {
+        grid = null;
+        renderGrid(items);
+      } catch (retryError) {
+        console.error('Erro ao tentar recriar grid:', retryError);
+        if (tableEl) {
+          tableEl.innerHTML = '<div class="alert alert-danger">Erro ao atualizar a tabela. Por favor, recarregue a página.</div>';
+        }
+      }
+    }
   };
 
   const reload = async () => {
-    const json = await fetchJson(`${getBaseUrl()}admin/locacoes/listar`);
-    allData = json.data || [];
-    applyFilters();
+    try {
+      const json = await fetchJson(`${getBaseUrl()}admin/locacoes/listar`);
+      allData = Array.isArray(json.data) ? json.data : [];
+      applyFilters();
+    } catch (error) {
+      console.error('Erro ao recarregar dados:', error);
+      allData = [];
+      applyFilters();
+    }
   };
 
   // Funções auxiliares para buscar relacionamentos
@@ -848,7 +885,15 @@
   window.abrirModalEscolherLocatario = () => openLocatarioLookup();
 
   // boot
-  setupMasks();
-  updateKpis(allData);
-  renderGrid(allData);
+  try {
+    setupMasks();
+    updateKpis(allData);
+    // Garantir que allData seja um array válido antes de renderizar
+    renderGrid(Array.isArray(allData) ? allData : []);
+  } catch (error) {
+    console.error('Erro na inicialização:', error);
+    if (tableEl) {
+      tableEl.innerHTML = '<div class="alert alert-danger">Erro ao inicializar a tabela. Por favor, recarregue a página.</div>';
+    }
+  }
 })();
