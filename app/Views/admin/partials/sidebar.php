@@ -7,7 +7,7 @@
                 src="<?= asset_url('assets/admin/images/logo-rentix-car.png') ?>"
                 class="logo-lg"
                 alt="Rentix Car"
-                style="max-width: 100%; height: auto;"
+                style="max-width:80%; height: auto;"
             />
         </a>
 
