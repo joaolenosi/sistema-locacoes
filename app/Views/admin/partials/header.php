@@ -15,7 +15,7 @@ if (!function_exists('empresa_iniciais')) {
         <div class="navbar-header">
             <div class="d-flex align-items-center gap-2">
                             <!-- Logo -->
-                            <div class="topbar-item d-none d-md-block">
+                            <!-- <div class="topbar-item d-none d-md-block">
                                 <a href="<?= base_url() ?>" class="text-decoration-none">
                                     <img
                                         src="<?= asset_url('assets/admin/images/logo-rentix-car.png') ?>"
@@ -25,7 +25,7 @@ if (!function_exists('empresa_iniciais')) {
                                     />
                                 </a>
                             </div>
-                            
+                             -->
                             <!-- Menu Toggle Button -->
                             <div class="topbar-item">
                                 <button type="button" class="button-toggle-menu">

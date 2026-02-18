@@ -10,15 +10,7 @@
                 style="max-width:80%; height: auto;"
             />
         </a>
-
-    <!--     <a href="<?= base_url() ?>" class="logo-light">
-            <img
-                src="<?= asset_url('assets/admin/images/logo-rentix-car.png') ?>"
-                class="logo-lg"
-                alt="Rentix Car"
-                style="max-width: 100%; height: auto;"
-            />
-        </a> -->
+ 
     </div>
 
     <!-- Menu Toggle Button (sm-hover) -->
@@ -219,7 +211,7 @@
             </li>
 
             <li class="nav-item">
-                <a class="nav-link" href="<?= base_url('admin/logout') ?>">
+                <a class="nav-link" href="<?= base_url('logout') ?>">
                     <span class="nav-icon">
                         <iconify-icon
                             icon="iconamoon:lock-duotone"
