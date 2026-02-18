@@ -3,7 +3,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8" />
-    <title><?= esc($title ?? 'Login') ?> | Sistema Agenda Miau</title>
+    <title><?= esc($title ?? 'Login') ?> | Sistema de Locações</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
@@ -40,9 +40,15 @@
                     <label class="form-label" for="telefone">Telefone</label>
                     <input type="text" id="telefone" name="telefone" class="form-control" placeholder="(00) 00000-0000" value="<?= esc(old('telefone')) ?>" required autofocus />
                 </div>
-                <div class="mb-4">
+                <div class="mb-3">
                     <label class="form-label" for="senha">Senha</label>
                     <input type="password" id="senha" name="senha" class="form-control" placeholder="Senha" required />
+                </div>
+                <div class="mb-4">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="lembrar" name="lembrar" />
+                        <label class="form-check-label" for="lembrar">Lembrar-me</label>
+                    </div>
                 </div>
                 <button class="btn btn-primary w-100" type="submit">Entrar</button>
             </form>
@@ -53,17 +59,79 @@
     <script src="<?= base_url('assets/admin/js/app.js') ?>"></script>
     <script>
     (function() {
-        var el = document.getElementById('telefone');
-        if (!el) return;
-        function getDigits(s) { return String(s || '').replace(/\D/g, ''); }
-        function mask() {
-            var d = getDigits(el.value).slice(0, 11);
-            if (d.length > 10) el.value = '(' + d.slice(0,2) + ') ' + d.slice(2,7) + '-' + d.slice(7);
-            else if (d.length > 6) el.value = '(' + d.slice(0,2) + ') ' + d.slice(2,6) + '-' + d.slice(6);
-            else if (d.length > 2) el.value = '(' + d.slice(0,2) + ') ' + d.slice(2);
-            else el.value = d.length ? '(' + d : '';
+        var telefoneEl = document.getElementById('telefone');
+        var senhaEl = document.getElementById('senha');
+        var lembrarEl = document.getElementById('lembrar');
+        var formEl = document.querySelector('form');
+        
+        if (!telefoneEl) return;
+        
+        // Função para obter apenas dígitos
+        function getDigits(s) { 
+            return String(s || '').replace(/\D/g, ''); 
         }
-        el.addEventListener('input', mask);
+        
+        // Função para aplicar máscara no telefone
+        function mask() {
+            var d = getDigits(telefoneEl.value).slice(0, 11);
+            if (d.length > 10) {
+                telefoneEl.value = '(' + d.slice(0,2) + ') ' + d.slice(2,7) + '-' + d.slice(7);
+            } else if (d.length > 6) {
+                telefoneEl.value = '(' + d.slice(0,2) + ') ' + d.slice(2,6) + '-' + d.slice(6);
+            } else if (d.length > 2) {
+                telefoneEl.value = '(' + d.slice(0,2) + ') ' + d.slice(2);
+            } else {
+                telefoneEl.value = d.length ? '(' + d : '';
+            }
+        }
+        
+        // Carregar dados salvos ao carregar a página
+        function carregarDadosSalvos() {
+            try {
+                var telefoneSalvo = localStorage.getItem('login_telefone');
+                var lembrarSalvo = localStorage.getItem('login_lembrar');
+                
+                if (telefoneSalvo && lembrarSalvo === 'true') {
+                    telefoneEl.value = telefoneSalvo;
+                    if (lembrarEl) {
+                        lembrarEl.checked = true;
+                    }
+                    // Focar no campo de senha se o telefone já estiver preenchido
+                    if (senhaEl) {
+                        senhaEl.focus();
+                    }
+                }
+            } catch (e) {
+                console.error('Erro ao carregar dados salvos:', e);
+            }
+        }
+        
+        // Salvar dados quando o formulário for enviado
+        function salvarDados() {
+            try {
+                if (lembrarEl && lembrarEl.checked) {
+                    localStorage.setItem('login_telefone', telefoneEl.value);
+                    localStorage.setItem('login_lembrar', 'true');
+                } else {
+                    localStorage.removeItem('login_telefone');
+                    localStorage.removeItem('login_lembrar');
+                }
+            } catch (e) {
+                console.error('Erro ao salvar dados:', e);
+            }
+        }
+        
+        // Event listeners
+        telefoneEl.addEventListener('input', mask);
+        
+        if (formEl) {
+            formEl.addEventListener('submit', function(e) {
+                salvarDados();
+            });
+        }
+        
+        // Carregar dados ao inicializar
+        carregarDadosSalvos();
     })();
     </script>
 </body>
