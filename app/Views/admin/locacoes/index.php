@@ -117,6 +117,30 @@
         margin-bottom: 0;
         font-size: 0.875rem;
     }
+    
+    /* Estilo para botão de ajuda do status */
+    .form-label .btn-link {
+        display: inline-flex;
+        align-items: center;
+        padding: 0;
+        margin-left: 0.25rem;
+        vertical-align: middle;
+        border: none;
+        background: none;
+        cursor: pointer;
+        transition: opacity 0.2s ease;
+    }
+    
+    .form-label .btn-link:hover {
+        opacity: 0.7;
+    }
+    
+    .form-label .btn-link:focus {
+        box-shadow: none;
+        outline: 2px solid rgba(13, 110, 253, 0.25);
+        outline-offset: 2px;
+        border-radius: 4px;
+    }
 
     /* Cards resumo (Locações) */
     .loc-kpi-card {
@@ -379,7 +403,12 @@ window.__LOCACOES_BOOTSTRAP__ = {
 
           <div class="row g-3 mb-3">
             <div class="col-md-6">
-              <label for="loc_status" class="form-label">Status</label>
+              <label for="loc_status" class="form-label">
+                Status
+                <button type="button" class="btn btn-link p-0 ms-1" style="vertical-align: middle; text-decoration: none;" data-bs-toggle="modal" data-bs-target="#modalAjudaStatus" title="Ajuda sobre status">
+                  <iconify-icon icon="iconamoon:question-duotone" class="text-primary" style="font-size: 18px;"></iconify-icon>
+                </button>
+              </label>
               <select class="form-select" id="loc_status" name="loc_status">
                 <option value="reservada">Reservada</option>
                 <option value="ativa">Ativa</option>
@@ -461,6 +490,102 @@ window.__LOCACOES_BOOTSTRAP__ = {
           </div>
         </div>
         <div id="table-escolher-locatario"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Ajuda sobre Status -->
+<div class="modal fade" id="modalAjudaStatus" tabindex="-1" aria-labelledby="modalAjudaStatusLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalAjudaStatusLabel">
+          <iconify-icon icon="iconamoon:question-duotone" class="text-primary"></iconify-icon>
+          Ajuda sobre Status de Locação
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-4">
+          <p class="text-muted">Entenda quando usar cada status e como eles ajudam a gerenciar suas locações:</p>
+        </div>
+
+        <div class="list-group">
+          <div class="list-group-item">
+            <div class="d-flex w-100 justify-content-between align-items-start mb-2">
+              <h6 class="mb-1">
+                <span class="badge bg-info text-dark me-2">Reservada</span>
+                Reservada
+              </h6>
+            </div>
+            <p class="mb-1"><strong>Quando usar:</strong> Use este status quando um cliente fez uma reserva, mas ainda não retirou o veículo.</p>
+            <small class="text-muted">Exemplo: Cliente fez o pagamento antecipado ou deixou um sinal, mas a locação ainda não começou oficialmente.</small>
+          </div>
+
+          <div class="list-group-item">
+            <div class="d-flex w-100 justify-content-between align-items-start mb-2">
+              <h6 class="mb-1">
+                <span class="badge bg-success me-2">Ativa</span>
+                Ativa
+              </h6>
+            </div>
+            <p class="mb-1"><strong>Quando usar:</strong> Use este status quando o veículo foi retirado pelo cliente e a locação está em andamento normalmente.</p>
+            <small class="text-muted">Exemplo: Cliente retirou o veículo, está dentro do prazo de devolução e não há problemas pendentes.</small>
+          </div>
+
+          <div class="list-group-item">
+            <div class="d-flex w-100 justify-content-between align-items-start mb-2">
+              <h6 class="mb-1">
+                <span class="badge bg-warning text-dark me-2">Atrasada</span>
+                Atrasada
+              </h6>
+            </div>
+            <p class="mb-1"><strong>Quando usar:</strong> Use este status quando a data de devolução prevista já passou, mas o cliente ainda não devolveu o veículo.</p>
+            <small class="text-muted">Exemplo: A locação deveria ter terminado ontem, mas o veículo ainda não foi devolvido. Pode haver cobrança de multa por atraso.</small>
+          </div>
+
+          <div class="list-group-item">
+            <div class="d-flex w-100 justify-content-between align-items-start mb-2">
+              <h6 class="mb-1">
+                <span class="badge bg-danger me-2">Inadimplente</span>
+                Inadimplente
+              </h6>
+            </div>
+            <p class="mb-1"><strong>Quando usar:</strong> Use este status quando o cliente está com pagamentos em atraso ou não está cumprindo as obrigações contratuais.</p>
+            <small class="text-muted">Exemplo: Cliente não pagou as mensalidades, multas ou está com pendências financeiras relacionadas à locação.</small>
+          </div>
+
+          <div class="list-group-item">
+            <div class="d-flex w-100 justify-content-between align-items-start mb-2">
+              <h6 class="mb-1">
+                <span class="badge bg-secondary me-2">Finalizada</span>
+                Finalizada
+              </h6>
+            </div>
+            <p class="mb-1"><strong>Quando usar:</strong> Use este status quando a locação foi concluída com sucesso, o veículo foi devolvido e todos os pagamentos foram quitados.</p>
+            <small class="text-muted">Exemplo: Cliente devolveu o veículo, todos os valores foram pagos e não há pendências. A locação foi encerrada normalmente.</small>
+          </div>
+
+          <div class="list-group-item">
+            <div class="d-flex w-100 justify-content-between align-items-start mb-2">
+              <h6 class="mb-1">
+                <span class="badge bg-dark me-2">Cancelada</span>
+                Cancelada
+              </h6>
+            </div>
+            <p class="mb-1"><strong>Quando usar:</strong> Use este status quando a locação foi cancelada antes de ser concluída, seja por desistência do cliente ou por outros motivos.</p>
+            <small class="text-muted">Exemplo: Cliente desistiu antes de retirar o veículo, ou houve algum problema que impediu a locação de prosseguir.</small>
+          </div>
+        </div>
+
+        <div class="alert alert-info mt-4 mb-0">
+          <iconify-icon icon="iconamoon:info-duotone"></iconify-icon>
+          <strong>Dica:</strong> O status pode ser alterado a qualquer momento durante o ciclo de vida da locação para refletir a situação atual.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendi</button>
       </div>
     </div>
   </div>
