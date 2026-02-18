@@ -336,7 +336,7 @@ class ManutencaoInteligente extends BaseController
                 ->first();
 
             if ($manutencao) {
-                // Origem = manutencao: apenas finalizar o registro
+                // Origem = manutencao: finalizar o registro e, se solicitado, criar a próxima manutenção
                 $ok = $manutencaoModel->update($id, [
                     'man_status' => 'finalizada',
                     'man_data' => $dataRealizacao,
@@ -345,6 +345,29 @@ class ManutencaoInteligente extends BaseController
                 if (!$ok) {
                     return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Não foi possível marcar a manutenção como realizada.']);
                 }
+
+                // Se marcou "agendar a próxima", criar nova manutenção aberta
+                if ($atualizarProxima === 1) {
+                    $intervaloKm = 10000; // padrão 10.000 km para próxima revisão
+                    $proximoKm = $kmAtual + $intervaloKm;
+                    $dataRealizacaoObj = new \DateTime($dataRealizacao);
+                    $dataRealizacaoObj->modify('+1 year');
+                    $proximaDataPrevista = $dataRealizacaoObj->format('Y-m-d');
+
+                    $novaManutencao = [
+                        'man_empresa_id' => $empresaId,
+                        'man_veiculo_id' => $manutencao['man_veiculo_id'],
+                        'man_data' => $proximaDataPrevista,
+                        'man_km' => $proximoKm,
+                        'man_km_atual' => $kmAtual,
+                        'man_trigger_tipo' => $manutencao['man_trigger_tipo'] ?? 'qualquer',
+                        'man_tipo' => $manutencao['man_tipo'] ?? 'preventiva',
+                        'man_status' => 'aberta',
+                        'man_obs' => 'Agendada automaticamente ao completar manutenção anterior.',
+                    ];
+                    $manutencaoModel->insert($novaManutencao);
+                }
+
                 return $this->response->setJSON(['success' => true, 'message' => 'Manutenção marcada como realizada.']);
             }
 
