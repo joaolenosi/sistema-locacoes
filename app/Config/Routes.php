@@ -26,6 +26,8 @@ $routes->get('admin/locacoes/listar', 'Locoes::listar');
 $routes->post('admin/locacoes/criar', 'Locoes::criar');
 $routes->get('admin/locacoes/editar/(:num)', 'Locoes::editar/$1');
 $routes->post('admin/locacoes/atualizar/(:num)', 'Locoes::atualizar/$1');
+$routes->get('admin/locacoes/veiculos-por-cliente/(:num)', 'Locoes::veiculosPorCliente/$1');
+$routes->get('admin/locacoes/cliente-por-veiculo/(:num)', 'Locoes::clientePorVeiculo/$1');
 $routes->get('admin/contratos', 'Contratos::index');
 $routes->get('admin/cobrancas', 'Cobrancas::index');
 $routes->get('admin/financeiro', 'Financeiro::index');

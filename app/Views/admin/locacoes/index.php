@@ -136,6 +136,13 @@
         align-items: center;
         justify-content: center;
     }
+
+    /* Campos readonly com aparência de desabilitados */
+    #loc_cli_display[readonly],
+    #loc_vei_display[readonly] {
+        background-color: #e9ecef !important;
+        cursor: not-allowed;
+    }
 </style>
 
 <!-- ========== Page Title Start ========== -->
@@ -326,7 +333,7 @@ window.__LOCACOES_BOOTSTRAP__ = {
               <input type="text" class="form-control money" id="loc_valor_locacao" name="loc_valor_locacao" placeholder="0,00" required>
             </div>
             <div class="col-md-6">
-              <label for="loc_valor_caucao" class="form-label">Valor da caução</label>
+              <label for="loc_valor_caucao" class="form-label">Valor do caução</label>
               <input type="text" class="form-control money" id="loc_valor_caucao" name="loc_valor_caucao" placeholder="0,00">
             </div>
           </div>

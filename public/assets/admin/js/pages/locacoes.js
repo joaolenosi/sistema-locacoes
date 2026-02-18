@@ -283,6 +283,29 @@
     applyFilters();
   };
 
+  // Funções auxiliares para buscar relacionamentos
+  const buscarVeiculosPorCliente = async (cliId) => {
+    if (!cliId) return [];
+    try {
+      const json = await fetchJson(`${getBaseUrl()}admin/locacoes/veiculos-por-cliente/${cliId}`);
+      return json.data || [];
+    } catch (e) {
+      console.warn("Erro ao buscar veículos do cliente:", e);
+      return [];
+    }
+  };
+
+  const buscarClientePorVeiculo = async (veiId) => {
+    if (!veiId) return null;
+    try {
+      const json = await fetchJson(`${getBaseUrl()}admin/locacoes/cliente-por-veiculo/${veiId}`);
+      return json.data || null;
+    } catch (e) {
+      console.warn("Erro ao buscar cliente do veículo:", e);
+      return null;
+    }
+  };
+
   const resetLocacaoForm = () => {
     const form = document.getElementById("formLocacao");
     form?.reset();
@@ -476,6 +499,22 @@
         language: ptBR,
         data: rows,
       }).render(el);
+      
+      // Adicionar event listener após o grid ser renderizado
+      setTimeout(() => {
+        const gridContainer = el.querySelector('.gridjs-wrapper');
+        if (gridContainer) {
+          gridContainer.addEventListener('click', (e) => {
+            const btn = e.target?.closest?.('.btn-select-veiculo');
+            if (btn) {
+              e.preventDefault();
+              e.stopPropagation();
+              const id = btn.getAttribute('data-id');
+              if (id) selectVeiculoById(id);
+            }
+          });
+        }
+      }, 100);
       return;
     }
     gridVeiculos.updateConfig({ columns, data: rows }).forceRender();
@@ -527,6 +566,22 @@
         language: ptBR,
         data: rows,
       }).render(el);
+      
+      // Adicionar event listener após o grid ser renderizado
+      setTimeout(() => {
+        const gridContainer = el.querySelector('.gridjs-wrapper');
+        if (gridContainer) {
+          gridContainer.addEventListener('click', (e) => {
+            const btn = e.target?.closest?.('.btn-select-locatario');
+            if (btn) {
+              e.preventDefault();
+              e.stopPropagation();
+              const id = btn.getAttribute('data-id');
+              if (id) selectLocatarioById(id);
+            }
+          });
+        }
+      }, 100);
       return;
     }
     gridLocatarios.updateConfig({ columns, data: rows }).forceRender();
@@ -569,14 +624,33 @@
     const modalEl = document.getElementById("modalEscolherVeiculo");
     if (!modalEl) return;
 
-    if (!veiculosData) {
-      const json = await fetchJson(`${getBaseUrl()}admin/veiculos/listar`);
-      veiculosData = json.data || [];
+    const cliId = document.getElementById("loc_cli_id")?.value;
+    let veiculosParaExibir = [];
+
+    if (cliId && cliId.trim() !== "") {
+      // Se há locatário selecionado, buscar apenas veículos desse cliente
+      veiculosParaExibir = await buscarVeiculosPorCliente(cliId);
+      
+      // Se não houver veículos no histórico, buscar todos os veículos disponíveis
+      if (veiculosParaExibir.length === 0) {
+        if (!veiculosData) {
+          const json = await fetchJson(`${getBaseUrl()}admin/veiculos/listar`);
+          veiculosData = json.data || [];
+        }
+        veiculosParaExibir = veiculosData || [];
+      }
+    } else {
+      // Se não há locatário selecionado, buscar todos os veículos
+      if (!veiculosData) {
+        const json = await fetchJson(`${getBaseUrl()}admin/veiculos/listar`);
+        veiculosData = json.data || [];
+      }
+      veiculosParaExibir = veiculosData || [];
     }
 
     document.getElementById("filtro-veiculo-geral").value = "";
     document.getElementById("filtro-veiculo-status").value = "";
-    renderVeiculosGrid(veiculosData);
+    renderVeiculosGrid(veiculosParaExibir);
     bootstrap.Modal.getOrCreateInstance(modalEl).show();
   };
 
@@ -595,26 +669,106 @@
     bootstrap.Modal.getOrCreateInstance(modalEl).show();
   };
 
-  const selectVeiculoById = (id) => {
-    const v = (veiculosData || []).find((x) => String(x.id) === String(id));
-    if (!v) return;
+  const selectVeiculoById = async (id) => {
+    if (!id) return;
+    
+    // Buscar veículo - tentar primeiro nos dados já carregados, depois via API
+    let v = (veiculosData || []).find((x) => String(x.id) === String(id));
+    
+    // Se não encontrou nos dados locais, buscar via API
+    if (!v) {
+      try {
+        const json = await fetchJson(`${getBaseUrl()}admin/veiculos/listar`);
+        const allVeiculos = json.data || [];
+        v = allVeiculos.find((x) => String(x.id) === String(id));
+        // Atualizar cache
+        if (!veiculosData) veiculosData = allVeiculos;
+      } catch (e) {
+        console.warn("Erro ao buscar veículo:", e);
+      }
+    }
+
+    if (!v) {
+      console.warn("Veículo não encontrado com ID:", id);
+      return;
+    }
 
     document.getElementById("loc_vei_id").value = v.id;
     document.getElementById("loc_vei_display").value = `${v.vei_placa || ""} - ${v.vei_modelo || ""}`.trim();
 
     const modalEl = document.getElementById("modalEscolherVeiculo");
     bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+
+    // Buscar cliente que locou esse veículo e preencher automaticamente
+    // Mas só se o locatário ainda não estiver preenchido
+    const cliIdEl = document.getElementById("loc_cli_id");
+    if (!cliIdEl || !cliIdEl.value || cliIdEl.value.trim() === "") {
+      const cliente = await buscarClientePorVeiculo(id);
+      if (cliente) {
+        const cliDisplayEl = document.getElementById("loc_cli_display");
+        if (cliIdEl) cliIdEl.value = cliente.id;
+        if (cliDisplayEl) {
+          const displayText = `${cliente.cli_nome || ""} (${formatCpfCnpj(cliente.cli_cpf_cnpj || "")})`.trim();
+          cliDisplayEl.value = displayText;
+        }
+      }
+    }
   };
 
-  const selectLocatarioById = (id) => {
+  const selectLocatarioById = async (id) => {
+    if (!id) return;
+    
     const c = (locatariosData || []).find((x) => String(x.id) === String(id));
-    if (!c) return;
+    if (!c) {
+      console.warn("Locatário não encontrado com ID:", id);
+      return;
+    }
 
-    document.getElementById("loc_cli_id").value = c.id;
-    document.getElementById("loc_cli_display").value = `${c.cli_nome || ""} (${formatCpfCnpj(c.cli_cpf_cnpj)})`.trim();
+    const cliIdEl = document.getElementById("loc_cli_id");
+    const cliDisplayEl = document.getElementById("loc_cli_display");
+    
+    if (cliIdEl) cliIdEl.value = c.id;
+    if (cliDisplayEl) {
+      const displayText = `${c.cli_nome || ""} (${formatCpfCnpj(c.cli_cpf_cnpj || "")})`.trim();
+      cliDisplayEl.value = displayText;
+    }
 
     const modalEl = document.getElementById("modalEscolherLocatario");
-    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+    if (modalEl && window.bootstrap?.Modal) {
+      const modal = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.hide();
+    }
+
+    // Buscar veículos desse cliente e selecionar automaticamente o primeiro
+    const veiculosDoCliente = await buscarVeiculosPorCliente(id);
+    if (veiculosDoCliente && veiculosDoCliente.length > 0) {
+      // Selecionar o primeiro veículo automaticamente
+      const primeiroVeiculo = veiculosDoCliente[0];
+      const veiIdEl = document.getElementById("loc_vei_id");
+      const veiDisplayEl = document.getElementById("loc_vei_display");
+      
+      if (veiIdEl) veiIdEl.value = primeiroVeiculo.id;
+      if (veiDisplayEl) {
+        const displayText = `${primeiroVeiculo.vei_placa || ""} - ${primeiroVeiculo.vei_modelo || ""}`.trim();
+        veiDisplayEl.value = displayText;
+      }
+      
+      // Atualizar cache de veículos se necessário
+      if (!veiculosData) {
+        veiculosData = [];
+      }
+      // Adicionar veículo ao cache se não estiver lá
+      const veiculoNoCache = veiculosData.find(v => String(v.id) === String(primeiroVeiculo.id));
+      if (!veiculoNoCache) {
+        veiculosData.push(primeiroVeiculo);
+      }
+    } else {
+      // Se não houver veículos no histórico, limpar campo de veículo
+      const veiIdEl = document.getElementById("loc_vei_id");
+      const veiDisplayEl = document.getElementById("loc_vei_display");
+      if (veiIdEl) veiIdEl.value = "";
+      if (veiDisplayEl) veiDisplayEl.value = "";
+    }
   };
 
   // ======= Eventos =======
@@ -625,19 +779,32 @@
     openLocacaoModal(btn.getAttribute("data-id"));
   });
 
-  document.getElementById("table-escolher-veiculo")?.addEventListener("click", (e) => {
-    const btn = e.target?.closest?.(".btn-select-veiculo");
-    if (!btn) return;
-    e.preventDefault();
-    selectVeiculoById(btn.getAttribute("data-id"));
-  });
+  // Usar delegação de eventos no documento para garantir que funcione mesmo quando o grid é renderizado dinamicamente
+  document.addEventListener("click", (e) => {
+    // Verificar se o clique foi em um botão de selecionar veículo
+    const btnVeiculo = e.target?.closest?.(".btn-select-veiculo");
+    if (btnVeiculo) {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = btnVeiculo.getAttribute("data-id");
+      if (id) {
+        selectVeiculoById(id);
+      }
+      return;
+    }
 
-  document.getElementById("table-escolher-locatario")?.addEventListener("click", (e) => {
-    const btn = e.target?.closest?.(".btn-select-locatario");
-    if (!btn) return;
-    e.preventDefault();
-    selectLocatarioById(btn.getAttribute("data-id"));
-  });
+    // Verificar se o clique foi em um botão de selecionar locatário
+    const btnLocatario = e.target?.closest?.(".btn-select-locatario");
+    if (btnLocatario) {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = btnLocatario.getAttribute("data-id");
+      if (id) {
+        selectLocatarioById(id);
+      }
+      return;
+    }
+  }, true); // Usar capture phase para garantir que o evento seja capturado antes de qualquer outro handler
 
   document.getElementById("filtro-veiculo-geral")?.addEventListener("input", filterVeiculosLocal);
   document.getElementById("filtro-veiculo-status")?.addEventListener("change", filterVeiculosLocal);

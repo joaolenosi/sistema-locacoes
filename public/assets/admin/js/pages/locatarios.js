@@ -353,6 +353,29 @@
     }
   };
 
+  // Enter: avançar campo a campo (Shift+Enter volta)
+  const enableEnterNavigation = () => {
+    if (!formEl) return;
+    formEl.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      const tag = (e.target?.tagName || "").toLowerCase();
+      if (tag === "textarea") return;
+      e.preventDefault();
+      const focusables = Array.from(
+        formEl.querySelectorAll(
+          'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])'
+        )
+      ).filter((el) => el.offsetParent !== null);
+      const idx = focusables.indexOf(e.target);
+      if (idx === -1) return;
+      const next = focusables[e.shiftKey ? idx - 1 : idx + 1] || focusables[0];
+      next?.focus?.();
+      if (next && next.tagName?.toLowerCase() === "input") {
+        try { next.select?.(); } catch (_) {}
+      }
+    });
+  };
+
   // Eventos
   btnAdd?.addEventListener("click", openCreate);
   btnSave?.addEventListener("click", submit);
@@ -375,6 +398,7 @@
   });
 
   setupMasks();
+  enableEnterNavigation();
 
   // Render inicial
   renderGrid(currentData);

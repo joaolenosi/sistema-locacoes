@@ -293,4 +293,138 @@ class Locoes extends BaseController
 
         return (float) $raw;
     }
+
+    /**
+     * Buscar veículos que já foram locados por um cliente específico
+     * Retorna veículos únicos ordenados por data mais recente
+     */
+    public function veiculosPorCliente($cliId)
+    {
+        try {
+            $locacaoModel = new LocacaoModel();
+            $veiculoModel = new VeiculoModel();
+            
+            $empresaId = get_empresa_id();
+            $cliId = (int) $cliId;
+            
+            if ($cliId <= 0) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'data' => [],
+                ]);
+            }
+
+            // Buscar todas as locações do cliente usando builder
+            $db = \Config\Database::connect();
+            $locacoes = $db->table('locacoes')
+                ->select('loc_vei_id, MAX(created_at) as ultima_locacao')
+                ->where('loc_empresa_id', $empresaId)
+                ->where('loc_cli_id', $cliId)
+                ->groupBy('loc_vei_id')
+                ->orderBy('ultima_locacao', 'DESC')
+                ->get()
+                ->getResultArray();
+
+            if (empty($locacoes)) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'data' => [],
+                ]);
+            }
+
+            // Extrair IDs dos veículos mantendo a ordem
+            $veiIds = [];
+            $ordemVeiculos = [];
+            foreach ($locacoes as $index => $loc) {
+                $veiId = (int) $loc['loc_vei_id'];
+                $veiIds[] = $veiId;
+                $ordemVeiculos[$veiId] = $index;
+            }
+
+            // Buscar dados completos dos veículos usando builder
+            $veiculos = [];
+            if (!empty($veiIds)) {
+                $veiculosRaw = $db->table('veiculos')
+                    ->where('vei_empresa_id', $empresaId)
+                    ->whereIn('id', $veiIds)
+                    ->get()
+                    ->getResultArray();
+
+                // Manter ordem baseada na última locação
+                foreach ($veiIds as $veiId) {
+                    foreach ($veiculosRaw as $veiculo) {
+                        if ((int) $veiculo['id'] === $veiId) {
+                            $veiculos[] = $veiculo;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $veiculos,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao buscar veículos do cliente.',
+            ]);
+        }
+    }
+
+    /**
+     * Buscar cliente que mais recentemente locou um veículo específico
+     */
+    public function clientePorVeiculo($veiId)
+    {
+        try {
+            $locacaoModel = new LocacaoModel();
+            $clienteModel = new ClienteModel();
+            
+            $empresaId = get_empresa_id();
+            $veiId = (int) $veiId;
+            
+            if ($veiId <= 0) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'data' => null,
+                ]);
+            }
+
+            // Buscar última locação do veículo
+            $locacao = $locacaoModel
+                ->where('loc_empresa_id', $empresaId)
+                ->where('loc_vei_id', $veiId)
+                ->orderBy('created_at', 'DESC')
+                ->first();
+
+            if (!$locacao || !isset($locacao['loc_cli_id'])) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'data' => null,
+                ]);
+            }
+
+            // Buscar dados do cliente
+            $cliente = $clienteModel->find((int) $locacao['loc_cli_id']);
+
+            if (!$cliente) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'data' => null,
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $cliente,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao buscar cliente do veículo.',
+            ]);
+        }
+    }
 }
