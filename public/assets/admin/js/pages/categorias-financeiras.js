@@ -1,48 +1,57 @@
 (() => {
-  const tableEl = document.getElementById("table-categorias-financeiras");
-  if (!tableEl) return;
-
-  // Helper para garantir base URL com barra final
-  const getBaseUrl = () => {
-    const base = window.__BASE_URL__ || window.location.origin;
-    return base.endsWith('/') ? base : base + '/';
-  };
-
-  // Tradução para Português do Brasil
-  const ptBR = {
-    search: {
-      placeholder: 'Digite uma palavra-chave...'
-    },
-    pagination: {
-      previous: 'Anterior',
-      next: 'Próximo',
-      showing: 'Mostrando',
-      to: 'a',
-      of: 'de',
-      results: 'resultados'
+  const init = () => {
+    const tableEl = document.getElementById("table-categorias-financeiras");
+    if (!tableEl) {
+      console.warn('Elemento table-categorias-financeiras não encontrado');
+      return;
     }
-  };
 
-  const tipoLabel = (tipo) => tipo === 'receita' ? 'Receita' : 'Despesa';
-  const tipoBadge = (tipo) => tipo === 'receita' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger';
-  const padraoLabel = (padrao) => String(padrao) === '1' ? 'Sim' : 'Não';
-  const padraoBadge = (padrao) => String(padrao) === '1' ? 'bg-info-subtle text-info' : 'bg-secondary-subtle text-secondary';
+    // Helper para garantir base URL com barra final
+    const getBaseUrl = () => {
+      const base = window.__BASE_URL__ || window.location.origin;
+      return base.endsWith('/') ? base : base + '/';
+    };
 
-  const toRows = (items) =>
-    (items || []).map((c) => [
-      String(c.id),
-      c.cat_nome || '-',
-      c.cat_tipo || '-',
-      String(c.cat_padrao ?? '0'),
-      String(c.id),
-    ]);
+    // Tradução para Português do Brasil
+    const ptBR = {
+      search: {
+        placeholder: 'Digite uma palavra-chave...'
+      },
+      pagination: {
+        previous: 'Anterior',
+        next: 'Próximo',
+        showing: 'Mostrando',
+        to: 'a',
+        of: 'de',
+        results: 'resultados'
+      }
+    };
 
-  let grid = null;
-  let currentData = Array.isArray(window.__CATEGORIAS__) ? window.__CATEGORIAS__ : [];
+    const tipoLabel = (tipo) => tipo === 'receita' ? 'Receita' : 'Despesa';
+    const tipoBadge = (tipo) => tipo === 'receita' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger';
+    const padraoLabel = (padrao) => String(padrao) === '1' ? 'Sim' : 'Não';
+    const padraoBadge = (padrao) => String(padrao) === '1' ? 'bg-info-subtle text-info' : 'bg-secondary-subtle text-secondary';
 
-  const renderGrid = (items) => {
-    currentData = items || [];
-    const rows = toRows(currentData);
+    const toRows = (items) => {
+      if (!Array.isArray(items)) return [];
+      return items.map((c) => {
+        if (!c || typeof c !== 'object') return null;
+        return [
+          String(c.id || ''),
+          c.cat_nome || '-',
+          c.cat_tipo || '-',
+          String(c.cat_padrao ?? '0'),
+          String(c.id || ''),
+        ];
+      }).filter(row => row !== null);
+    };
+
+    let grid = null;
+    let currentData = Array.isArray(window.__CATEGORIAS__) ? window.__CATEGORIAS__ : [];
+
+    const renderGrid = (items) => {
+      currentData = Array.isArray(items) ? items : [];
+      const rows = toRows(currentData);
 
     const columns = [
       {
@@ -96,43 +105,48 @@
         sort: true,
         search: true,
         language: ptBR,
-        data: rows
+        data: Array.isArray(rows) ? rows : []
       }).render(tableEl);
       return;
     }
 
-    grid.updateConfig({ columns: columns, data: rows }).forceRender();
+    grid.updateConfig({ columns: columns, data: Array.isArray(rows) ? rows : [] }).forceRender();
   };
 
-  const fetchJson = async (url, options = {}) => {
+    const fetchJson = async (url, options = {}) => {
     const res = await fetch(url, {
       headers: { 'X-Requested-With': 'XMLHttpRequest' },
       ...options
     });
-    const json = await res.json().catch(() => null);
-    if (!res.ok) throw new Error(json?.message || 'Erro na requisição.');
-    return json;
-  };
+      const json = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(json?.message || 'Erro na requisição.');
+      return json;
+    };
 
-  const reload = async () => {
-    const json = await fetchJson(`${getBaseUrl()}admin/cadastro/categorias-financeiras/listar`);
-    renderGrid(json.data || []);
-  };
+    const reload = async () => {
+      try {
+        const json = await fetchJson(`${getBaseUrl()}admin/cadastro/categorias-financeiras/listar`);
+        renderGrid(Array.isArray(json?.data) ? json.data : []);
+      } catch (e) {
+        console.error('Erro ao recarregar dados:', e);
+        renderGrid([]);
+      }
+    };
 
-  const modalEl = document.getElementById('modalCategoria');
-  const formEl = document.getElementById('formCategoria');
-  const alertEl = document.getElementById('cat-form-alert');
-  const btnSave = document.getElementById('btnSalvarCategoria');
-  const btnAdd = document.getElementById('btn-add-categoria');
-  const titleEl = document.getElementById('modalCategoriaLabel');
+    const modalEl = document.getElementById('modalCategoria');
+    const formEl = document.getElementById('formCategoria');
+    const alertEl = document.getElementById('cat-form-alert');
+    const btnSave = document.getElementById('btnSalvarCategoria');
+    const btnAdd = document.getElementById('btn-add-categoria');
+    const titleEl = document.getElementById('modalCategoriaLabel');
 
-  const getBsModal = () => {
+    const getBsModal = () => {
     if (!modalEl) return null;
-    if (!window.bootstrap?.Modal) return null;
-    return window.bootstrap.Modal.getOrCreateInstance(modalEl);
-  };
+      if (!window.bootstrap?.Modal) return null;
+      return window.bootstrap.Modal.getOrCreateInstance(modalEl);
+    };
 
-  const setAlert = (msg) => {
+    const setAlert = (msg) => {
     if (!alertEl) return;
     if (!msg) {
       alertEl.classList.add('d-none');
@@ -160,123 +174,151 @@
     }
   };
 
-  const resetForm = () => {
-    setAlert('');
-    formEl?.reset();
-    const idEl = document.getElementById('cat_id');
-    if (idEl) idEl.value = '';
-    if (titleEl) titleEl.textContent = 'Cadastrar categoria';
-    btnSave?.querySelector('.btn-text') && (btnSave.querySelector('.btn-text').textContent = 'Adicionar');
-  };
-
-  const fillForm = (c) => {
-    const setVal = (id, val) => {
-      const el = document.getElementById(id);
-      if (el) el.value = val ?? '';
+    const resetForm = () => {
+      setAlert('');
+      formEl?.reset();
+      const idEl = document.getElementById('cat_id');
+      if (idEl) idEl.value = '';
+      if (titleEl) titleEl.textContent = 'Cadastrar categoria';
+      btnSave?.querySelector('.btn-text') && (btnSave.querySelector('.btn-text').textContent = 'Adicionar');
     };
-    setVal('cat_id', c.id);
-    setVal('cat_nome', c.cat_nome);
-    setVal('cat_tipo', c.cat_tipo);
-    setVal('cat_padrao', String(c.cat_padrao ?? '0'));
 
-    if (titleEl) titleEl.textContent = 'Editar categoria';
-    btnSave?.querySelector('.btn-text') && (btnSave.querySelector('.btn-text').textContent = 'Salvar alterações');
-  };
+    const fillForm = (c) => {
+      const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val ?? '';
+      };
+      setVal('cat_id', c.id);
+      setVal('cat_nome', c.cat_nome);
+      setVal('cat_tipo', c.cat_tipo);
+      setVal('cat_padrao', String(c.cat_padrao ?? '0'));
 
-  // Enter: avançar campo a campo
-  const enableEnterNavigation = () => {
-    if (!formEl) return;
-    formEl.addEventListener('keydown', (e) => {
-      if (e.key !== 'Enter') return;
-      const tag = (e.target?.tagName || '').toLowerCase();
-      if (tag === 'textarea') return;
-      e.preventDefault();
-      const focusables = Array.from(
-        formEl.querySelectorAll(
-          'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])'
-        )
-      ).filter((el) => el.offsetParent !== null);
-      const idx = focusables.indexOf(e.target);
-      if (idx === -1) return;
-      const next = focusables[e.shiftKey ? idx - 1 : idx + 1] || focusables[0];
-      next?.focus?.();
-      if (next && next.tagName?.toLowerCase() === 'input') {
-        try { next.select?.(); } catch (_) {}
-      }
-    });
-  };
+      if (titleEl) titleEl.textContent = 'Editar categoria';
+      btnSave?.querySelector('.btn-text') && (btnSave.querySelector('.btn-text').textContent = 'Salvar alterações');
+    };
 
-  const openCreate = () => {
-    resetForm();
-    getBsModal()?.show();
-    setTimeout(() => document.getElementById('cat_nome')?.focus?.(), 150);
-  };
+    // Enter: avançar campo a campo
+    const enableEnterNavigation = () => {
+      if (!formEl) return;
+      formEl.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        const tag = (e.target?.tagName || '').toLowerCase();
+        if (tag === 'textarea') return;
+        e.preventDefault();
+        const focusables = Array.from(
+          formEl.querySelectorAll(
+            'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])'
+          )
+        ).filter((el) => el.offsetParent !== null);
+        const idx = focusables.indexOf(e.target);
+        if (idx === -1) return;
+        const next = focusables[e.shiftKey ? idx - 1 : idx + 1] || focusables[0];
+        next?.focus?.();
+        if (next && next.tagName?.toLowerCase() === 'input') {
+          try { next.select?.(); } catch (_) {}
+        }
+      });
+    };
 
-  const openEdit = async (id) => {
-    resetForm();
-    lockButton(true, 'Carregando...');
-    try {
-      const json = await fetchJson(`${getBaseUrl()}admin/cadastro/categorias-financeiras/editar/${id}`);
-      fillForm(json.data);
+    const openCreate = () => {
+      resetForm();
       getBsModal()?.show();
       setTimeout(() => document.getElementById('cat_nome')?.focus?.(), 150);
-    } catch (e) {
-      setAlert(e.message || 'Erro ao carregar categoria.');
-      getBsModal()?.show();
-    } finally {
-      lockButton(false);
-    }
-  };
+    };
 
-  const submit = async () => {
-    if (!formEl) return;
-    setAlert('');
-
-    const required = ['cat_nome', 'cat_tipo'];
-    for (const r of required) {
-      const el = document.getElementById(r);
-      if (el && !String(el.value || '').trim()) {
-        setAlert('Preencha os campos obrigatórios.');
-        return;
-      }
-    }
-
-    const id = document.getElementById('cat_id')?.value || '';
-    const fd = new FormData(formEl);
-
-    lockButton(true, id ? 'Salvando...' : 'Adicionando...');
-    try {
-      const url = id
-        ? `${getBaseUrl()}admin/cadastro/categorias-financeiras/atualizar/${id}`
-        : `${getBaseUrl()}admin/cadastro/categorias-financeiras/criar`;
-
-      await fetchJson(url, { method: 'POST', body: fd });
-      getBsModal()?.hide();
-      await reload();
+    const openEdit = async (id) => {
       resetForm();
-    } catch (e) {
-      setAlert(e.message || 'Erro ao salvar categoria.');
-    } finally {
+      lockButton(true, 'Carregando...');
+      try {
+        const json = await fetchJson(`${getBaseUrl()}admin/cadastro/categorias-financeiras/editar/${id}`);
+        fillForm(json.data);
+        getBsModal()?.show();
+        setTimeout(() => document.getElementById('cat_nome')?.focus?.(), 150);
+      } catch (e) {
+        setAlert(e.message || 'Erro ao carregar categoria.');
+        getBsModal()?.show();
+      } finally {
+        lockButton(false);
+      }
+    };
+
+    const submit = async () => {
+      if (!formEl) return;
+      setAlert('');
+
+      const required = ['cat_nome', 'cat_tipo'];
+      for (const r of required) {
+        const el = document.getElementById(r);
+        if (el && !String(el.value || '').trim()) {
+          setAlert('Preencha os campos obrigatórios.');
+          return;
+        }
+      }
+
+      const id = document.getElementById('cat_id')?.value || '';
+      const fd = new FormData(formEl);
+
+      lockButton(true, id ? 'Salvando...' : 'Adicionando...');
+      try {
+        const url = id
+          ? `${getBaseUrl()}admin/cadastro/categorias-financeiras/atualizar/${id}`
+          : `${getBaseUrl()}admin/cadastro/categorias-financeiras/criar`;
+
+        await fetchJson(url, { method: 'POST', body: fd });
+        getBsModal()?.hide();
+        await reload();
+        resetForm();
+      } catch (e) {
+        setAlert(e.message || 'Erro ao salvar categoria.');
+      } finally {
+        lockButton(false);
+      }
+    };
+
+    btnAdd?.addEventListener('click', openCreate);
+    btnSave?.addEventListener('click', submit);
+
+    document.addEventListener('click', (e) => {
+      const btnEdit = e.target.closest?.('.btn-edit-categoria');
+      if (btnEdit) {
+        const id = btnEdit.getAttribute('data-id');
+        if (id) {
+          e.preventDefault();
+          openEdit(id);
+        }
+      }
+    });
+
+    modalEl?.addEventListener('hidden.bs.modal', () => {
+      resetForm();
       lockButton(false);
+    });
+
+    // Verificar se os elementos necessários existem antes de anexar listeners
+    if (!btnSave) {
+      console.error('Elemento btnSalvarCategoria não encontrado');
     }
+    if (!btnAdd) {
+      console.error('Elemento btn-add-categoria não encontrado');
+    }
+    if (!formEl) {
+      console.error('Elemento formCategoria não encontrado');
+    }
+
+    renderGrid(currentData);
+    if (!currentData || currentData.length === 0) {
+      reload().catch((e) => {
+        console.error('Erro ao carregar dados iniciais:', e);
+      });
+    }
+    enableEnterNavigation();
   };
 
-  btnAdd?.addEventListener('click', openCreate);
-  btnSave?.addEventListener('click', submit);
-
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest?.('.btn-edit-categoria');
-    if (!btn) return;
-    const id = btn.getAttribute('data-id');
-    if (id) openEdit(id);
-  });
-
-  modalEl?.addEventListener('hidden.bs.modal', () => {
-    resetForm();
-    lockButton(false);
-  });
-
-  renderGrid(currentData);
-  if (!currentData || currentData.length === 0) reload().catch(() => {});
-  enableEnterNavigation();
+  // Executar quando o DOM estiver pronto
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    // DOM já está pronto
+    init();
+  }
 })();

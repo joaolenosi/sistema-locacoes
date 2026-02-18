@@ -247,7 +247,7 @@ window.__CATEGORIAS__ = <?= json_encode($categorias ?? []) ?>;
 </script>
 
 <!-- Gridjs Categorias Financeiras js -->
-<script src="<?= asset_url('assets/admin/js/pages/categorias-financeiras.js') ?>"></script>
+<script src="<?= asset_url('assets/admin/js/pages/categorias-financeiras.js') ?>" onerror="console.error('Erro ao carregar categorias-financeiras.js')"></script>
 
 <!-- Script para controle de filtros -->
 <script>
