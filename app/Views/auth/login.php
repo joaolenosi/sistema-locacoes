@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-    <link rel="shortcut icon" href="<?= asset_url('assets/admin/images/favicon.ico') ?>" />
+    <link rel="shortcut icon" href="<?= asset_url('assets/admin/images/fav.png') ?>" type="image/png" />
     <link href="<?= asset_url('assets/admin/css/vendor.min.css') ?>" rel="stylesheet" type="text/css" />
     <link href="<?= asset_url('assets/admin/css/icons.min.css') ?>" rel="stylesheet" type="text/css" />
     <link href="<?= asset_url('assets/admin/css/app.min.css') ?>" rel="stylesheet" type="text/css" />
@@ -70,8 +70,8 @@
         function getDigits(s) { 
             return String(s || '').replace(/\D/g, ''); 
         }
-        
-        // Função para aplicar máscara no telefone
+          
+        // Função para aplicar máscara no telefone   
         function mask() {
             var d = getDigits(telefoneEl.value).slice(0, 11);
             if (d.length > 10) {

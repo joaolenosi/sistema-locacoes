@@ -337,7 +337,7 @@ if (!function_exists('empresa_iniciais')) {
             </header>
 
             <!-- Activity Timeline -->
-            <div>
+        <!--     <div>
                 <div
                     class="offcanvas offcanvas-end border-0"
                     tabindex="-1"
@@ -618,3 +618,4 @@ if (!function_exists('empresa_iniciais')) {
                     </div>
                 </div>
             </div>
+ -->
