@@ -1,4 +1,4 @@
-﻿<?= $this->extend('admin/layout') ?>
+<?= $this->extend('admin/layout') ?>
 
 <?= $this->section('content') ?>
 <!-- ========== Page Title Start ========== -->
@@ -9,13 +9,17 @@
                 <h4 class="mb-0 fw-semibold"><?= esc($title ?? 'Dashboard') ?></h4>
                 <p class="text-muted mb-0">Bem vindo(a) de volta, joao 👋</p>
             </div>
-            <div>
-                <iconify-icon icon="iconamoon:eye-duotone" class="text-primary fs-20"></iconify-icon>
+            <div id="dashboard-toggle-valores" class="cursor-pointer" role="button" title="Ocultar valores" aria-label="Ocultar valores">
+                <iconify-icon id="dashboard-toggle-icon" icon="iconamoon:eye-duotone" class="text-primary fs-20"></iconify-icon>
             </div>
         </div>
     </div>
 </div>
 <!-- ========== Page Title End ========== -->
+
+<style>
+#dashboard-toggle-valores { cursor: pointer; user-select: none; }
+</style>
 
 <!-- Faturamento do mês atual -->
                     <div class="row">
@@ -25,15 +29,15 @@
                 <div class="row align-items-center">
                     <div class="col-md-8">
                         <h5 class="text-white mb-3">Faturamento do mês atual</h5>
-                        <h2 class="text-white mb-3">R$ <?= number_format($faturamento_mes_atual ?? 0, 2, ',', '.') ?></h2>
+                        <h2 class="text-white mb-3"><span class="dashboard-valor" data-original="R$ <?= number_format($faturamento_mes_atual ?? 0, 2, ',', '.') ?>">R$ <?= number_format($faturamento_mes_atual ?? 0, 2, ',', '.') ?></span></h2>
                         <div class="d-flex gap-4">
                             <div>
                                 <p class="text-white-50 mb-0 small">Mês anterior</p>
-                                <p class="text-white mb-0">R$ <?= number_format($faturamento_mes_anterior ?? 0, 2, ',', '.') ?></p>
+                                <p class="text-white mb-0"><span class="dashboard-valor" data-original="R$ <?= number_format($faturamento_mes_anterior ?? 0, 2, ',', '.') ?>">R$ <?= number_format($faturamento_mes_anterior ?? 0, 2, ',', '.') ?></span></p>
                             </div>
                             <div>
                                 <p class="text-white-50 mb-0 small">% Crescimento</p>
-                                <p class="text-white mb-0"><?= number_format($crescimento_percentual ?? 0, 0) ?>%</p>
+                                <p class="text-white mb-0"><span class="dashboard-valor" data-original="<?= number_format($crescimento_percentual ?? 0, 0) ?>%"><?= number_format($crescimento_percentual ?? 0, 0) ?>%</span></p>
                                                     </div>
                                                 </div>
                                                 </div>
@@ -92,7 +96,7 @@
                     <h5 class="text-white mb-0">Caixa Total</h5>
                     <iconify-icon icon="iconamoon:wallet-duotone" class="text-white" style="font-size: 32px;"></iconify-icon>
                                                 </div>
-                <h2 class="text-white mb-0">R$ <?= number_format($caixa_total ?? 0, 2, ',', '.') ?></h2>
+                <h2 class="text-white mb-0"><span class="dashboard-valor" data-original="R$ <?= number_format($caixa_total ?? 0, 2, ',', '.') ?>">R$ <?= number_format($caixa_total ?? 0, 2, ',', '.') ?></span></h2>
                                         </div>
                                     </div>
                                     <!-- end card -->
@@ -100,7 +104,7 @@
                                         <div class="card-body">
                 <h5 class="card-title mb-1">Lucro do mês atual</h5>
                 <div class="d-flex align-items-center justify-content-between">
-                    <h3 class="mb-0">R$ <?= number_format($lucro_mes_atual ?? 0, 2, ',', '.') ?></h3>
+                    <h3 class="mb-0"><span class="dashboard-valor" data-original="R$ <?= number_format($lucro_mes_atual ?? 0, 2, ',', '.') ?>">R$ <?= number_format($lucro_mes_atual ?? 0, 2, ',', '.') ?></span></h3>
                     <iconify-icon icon="iconamoon:trend-up-bold" class="text-success" style="font-size: 32px;"></iconify-icon>
                                                     </div>
                                                 </div>
@@ -117,7 +121,7 @@
                                 <iconify-icon icon="iconamoon:warning-duotone" class="text-warning" style="font-size: 24px;"></iconify-icon>
                             </div>
                         </div>
-                        <h4 class="mb-1"><?= esc($cobrancas_atraso ?? 0) ?></h4>
+                        <h4 class="mb-1"><span class="dashboard-valor" data-original="<?= esc($cobrancas_atraso ?? 0) ?>"><?= esc($cobrancas_atraso ?? 0) ?></span></h4>
                         <p class="text-muted mb-0 small">Cobranças em atraso</p>
                                                 </div>
                                             </div>
@@ -132,7 +136,7 @@
                                 <iconify-icon icon="iconamoon:warning-duotone" class="text-danger" style="font-size: 24px;"></iconify-icon>
                             </div>
                         </div>
-                        <h4 class="mb-1"><?= esc($precisa_manutencao ?? 0) ?></h4>
+                        <h4 class="mb-1"><span class="dashboard-valor" data-original="<?= esc($precisa_manutencao ?? 0) ?>"><?= esc($precisa_manutencao ?? 0) ?></span></h4>
                         <p class="text-muted mb-0 small">Precisa de manutenção</p>
                     </div>
                                         </div>
@@ -147,7 +151,7 @@
                                 <iconify-icon icon="iconamoon:box-duotone" class="text-primary" style="font-size: 24px;"></iconify-icon>
                                                         </div>
                                                     </div>
-                        <h4 class="mb-1"><?= esc($veiculos_disponiveis ?? 0) ?> de <?= esc($total_veiculos ?? 0) ?></h4>
+                        <h4 class="mb-1"><span class="dashboard-valor" data-original="<?= esc($veiculos_disponiveis ?? 0) ?> de <?= esc($total_veiculos ?? 0) ?>"><?= esc($veiculos_disponiveis ?? 0) ?> de <?= esc($total_veiculos ?? 0) ?></span></h4>
                         <p class="text-muted mb-0 small">Veículos disponíveis</p>
                                                     </div>
                                                 </div>
@@ -162,7 +166,7 @@
                                 <iconify-icon icon="iconamoon:minus-circle-duotone" class="text-danger" style="font-size: 24px;"></iconify-icon>
                             </div>
                         </div>
-                        <h4 class="mb-1"><?= esc($cnhs_vencidas ?? 0) ?></h4>
+                        <h4 class="mb-1"><span class="dashboard-valor" data-original="<?= esc($cnhs_vencidas ?? 0) ?>"><?= esc($cnhs_vencidas ?? 0) ?></span></h4>
                         <p class="text-muted mb-0 small">CNH's vencidas</p>
                     </div>
                                         </div>
@@ -173,6 +177,45 @@
     <!-- end col -->
 </div>
 <!-- end row -->
+
+<!-- Toggle valores dos cards -->
+<script>
+(function() {
+    var PLACEHOLDER = '••••••••';
+    var btn = document.getElementById('dashboard-toggle-valores');
+    var icon = document.getElementById('dashboard-toggle-icon');
+    if (!btn || !icon) return;
+
+    function isOculto() {
+        var first = document.querySelector('.dashboard-valor');
+        return first && first.textContent === PLACEHOLDER;
+    }
+
+    function ocultar() {
+        document.querySelectorAll('.dashboard-valor').forEach(function(el) {
+            var orig = el.getAttribute('data-original');
+            if (orig) { el.textContent = PLACEHOLDER; }
+        });
+        icon.setAttribute('icon', 'iconamoon:eye-off-duotone');
+        btn.setAttribute('title', 'Exibir valores');
+        btn.setAttribute('aria-label', 'Exibir valores');
+    }
+
+    function exibir() {
+        document.querySelectorAll('.dashboard-valor').forEach(function(el) {
+            var orig = el.getAttribute('data-original');
+            if (orig) { el.textContent = orig; }
+        });
+        icon.setAttribute('icon', 'iconamoon:eye-duotone');
+        btn.setAttribute('title', 'Ocultar valores');
+        btn.setAttribute('aria-label', 'Ocultar valores');
+    }
+
+    btn.addEventListener('click', function() {
+        if (isOculto()) { exibir(); } else { ocultar(); }
+    });
+})();
+</script>
 
 <!-- Dashboard JS -->
 <script>
