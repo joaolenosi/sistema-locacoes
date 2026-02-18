@@ -217,7 +217,7 @@
                             icon="iconamoon:lock-duotone"
                         ></iconify-icon>
                     </span>
-                    <span class="nav-text"> Deslogar </span>
+                    <span class="nav-text"> Deslogar 1</span>
                 </a>
             </li>
         </ul>
