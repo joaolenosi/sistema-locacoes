@@ -273,8 +273,8 @@ class Financeiro extends BaseController
             ->where('lan_empresa_id', $empresaId)
             ->where('lan_tipo', 'receita')
             ->where('lan_status', 'pago')
-            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) >= ?', [$inicio])
-            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) <= ?', [$fim])
+            ->where('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) >=', $db->escape($inicio), false)
+            ->where('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) <=', $db->escape($fim), false)
             ->get()
             ->getRow();
         $totalReceitas = (float) ($receitas->total ?? 0);
@@ -284,8 +284,8 @@ class Financeiro extends BaseController
             ->where('lan_empresa_id', $empresaId)
             ->where('lan_tipo', 'despesa')
             ->where('lan_status', 'pago')
-            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) >= ?', [$inicio])
-            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) <= ?', [$fim])
+            ->where('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) >=', $db->escape($inicio), false)
+            ->where('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) <=', $db->escape($fim), false)
             ->get()
             ->getRow();
         $totalDespesas = (float) ($despesas->total ?? 0);
@@ -310,8 +310,8 @@ class Financeiro extends BaseController
             ->where('lan_empresa_id', $empresaId)
             ->where('lan_tipo', 'receita')
             ->where('lan_status', 'pago')
-            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) >= ?', [$inicio])
-            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) <= ?', [$fim]);
+            ->where('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) >=', $db->escape($inicio), false)
+            ->where('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) <=', $db->escape($fim), false);
         $sqlReceitas = $builderReceitas->getCompiledSelect(false);
 
         // Query para despesas do mês (cards)
@@ -320,8 +320,8 @@ class Financeiro extends BaseController
             ->where('lan_empresa_id', $empresaId)
             ->where('lan_tipo', 'despesa')
             ->where('lan_status', 'pago')
-            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) >= ?', [$inicio])
-            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) <= ?', [$fim]);
+            ->where('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) >=', $db->escape($inicio), false)
+            ->where('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) <=', $db->escape($fim), false);
         $sqlDespesas = $builderDespesas->getCompiledSelect(false);
 
         // Query para listagem completa
