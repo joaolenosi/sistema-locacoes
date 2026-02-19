@@ -389,7 +389,7 @@ class Contratos extends BaseController
         $conteudoSubstituido = '';
         if ($modelo && !empty($modelo['con_conteudo'])) {
             helper('contrato');
-            $conteudoSubstituido = substituirVariaveisContrato(
+            $conteudoSubstituido = \substituirVariaveisContrato(
                 $modelo['con_conteudo'],
                 $locacaoArray,
                 $clienteArray,
@@ -444,7 +444,7 @@ class Contratos extends BaseController
         $conteudoSubstituido = '';
         if ($modelo && !empty($modelo['con_conteudo'])) {
             helper('contrato');
-            $conteudoSubstituido = substituirVariaveisContrato(
+            $conteudoSubstituido = \substituirVariaveisContrato(
                 $modelo['con_conteudo'],
                 $locacao ?: [],
                 $cliente ?: [],
