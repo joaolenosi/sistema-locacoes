@@ -23,18 +23,22 @@
 
 <!-- CSS Customizado para Footer e Tema Dark -->
 <style>
-    /* Área de conteúdo com fundo escuro para tema dark */
+    /* Área de conteúdo - min-height sempre aplicado */
     .page-content {
-        background-color: #1a1d29 !important;
         min-height: calc(100vh - 70px);
     }
     
-    .container-xxl {
+    /* Estilos para tema DARK */
+    [data-bs-theme="dark"] .page-content {
+        background-color: #1a1d29 !important;
+    }
+    
+    [data-bs-theme="dark"] .container-xxl {
         background-color: transparent !important;
     }
     
-    /* Cards com fundo escuro */
-    .card {
+    /* Cards com fundo escuro apenas no tema dark */
+    [data-bs-theme="dark"] .card {
         background-color: #252836 !important;
         border-color: #2f3542 !important;
         color: #e9ecef !important;
@@ -42,8 +46,11 @@
     
     /* Card body com padding adequado - garante espaçamento dos textos */
     .card-body {
-        color: #e9ecef !important;
         padding: 1.5rem !important;
+    }
+    
+    [data-bs-theme="dark"] .card-body {
+        color: #e9ecef !important;
     }
     
     /* Garantir padding em elementos diretos do card quando não há card-body */
@@ -73,20 +80,34 @@
         padding: 1.25rem !important;
     }
     
-    /* Textos em cores claras */
-    .text-muted {
+    /* Textos em cores claras apenas no tema dark */
+    [data-bs-theme="dark"] .text-muted {
         color: #adb5bd !important;
     }
     
-    h1, h2, h3, h4, h5, h6,
-    .h1, .h2, .h3, .h4, .h5, .h6 {
+    /* Títulos em cores claras apenas no tema dark */
+    [data-bs-theme="dark"] h1, 
+    [data-bs-theme="dark"] h2, 
+    [data-bs-theme="dark"] h3, 
+    [data-bs-theme="dark"] h4, 
+    [data-bs-theme="dark"] h5, 
+    [data-bs-theme="dark"] h6,
+    [data-bs-theme="dark"] .h1, 
+    [data-bs-theme="dark"] .h2, 
+    [data-bs-theme="dark"] .h3, 
+    [data-bs-theme="dark"] .h4, 
+    [data-bs-theme="dark"] .h5, 
+    [data-bs-theme="dark"] .h6 {
         color: #e9ecef !important;
     }
     
-    /* Footer com cor uniforme e layout harmonioso */
-    .footer {
+    /* Footer com cor uniforme e layout harmonioso - apenas no tema dark */
+    [data-bs-theme="dark"] .footer {
         background-color: #1a1d29 !important;
         border-top: 1px solid #2f3542;
+    }
+    
+    .footer {
         padding: 1rem 0;
         margin-top: auto;
     }
@@ -99,8 +120,11 @@
         background-color: transparent !important;
     }
     
-    .footer .text-center {
+    [data-bs-theme="dark"] .footer .text-center {
         color: #adb5bd !important;
+    }
+    
+    .footer .text-center {
         font-size: 0.875rem;
     }
     
@@ -110,21 +134,21 @@
         display: none !important;
     }
     
-    /* Page title box com fundo escuro */
+    /* Page title box - apenas no tema dark */
     .page-title-box {
         background-color: transparent !important;
     }
     
-    .page-title-box h4,
-    .page-title-box .breadcrumb {
+    [data-bs-theme="dark"] .page-title-box h4,
+    [data-bs-theme="dark"] .page-title-box .breadcrumb {
         color: #e9ecef !important;
     }
     
-    .breadcrumb-item a {
+    [data-bs-theme="dark"] .breadcrumb-item a {
         color: #adb5bd !important;
     }
     
-    .breadcrumb-item.active {
+    [data-bs-theme="dark"] .breadcrumb-item.active {
         color: #e9ecef !important;
     }
 </style>
