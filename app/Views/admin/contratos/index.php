@@ -299,7 +299,7 @@
                             <div id="contrato-modelo-editor"></div>
                         </div>
 
-                        <textarea id="contrato-modelo-conteudo" class="d-none"><?= esc($modelo_padrao['con_conteudo'] ?? '') ?></textarea>
+                        <textarea id="contrato-modelo-conteudo" class="d-none"><?= esc($modelo_padrao['con_conteudo_editor'] ?? $modelo_padrao['con_conteudo'] ?? '') ?></textarea>
                         <textarea id="contrato-modelo-conteudo-html" class="d-none"></textarea>
 
                         <div class="d-flex justify-content-end gap-2 mt-3">

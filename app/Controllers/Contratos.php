@@ -75,6 +75,11 @@ class Contratos extends BaseController
             $modelosList = $modeloPadrao ? [['id' => $modeloPadrao['id'], 'con_nome' => $modeloPadrao['con_nome'] ?? 'Modelo padrão']] : [];
         }
 
+        // Para o editor: sempre enviar texto puro (converte HTML do banco em texto legível)
+        if ($modeloPadrao !== null && array_key_exists('con_conteudo', $modeloPadrao)) {
+            $modeloPadrao['con_conteudo_editor'] = $this->htmlParaTextoEditor($modeloPadrao['con_conteudo'] ?? '');
+        }
+
         $data = [
             'title' => 'Contratos',
             'meus_contratos' => $meusContratos,
@@ -432,6 +437,30 @@ class Contratos extends BaseController
         ];
 
         return view('admin/contratos/ver', $data);
+    }
+
+    /**
+     * Converte HTML do modelo (banco/Quill) em texto puro para exibir no editor.
+     * Assim o usuário vê o contrato legível e pode formatar de novo com o editor.
+     */
+    private function htmlParaTextoEditor(string $conteudo): string
+    {
+        $conteudo = trim($conteudo);
+        if ($conteudo === '') {
+            return '';
+        }
+        // Se não parece HTML, devolve como está (já é texto puro)
+        if (strpos($conteudo, '<') === false || strpos($conteudo, '>') === false) {
+            return $conteudo;
+        }
+        $s = $conteudo;
+        $s = preg_replace('/<br\s*\/?>/i', "\n", $s);
+        $s = preg_replace('/<\/p>\s*<p>/i', "\n\n", $s);
+        $s = preg_replace('/<\/p>/i', "\n", $s);
+        $s = preg_replace('/<p>/i', '', $s);
+        $s = strip_tags($s);
+        $s = html_entity_decode($s, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        return trim(preg_replace("/\n{3,}/", "\n\n", $s));
     }
 
     /**
