@@ -10,6 +10,16 @@ if (!function_exists('empresa_iniciais')) {
     }
 }
 ?>
+<style>
+    .wrapper .main-nav .navbar-nav .nav-item .nav-link.active .nav-icon {
+  color:#e70611;
+}
+
+.wrapper .main-nav .navbar-nav .nav-item .nav-link.active {
+  font-weight: 500;
+  border-left-color: #e70611;
+}
+</style>
 <header class="topbar">
     <div class="container-xxl">
         <div class="navbar-header">

@@ -8,6 +8,9 @@
     rel="stylesheet"
     type="text/css"
 />
+<!-- Select2 -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 
 <!-- CSS Customizado para correções -->
 <style>
@@ -164,7 +167,7 @@
                                     <iconify-icon icon="iconamoon:filter-duotone" class="fs-18"></iconify-icon>
                                     Filtros
                                 </button>
-                                <button type="button" class="btn btn-primary">
+                                <button type="button" class="btn btn-primary" id="btn-novo-contrato">
                                     <iconify-icon icon="iconamoon:plus-duotone" class="fs-18"></iconify-icon>
                                     Novo Contrato
                                 </button>
@@ -310,6 +313,10 @@
 </div>
 <!-- end row -->
 
+<!-- jQuery (Select2 dependency) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<!-- Select2 -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
 <!-- Gridjs Plugin js -->
 <script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
 <script>window.__BASE_URL__ = '<?= base_url() ?>';</script>
@@ -356,6 +363,39 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 500);
 });
 </script>
+
+<!-- Modal: Criar contrato -->
+<div class="modal fade" id="modalCriarContrato" tabindex="-1" aria-labelledby="modalCriarContratoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCriarContratoLabel">Criar contrato</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="modal-locacao" class="form-label">Locação</label>
+                    <select id="modal-locacao" class="form-select" style="width: 100%;">
+                        <option value="">Pesquise pela locação...</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="modal-modelo" class="form-label">Modelo do contrato</label>
+                    <select id="modal-modelo" class="form-select">
+                        <option value="">Selecione o modelo</option>
+                        <?php foreach (($modelos_list ?? []) as $m): ?>
+                            <option value="<?= (int)($m['id'] ?? 0) ?>"><?= esc($m['con_nome'] ?? '') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn-modal-criar-contrato">Criar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Offcanvas: Variáveis disponíveis -->
 <div

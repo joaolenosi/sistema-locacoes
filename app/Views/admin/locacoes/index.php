@@ -405,8 +405,8 @@ window.__LOCACOES_BOOTSTRAP__ = {
             <div class="col-md-6">
               <label for="loc_status" class="form-label">
                 Status
-                <button type="button" class="btn btn-link p-0 ms-1" style="vertical-align: middle; text-decoration: none;" data-bs-toggle="modal" data-bs-target="#modalAjudaStatus" title="Ajuda sobre status">
-                  <iconify-icon icon="iconamoon:question-duotone" class="text-primary" style="font-size: 18px;"></iconify-icon>
+                <button type="button" class="btn btn-link p-0 ms-1 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; min-width: 28px; min-height: 28px; vertical-align: middle; text-decoration: none;" data-bs-toggle="modal" data-bs-target="#modalAjudaStatus" title="Ajuda sobre status" aria-label="Ajuda sobre status">
+                  <iconify-icon icon="iconamoon:question-duotone" class="text-primary" style="width: 18px; height: 18px; font-size: 18px;"></iconify-icon>
                 </button>
               </label>
               <select class="form-select" id="loc_status" name="loc_status">

@@ -12,12 +12,12 @@
 
       if (periodo === "anual") {
         const precoMensalAnual = Number(plano.preco_anual || 0) / 12;
-        precoOriginal.textContent = `de R$ ${precoMensalAnual.toFixed(2).replace(".", ",")}`;
+        precoOriginal.textContent = `de R$ ${precoMensalAnual.toFixed(2).replace(".", ",")} por`;
         precoAtual.textContent = `R$ ${Number(plano.preco_anual || 0).toFixed(2).replace(".", ",")}`;
         periodoTexto.textContent = "/ Ano";
       } else {
         const precoOriginalMensal = Number(plano.preco_mensal || 0) * 1.2;
-        precoOriginal.textContent = `de R$ ${precoOriginalMensal.toFixed(2).replace(".", ",")}`;
+        precoOriginal.textContent = `de R$ ${precoOriginalMensal.toFixed(2).replace(".", ",")} por`;
         precoAtual.textContent = `R$ ${Number(plano.preco_mensal || 0).toFixed(2).replace(".", ",")}`;
         periodoTexto.textContent = "/ Mês";
       }

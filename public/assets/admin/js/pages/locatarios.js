@@ -83,14 +83,12 @@
         formatter: (_cell, row) => {
           const id = row.cells[0].data;
           const base = (window.__BASE_URL__ || "").replace(/\/$/, "") + "/";
+          const iconInfo = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>';
+          const iconEdit = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
           return gridjs.html(`
-            <div class="d-flex gap-2">
-              <a href="${base}admin/locatarios/detalhes/${id}" class="btn btn-sm btn-outline-secondary" title="Detalhes">
-                <iconify-icon icon="iconamoon:info-circle-duotone" class="fs-18"></iconify-icon>
-              </a>
-              <button type="button" class="btn btn-sm btn-outline-primary btn-edit-locatario" data-id="${id}" title="Editar">
-                <iconify-icon icon="iconamoon:edit-duotone" class="fs-18"></iconify-icon>
-              </button>
+            <div class="d-flex gap-2 align-items-center">
+              <a href="${base}admin/locatarios/detalhes/${id}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center justify-content-center" title="Detalhes">${iconInfo}</a>
+              <button type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center justify-content-center btn-edit-locatario" data-id="${id}" title="Editar">${iconEdit}</button>
             </div>
           `);
         },

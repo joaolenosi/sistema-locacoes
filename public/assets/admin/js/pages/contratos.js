@@ -24,7 +24,8 @@
             c.termino || '-',
             c.valor_total || '-',
             c.status || '-',
-            String(c.id)
+            String(c.ver_id != null ? c.ver_id : c.id),
+            c.tipo || 'contrato'
         ]);
     };
 
@@ -53,9 +54,13 @@
                 }
             },
             { name: 'Ações', width: '120px', formatter: (cell, row) => {
-                const id = row.cells[0].data;
-                return gridjs.html("<a href='#' class='text-reset text-decoration-underline btn-detalhes-contrato' data-id='" + id + "'>Detalhes</a>");
-            }}
+                const verId = row.cells[8].data;
+                const tipo = row.cells[9].data;
+                const url = tipo === 'contrato' ? getBaseUrl() + 'admin/contratos/ver/' + verId : getBaseUrl() + 'admin/locacoes?editar=' + verId;
+                return gridjs.html("<a href='" + url + "' class='text-reset text-decoration-underline btn-detalhes-contrato'>Detalhes</a>");
+            }},
+            { name: '', width: '0px', hidden: true, formatter: () => '' },
+            { name: '', width: '0px', hidden: true, formatter: () => '' }
         ];
 
         if (!gridInstance) {
@@ -94,10 +99,71 @@
         const btn = e.target && e.target.closest && e.target.closest('.btn-detalhes-contrato');
         if (btn) {
             e.preventDefault();
-            const id = btn.getAttribute('data-id');
-            if (id) {
-                window.location.href = getBaseUrl() + 'admin/locacoes?editar=' + id;
-            }
+            const href = btn.getAttribute('href');
+            if (href && href !== '#') window.location.href = href;
         }
     });
+
+    // ----- Modal Novo Contrato + Select2 -----
+    const modalEl = document.getElementById('modalCriarContrato');
+    const btnNovo = document.getElementById('btn-novo-contrato');
+    const btnCriar = document.getElementById('btn-modal-criar-contrato');
+    const selectLocacao = document.getElementById('modal-locacao');
+    const selectModelo = document.getElementById('modal-modelo');
+
+    if (modalEl && btnNovo && typeof $ !== 'undefined') {
+        btnNovo.addEventListener('click', function () {
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+            if (selectLocacao && !selectLocacao._select2) {
+                $(selectLocacao).select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'Pesquise pela locação...',
+                    allowClear: true,
+                    ajax: {
+                        url: getBaseUrl() + 'admin/contratos/locacoes-disponiveis',
+                        dataType: 'json',
+                        delay: 250,
+                        data: function (params) { return { q: params.term }; },
+                        processResults: function (data) {
+                            return { results: data.results || [] };
+                        }
+                    },
+                    minimumInputLength: 0
+                });
+                selectLocacao._select2 = true;
+            }
+        });
+    }
+
+    if (btnCriar && selectLocacao && selectModelo && typeof $ !== 'undefined') {
+        btnCriar.addEventListener('click', function () {
+            const locacaoId = $(selectLocacao).val();
+            const modeloId = selectModelo.value;
+            if (!locacaoId || !modeloId) {
+                alert('Selecione a locação e o modelo do contrato.');
+                return;
+            }
+            btnCriar.disabled = true;
+            btnCriar.textContent = 'Criando...';
+            fetch(getBaseUrl() + 'admin/contratos/criar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                body: 'locacao_id=' + encodeURIComponent(locacaoId) + '&modelo_id=' + encodeURIComponent(modeloId)
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (json) {
+                    if (json.success && json.redirect) {
+                        window.location.href = json.redirect;
+                        return;
+                    }
+                    alert(json.message || 'Erro ao criar contrato.');
+                })
+                .catch(function () { alert('Erro ao criar contrato.'); })
+                .finally(function () {
+                    btnCriar.disabled = false;
+                    btnCriar.textContent = 'Criar';
+                });
+        });
+    }
 })();

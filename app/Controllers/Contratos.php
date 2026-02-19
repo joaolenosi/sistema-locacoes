@@ -2,16 +2,18 @@
 
 namespace App\Controllers;
 
+use App\Models\ContratoModel;
 use App\Models\ContratoModeloModel;
 use App\Models\ContratoVariavelModel;
+use App\Models\EmpresaModel;
 use App\Models\LocacaoModel;
 
 class Contratos extends BaseController
 {
     public function index(): string
     {
-        // Aba "Meus contratos" - buscar locações reais
-        $meusContratos = $this->buscarContratosDasLocacoes();
+        // Aba "Meus contratos" - buscar da tabela contratos (ou fallback locações)
+        $meusContratos = $this->buscarMeusContratos();
 
         $modeloPadrao = null;
         $variaveis = [];
@@ -36,7 +38,10 @@ class Contratos extends BaseController
                 ->orderBy('cov_entidade', 'ASC')
                 ->orderBy('cov_chave', 'ASC')
                 ->findAll();
+
+            $modelosList = $modeloModel->where('con_ativo', 1)->orderBy('con_nome', 'ASC')->findAll();
         } catch (\Throwable $e) {
+            $modelosList = [];
             $dbWarning = 'Não foi possível carregar do banco remoto agora. Exibindo dados padrão para testes.';
 
             // Fallback mínimo baseado no dump fornecido (contratos_modelos / contratos_variaveis)
@@ -63,12 +68,18 @@ class Contratos extends BaseController
                 ['cov_chave' => 'veiculo.modelo', 'cov_label' => 'Modelo do Veículo', 'cov_entidade' => 'veiculo'],
                 ['cov_chave' => 'veiculo.placa', 'cov_label' => 'Placa do Veículo', 'cov_entidade' => 'veiculo'],
             ];
+            $modelosList = [['id' => 1, 'con_nome' => 'Contrato de Locação de Veículo']];
+        }
+
+        if (empty($modelosList)) {
+            $modelosList = $modeloPadrao ? [['id' => $modeloPadrao['id'], 'con_nome' => $modeloPadrao['con_nome'] ?? 'Modelo padrão']] : [];
         }
 
         $data = [
             'title' => 'Contratos',
             'meus_contratos' => $meusContratos,
             'modelo_padrao' => $modeloPadrao,
+            'modelos_list' => $modelosList ?? [],
             'variaveis' => $variaveis,
             'db_warning' => $dbWarning,
         ];
@@ -81,7 +92,48 @@ class Contratos extends BaseController
     }
 
     /**
-     * Busca contratos baseados nas locações reais
+     * Busca "Meus contratos" da tabela contratos (ou fallback nas locações se tabela não existir)
+     */
+    private function buscarMeusContratos(): array
+    {
+        $empresaId = get_empresa_id();
+        if ($empresaId < 1) {
+            return [];
+        }
+
+        try {
+            $contratoModel = new ContratoModel();
+            $rows = $contratoModel
+                ->builderWithJoins()
+                ->where('contratos.con_empresa_id', $empresaId)
+                ->orderBy('contratos.created_at', 'DESC')
+                ->get()
+                ->getResultArray();
+
+            $contratos = [];
+            foreach ($rows as $row) {
+                $contratos[] = [
+                    'id' => (int) $row['id'],
+                    'numero' => $row['con_numero'] ?? '-',
+                    'locatario' => $row['cli_nome'] ?? '-',
+                    'veiculo' => $row['vei_placa'] ?? '-',
+                    'inicio' => formatarDataBR($row['loc_data_inicio'] ?? ''),
+                    'termino' => formatarDataBR($row['loc_data_fim_prevista'] ?? ''),
+                    'valor_total' => formatarMoedaBR($row['loc_valor_total'] ?? $row['loc_valor_locacao'] ?? 0),
+                    'status' => ($row['con_status'] ?? '') === 'gerado' ? 'Gerado' : 'Rascunho',
+                    'tipo' => 'contrato',
+                    'ver_id' => (int) $row['id'],
+                ];
+            }
+            return $contratos;
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao buscar contratos: ' . $e->getMessage());
+            return $this->buscarContratosDasLocacoes();
+        }
+    }
+
+    /**
+     * Busca contratos baseados nas locações (fallback quando tabela contratos não existe)
      */
     private function buscarContratosDasLocacoes(): array
     {
@@ -102,7 +154,7 @@ class Contratos extends BaseController
 
             $contratos = [];
             foreach ($locacoes as $locacao) {
-                $contrato = $this->formatarDadosContrato($locacao);
+                $contrato = $this->formatarDadosContratoLocacao($locacao);
                 if ($contrato) {
                     $contratos[] = $contrato;
                 }
@@ -111,16 +163,14 @@ class Contratos extends BaseController
             return $contratos;
         } catch (\Throwable $e) {
             log_message('error', 'Erro ao buscar contratos das locações: ' . $e->getMessage());
-            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
-            // Retornar array vazio em caso de erro ao invés de dados mockados
             return [];
         }
     }
 
     /**
-     * Formata dados de uma locação para formato de contrato
+     * Formata dados de uma locação para formato de contrato (listagem fallback)
      */
-    private function formatarDadosContrato(array $locacao): ?array
+    private function formatarDadosContratoLocacao(array $locacao): ?array
     {
         // Validar se tem dados mínimos necessários
         if (empty($locacao['cli_nome']) || empty($locacao['vei_placa'])) {
@@ -138,34 +188,42 @@ class Contratos extends BaseController
 
         return [
             'id' => (int) $locacao['id'],
-            'numero' => $this->gerarNumeroContrato($locacao['id']),
+            'numero' => $this->gerarNumeroContratoFromLocacaoId($locacao['id']),
             'locatario' => $locacao['cli_nome'] ?? '-',
             'veiculo' => $locacao['vei_placa'] ?? '-',
             'inicio' => formatarDataBR($locacao['loc_data_inicio'] ?? ''),
             'termino' => formatarDataBR($locacao['loc_data_fim_prevista'] ?? ''),
             'valor_total' => formatarMoedaBR($locacao['loc_valor_total'] ?? $locacao['loc_valor_locacao'] ?? 0),
             'status' => $statusMap[$locacao['loc_status']] ?? $locacao['loc_status'] ?? 'Desconhecido',
+            'tipo' => 'locacao',
+            'ver_id' => (int) $locacao['id'],
         ];
     }
 
     /**
-     * Gera número único de contrato no formato CT-YYYY-NNN
+     * Gera número de contrato no formato C-000001-1 (ano-id-sequencial)
      */
-    private function gerarNumeroContrato(int $locacaoId): string
+    private function gerarNumeroContrato(int $contratoId): string
     {
         $ano = date('Y');
-        // Usar ID da locação como sequencial (pode ser melhorado com contador real)
+        $seq = str_pad((string) $contratoId, 6, '0', STR_PAD_LEFT);
+        return "C-{$seq}-1";
+    }
+
+    private function gerarNumeroContratoFromLocacaoId(int $locacaoId): string
+    {
+        $ano = date('Y');
         $sequencial = str_pad((string) $locacaoId, 3, '0', STR_PAD_LEFT);
         return "CT-{$ano}-{$sequencial}";
     }
 
     /**
-     * API: listar contratos (baseado nas locações) para consumo via AJAX
+     * API: listar contratos para consumo via AJAX (tabela contratos ou fallback locações)
      */
     public function listar()
     {
         try {
-            $contratos = $this->buscarContratosDasLocacoes();
+            $contratos = $this->buscarMeusContratos();
             return $this->response->setJSON([
                 'success' => true,
                 'data' => $contratos,
@@ -177,5 +235,273 @@ class Contratos extends BaseController
                 'message' => 'Erro ao listar contratos.',
             ]);
         }
+    }
+
+    /**
+     * API Select2: locações disponíveis (reservada, ativa) para o modal Criar contrato
+     */
+    public function locacoesDisponiveis()
+    {
+        $empresaId = get_empresa_id();
+        if ($empresaId < 1) {
+            return $this->response->setJSON(['results' => []]);
+        }
+
+        $q = $this->request->getGet('q');
+        $builder = (new LocacaoModel())->builderWithJoins()
+            ->where('locacoes.loc_empresa_id', $empresaId)
+            ->whereIn('locacoes.loc_status', ['reservada', 'ativa']);
+
+        if (!empty($q) && is_string($q)) {
+            $term = '%' . $q . '%';
+            $builder->groupStart();
+            if (is_numeric($q)) {
+                $builder->where('locacoes.id', (int) $q)->orLike('veiculos.vei_placa', $term)->orLike('clientes.cli_nome', $term);
+            } else {
+                $builder->like('veiculos.vei_placa', $term)->orLike('clientes.cli_nome', $term);
+            }
+            $builder->groupEnd();
+        }
+
+        $locacoes = $builder->orderBy('locacoes.created_at', 'DESC')
+            ->limit(30)
+            ->get()
+            ->getResultArray();
+
+        $results = [];
+        foreach ($locacoes as $loc) {
+            $numero = str_pad((string) ($loc['id'] ?? 0), 6, '0', STR_PAD_LEFT);
+            $placa = $loc['vei_placa'] ?? '';
+            $nome = $loc['cli_nome'] ?? '';
+            $text = "#{$numero} - {$placa} | " . strtoupper($nome);
+            $results[] = ['id' => (int) $loc['id'], 'text' => $text];
+        }
+
+        return $this->response->setJSON(['results' => $results]);
+    }
+
+    /**
+     * POST: criar documento de contrato (rascunho) e redirecionar para ver
+     */
+    public function criar()
+    {
+        $empresaId = get_empresa_id();
+        if ($empresaId < 1) {
+            return $this->response->setStatusCode(403)->setJSON([
+                'success' => false,
+                'message' => 'Empresa não identificada.',
+            ]);
+        }
+
+        $locacaoId = (int) $this->request->getPost('locacao_id');
+        $modeloId = (int) $this->request->getPost('modelo_id');
+        if ($locacaoId < 1 || $modeloId < 1) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'success' => false,
+                'message' => 'Selecione a locação e o modelo do contrato.',
+            ]);
+        }
+
+        $locacaoModel = new LocacaoModel();
+        $locacao = $locacaoModel->builderWithJoins()
+            ->where('locacoes.loc_empresa_id', $empresaId)
+            ->where('locacoes.id', $locacaoId)
+            ->get()->getRowArray();
+        if (!$locacao) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'success' => false,
+                'message' => 'Locação não encontrada.',
+            ]);
+        }
+
+        $modeloModel = new ContratoModeloModel();
+        $modelo = $modeloModel->where('con_ativo', 1)->find($modeloId);
+        if (!$modelo) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'success' => false,
+                'message' => 'Modelo de contrato não encontrado.',
+            ]);
+        }
+
+        $contratoModel = new ContratoModel();
+        $contratoModel->insert([
+            'con_empresa_id' => $empresaId,
+            'con_locacao_id' => $locacaoId,
+            'con_modelo_id' => $modeloId,
+            'con_numero' => '', // será preenchido após insert com id
+            'con_status' => 'rascunho',
+        ]);
+        $contratoId = (int) $contratoModel->getInsertID();
+        if ($contratoId < 1) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao criar contrato.',
+            ]);
+        }
+
+        $numero = $this->gerarNumeroContrato($contratoId);
+        $contratoModel->update($contratoId, ['con_numero' => $numero]);
+
+        $redirect = base_url('admin/contratos/ver/' . $contratoId);
+        return $this->response->setJSON([
+            'success' => true,
+            'redirect' => $redirect,
+        ]);
+    }
+
+    /**
+     * Tela de visualização do contrato (Dados + Visualização + PDF)
+     */
+    public function ver(int $id)
+    {
+        $empresaId = get_empresa_id();
+        if ($empresaId < 1) {
+            return redirect()->to(base_url('admin/contratos'));
+        }
+
+        $contratoModel = new ContratoModel();
+        $contrato = $contratoModel->where('con_empresa_id', $empresaId)->find($id);
+        if (!$contrato) {
+            return redirect()->to(base_url('admin/contratos'));
+        }
+
+        $locacaoModel = new LocacaoModel();
+        $locacao = $locacaoModel->builderWithJoins()
+            ->where('locacoes.id', $contrato['con_locacao_id'])
+            ->get()->getRowArray();
+        if (!$locacao) {
+            return redirect()->to(base_url('admin/contratos'));
+        }
+
+        // Carregar cliente e veículo completos (helper precisa de todos os campos)
+        $db = \Config\Database::connect();
+        $cliente = $db->table('clientes')->where('id', $locacao['loc_cli_id'])->get()->getRowArray();
+        $veiculo = $db->table('veiculos')->where('id', $locacao['loc_vei_id'])->get()->getRowArray();
+        $empresaModel = new EmpresaModel();
+        $empresa = $empresaModel->find($empresaId);
+        $modeloModel = new ContratoModeloModel();
+        $modelo = $modeloModel->find($contrato['con_modelo_id']);
+
+        $locacaoArray = is_array($locacao) ? $locacao : [];
+        $clienteArray = $cliente ?: [];
+        $veiculoArray = $veiculo ?: [];
+        $empresaArray = $empresa ?: [];
+        $conteudoSubstituido = '';
+        if ($modelo && !empty($modelo['con_conteudo'])) {
+            helper('contrato');
+            $conteudoSubstituido = substituirVariaveisContrato(
+                $modelo['con_conteudo'],
+                $locacaoArray,
+                $clienteArray,
+                $veiculoArray,
+                $empresaArray
+            );
+        }
+
+        $data = [
+            'title' => 'Contrato ' . ($contrato['con_numero'] ?? ''),
+            'contrato' => $contrato,
+            'locacao' => $locacaoArray,
+            'cliente' => $clienteArray,
+            'veiculo' => $veiculoArray,
+            'empresa' => $empresaArray,
+            'modelo' => $modelo ?: [],
+            'conteudo_substituido' => $conteudoSubstituido,
+        ];
+
+        return view('admin/contratos/ver', $data);
+    }
+
+    /**
+     * GET: gerar e baixar PDF do contrato
+     */
+    public function pdf(int $id)
+    {
+        $empresaId = get_empresa_id();
+        if ($empresaId < 1) {
+            return $this->response->setStatusCode(403);
+        }
+
+        $contrato = (new ContratoModel())->where('con_empresa_id', $empresaId)->find($id);
+        if (!$contrato) {
+            return $this->response->setStatusCode(404);
+        }
+
+        $locacaoModel = new LocacaoModel();
+        $locacao = $locacaoModel->builderWithJoins()
+            ->where('locacoes.id', $contrato['con_locacao_id'])
+            ->get()->getRowArray();
+        if (!$locacao) {
+            return $this->response->setStatusCode(404);
+        }
+
+        $db = \Config\Database::connect();
+        $cliente = $db->table('clientes')->where('id', $locacao['loc_cli_id'])->get()->getRowArray();
+        $veiculo = $db->table('veiculos')->where('id', $locacao['loc_vei_id'])->get()->getRowArray();
+        $empresa = (new EmpresaModel())->find($empresaId);
+        $modelo = (new ContratoModeloModel())->find($contrato['con_modelo_id']);
+
+        $conteudoSubstituido = '';
+        if ($modelo && !empty($modelo['con_conteudo'])) {
+            helper('contrato');
+            $conteudoSubstituido = substituirVariaveisContrato(
+                $modelo['con_conteudo'],
+                $locacao ?: [],
+                $cliente ?: [],
+                $veiculo ?: [],
+                $empresa ?: []
+            );
+        }
+
+        $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+        body { font-family: DejaVu Sans, sans-serif; font-size: 11pt; line-height: 1.4; padding: 20px; }
+        p { margin: 0 0 0.5em 0; }
+        </style></head><body><pre style="white-space: pre-wrap;">' . nl2br(htmlspecialchars($conteudoSubstituido)) . '</pre></body></html>';
+
+        try {
+            $dompdf = new \Dompdf\Dompdf();
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+            $pdfOutput = $dompdf->output();
+        } catch (\Throwable $e) {
+            log_message('error', 'Dompdf: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setBody('Erro ao gerar PDF.');
+        }
+
+        $filename = 'contrato-' . ($contrato['con_numero'] ?? $id) . '.pdf';
+        return $this->response
+            ->setHeader('Content-Type', 'application/pdf')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($pdfOutput);
+    }
+
+    /**
+     * POST: marcar contrato como gerado e gerar token para envio
+     */
+    public function marcarGerado(int $id)
+    {
+        $empresaId = get_empresa_id();
+        if ($empresaId < 1) {
+            return $this->response->setStatusCode(403)->setJSON(['success' => false]);
+        }
+
+        $contrato = (new ContratoModel())->where('con_empresa_id', $empresaId)->find($id);
+        if (!$contrato) {
+            return $this->response->setStatusCode(404)->setJSON(['success' => false]);
+        }
+
+        $token = bin2hex(random_bytes(32));
+        (new ContratoModel())->update($id, [
+            'con_status' => 'gerado',
+            'con_token' => $token,
+        ]);
+
+        $linkEnvio = base_url('contrato/ver/' . $token); // rota pública futura, por enquanto só o token
+        return $this->response->setJSON([
+            'success' => true,
+            'link' => $linkEnvio,
+            'token' => $token,
+        ]);
     }
 }
