@@ -48,8 +48,9 @@ class Home extends BaseController
     }
 
     /**
-     * Faturamento (receitas pagas) em um mês/ano.
-     * Mês: COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento).
+     * Faturamento = todas as receitas que entraram como pagas no mês.
+     * NÃO subtrai despesas - é apenas a soma das receitas pagas.
+     * Mês determinado por: COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento).
      */
     private function getFaturamentoMes(int $empresaId, int $mes, int $ano): float
     {
@@ -84,7 +85,8 @@ class Home extends BaseController
     }
 
     /**
-     * Caixa total = soma receitas pagas - soma despesas pagas (todos os tempos).
+     * Caixa total = receitas pagas (todos os tempos) - despesas pagas (todos os tempos).
+     * Saldo acumulado: o que você recebeu menos o que você pagou em todo o histórico.
      */
     private function getCaixaTotal(int $empresaId): float
     {
@@ -113,7 +115,8 @@ class Home extends BaseController
 
     /**
      * Receitas e despesas do mês atual (recebidas/pagas no mês).
-     * Faturamento = receitas (o que você recebeu). Lucro = receitas - despesas.
+     * Usado para calcular Lucro = receitas - despesas.
+     * Faturamento usa apenas receitas (sem subtrair despesas).
      *
      * @return array{0: float, 1: float} [receitas, despesas]
      */
@@ -136,7 +139,7 @@ class Home extends BaseController
 
         $despesas = $db->table('lancamentos_financeiros')
             ->select('SUM(COALESCE(lan_valor_pago, lan_valor)) as total', false)
-            ->where('lan_empresa_id', $empresaId)
+            ->where('lan_empresa_id', $empresaId) 
             ->where('lan_tipo', 'despesa')
             ->where('lan_status', 'pago')
             ->where('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) >=', $db->escape($inicio), false)

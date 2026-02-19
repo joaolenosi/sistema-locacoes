@@ -256,9 +256,9 @@ class Financeiro extends BaseController
     }
 
     /**
-     * Receitas e despesas do mês atual.
-     * Mês do lançamento: data pagamento, ou (se nula) data vencimento, ou data lançamento.
-     * Assim, registro pago com vencimento 18/02 e data pagamento nula entra em fevereiro.
+     * Receitas e despesas do mês atual (para calcular Lucro = receitas - despesas).
+     * Faturamento usa apenas receitas (sem subtrair despesas).
+     * Mês determinado por: COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento).
      *
      * @return array{0: float, 1: float} [receitas, despesas]
      */
