@@ -514,6 +514,8 @@ class Contratos extends BaseController
         }
 
         $bodyContent = $this->conteudoContratoParaPdfHtml($conteudoSubstituido);
+        // Garantir que tags HTML não estejam como entidades (evitar que o PDF mostre literalmente <p>, <strong>, etc.)
+        $bodyContent = html_entity_decode($bodyContent, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
         body { font-family: DejaVu Serif, serif; font-size: 11pt; line-height: 1.5; margin: 24px; }
         .titulo-contrato { font-size: 14pt; font-weight: bold; margin-top: 1em; margin-bottom: 0.6em; text-align: center; }
@@ -523,7 +525,7 @@ class Contratos extends BaseController
 
         try {
             $dompdf = new \Dompdf\Dompdf();
-            $dompdf->loadHtml($html);
+            $dompdf->loadHtml($html, 'UTF-8');
             $dompdf->setPaper('A4', 'portrait');
             $dompdf->render();
             $pdfOutput = $dompdf->output();
