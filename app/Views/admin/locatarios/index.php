@@ -235,7 +235,7 @@
                         </div>
                         <div class="col-md-8">
                             <label class="form-label" for="cli_nome">Nome / Razão social <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="cli_nome" name="cli_nome" placeholder="Ex.: João Silva" required>
+                            <input type="text" class="form-control" id="cli_nome" name="cli_nome" placeholder="Ex.: João Silva" required style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase();">
                         </div>
 
                         <div class="col-md-4">

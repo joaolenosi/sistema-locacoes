@@ -203,6 +203,56 @@
     return value;
   };
 
+  // ViaCEP: ao sair do campo CEP (ou com 8 dígitos), preenche endereço
+  const fetchViaCep = async (cepDigits) => {
+    if (!cepDigits || cepDigits.length !== 8) return null;
+    const res = await fetch(`https://viacep.com.br/ws/${cepDigits}/json/`, {
+      headers: { "Accept": "application/json" },
+    });
+    const data = await res.json().catch(() => null);
+    if (data?.erro === true) return null;
+    return data;
+  };
+
+  const setupCepBlur = () => {
+    const cepEl = document.getElementById("cli_cep");
+    if (!cepEl) return;
+
+    cepEl.addEventListener("blur", async () => {
+      const raw = (cepEl.value || "").replace(/\D/g, "");
+      if (raw.length !== 8) return;
+
+      const setVal = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.value = value ?? "";
+      };
+
+      const prevRua = document.getElementById("cli_rua")?.value ?? "";
+      const prevBairro = document.getElementById("cli_bairro")?.value ?? "";
+      const prevCidade = document.getElementById("cli_cidade")?.value ?? "";
+      const prevEstado = document.getElementById("cli_estado")?.value ?? "";
+      const hadAddress = [prevRua, prevBairro, prevCidade, prevEstado].some((s) => s.trim() !== "");
+
+      try {
+        const data = await fetchViaCep(raw);
+        if (!data) {
+          if (!hadAddress) setAlert("CEP não encontrado.");
+          return;
+        }
+        setAlert("");
+        setVal("cli_estado", data.uf || "");
+        setVal("cli_cidade", data.localidade || "");
+        setVal("cli_bairro", data.bairro || "");
+        setVal("cli_rua", data.logradouro || "");
+        if (data.complemento && !document.getElementById("cli_complemento")?.value?.trim()) {
+          setVal("cli_complemento", data.complemento);
+        }
+      } catch (_) {
+        if (!hadAddress) setAlert("Erro ao buscar CEP. Tente novamente.");
+      }
+    });
+  };
+
   const fillForm = (data) => {
     if (!data) return;
     const setVal = (id, value) => {
@@ -218,7 +268,7 @@
 
     setVal("cli_id", data.id);
     setVal("cli_tipo_pessoa", tipoPessoa);
-    setVal("cli_nome", data.cli_nome);
+    setVal("cli_nome", (data.cli_nome || "").toUpperCase());
     setVal("cli_cpf_cnpj", formatCPFCNPJ(data.cli_cpf_cnpj, tipoPessoa));
     setVal("cli_data_nascimento", data.cli_data_nascimento ? data.cli_data_nascimento.slice(0, 10) : "");
     setCheck("cli_ativo", data.cli_ativo === 1 || data.cli_ativo === '1' || data.cli_ativo === true);
@@ -297,6 +347,12 @@
 
     const id = document.getElementById("cli_id")?.value || "";
     const fd = new FormData(formEl);
+
+    // Nome em maiúsculas
+    const nomeEl = document.getElementById("cli_nome");
+    if (nomeEl && nomeEl.value) {
+      fd.set("cli_nome", (nomeEl.value || "").trim().toUpperCase());
+    }
 
     // Normalizar CPF/CNPJ removendo formatação (o backend espera apenas números)
     const cpfCnpjEl = document.getElementById("cli_cpf_cnpj");
@@ -400,6 +456,7 @@
   });
 
   setupMasks();
+  setupCepBlur();
   enableEnterNavigation();
 
   // Render inicial

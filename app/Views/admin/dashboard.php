@@ -7,7 +7,7 @@
         <div class="page-title-box d-flex justify-content-between align-items-center">
             <div>
                 <h4 class="mb-0 fw-semibold"><?= esc($title ?? 'Dashboard') ?></h4>
-                <p class="text-muted mb-0">Bem vindo(a) de volta, joao 👋</p>
+                <p class="text-muted mb-0">Bem vindo(a) de volta, <?= esc(session()->get('empresa_nome') ?: 'usuário') ?> 👋</p>
             </div>
             <div id="dashboard-toggle-valores" class="cursor-pointer" role="button" title="Ocultar valores" aria-label="Ocultar valores">
                 <iconify-icon id="dashboard-toggle-icon" icon="iconamoon:eye-duotone" class="text-primary fs-20"></iconify-icon>
