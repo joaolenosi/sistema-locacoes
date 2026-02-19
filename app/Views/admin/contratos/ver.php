@@ -10,6 +10,9 @@
 .contratos-ver-dados .contrato-card p { font-size: 1rem; margin-bottom: 0.35rem; }
 .contratos-ver-dados .badge { font-size: 0.85rem; }
 .contratos-ver-previa .contrato-conteudo-previa { font-size: 1rem; line-height: 1.5; }
+.contrato-previa-html p { margin: 0.4em 0; }
+.contrato-previa-html p:first-child { margin-top: 0; }
+.contrato-previa-html strong { font-weight: 600; }
 </style>
 <?php
 $contrato = $contrato ?? [];
@@ -130,7 +133,12 @@ $baseUrl = base_url();
                             </a>
                         </div>
                         <div class="border rounded p-4 bg-light bg-opacity-50" style="min-height: 320px;">
-                            <div class="contrato-conteudo-previa" style="white-space: pre-wrap; font-family: inherit;"><?= nl2br(esc($conteudoSubstituido)) ?></div>
+                            <?php
+                            $ehHtml = is_string($conteudoSubstituido) && strpos($conteudoSubstituido, '<') !== false && strpos($conteudoSubstituido, '>') !== false;
+                            ?>
+                            <div class="contrato-conteudo-previa <?= $ehHtml ? 'contrato-previa-html' : '' ?>" style="<?= $ehHtml ? '' : 'white-space: pre-wrap;' ?> font-family: inherit;">
+                                <?= $ehHtml ? $conteudoSubstituido : nl2br(esc($conteudoSubstituido)) ?>
+                            </div>
                         </div>
                     </div>
                 </div>

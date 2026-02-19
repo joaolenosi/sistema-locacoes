@@ -22,7 +22,7 @@ class Financeiro extends BaseController
             ->get()
             ->getResultArray();
 
-        [$receitasMesAtual, $despesasMesAtual] = $this->calcularTotaisMesAtual($lancamentos);
+        [$receitasMesAtual, $despesasMesAtual] = $this->getReceitasEDespesasMesAtual($empresaId);
 
         $data = [
             'title' => 'Listagem Financeira',
@@ -256,55 +256,40 @@ class Financeiro extends BaseController
     }
 
     /**
-     * @param array<int, array<string, mixed>> $lancamentos
-     * @return array{0: float, 1: float}
+     * Receitas e despesas do mês atual (recebidas/pagas no mês).
+     * Usa consulta direta por período para não depender de formato de data em PHP.
+     *
+     * @return array{0: float, 1: float} [receitas, despesas]
      */
-    private function calcularTotaisMesAtual(array $lancamentos): array
+    private function getReceitasEDespesasMesAtual(int $empresaId): array
     {
-        $mes = (int) date('m');
-        $ano = (int) date('Y');
+        $db = \Config\Database::connect();
+        $inicio = date('Y-m-01');
+        $fim   = date('Y-m-t');
 
-        $receitas = 0.0;
-        $despesas = 0.0;
+        $receitas = $db->table('lancamentos_financeiros')
+            ->select('SUM(COALESCE(lan_valor_pago, lan_valor)) as total', false)
+            ->where('lan_empresa_id', $empresaId)
+            ->where('lan_tipo', 'receita')
+            ->where('lan_status', 'pago')
+            ->where('COALESCE(lan_data_pagamento, lan_data_lancamento) >=', $inicio, false)
+            ->where('COALESCE(lan_data_pagamento, lan_data_lancamento) <=', $fim, false)
+            ->get()
+            ->getRow();
+        $totalReceitas = (float) ($receitas->total ?? 0);
 
-        foreach ($lancamentos as $l) {
-            $status = (string) ($l['lan_status'] ?? 'pendente');
-            if ($status !== 'pago') {
-                continue;
-            }
+        $despesas = $db->table('lancamentos_financeiros')
+            ->select('SUM(COALESCE(lan_valor_pago, lan_valor)) as total', false)
+            ->where('lan_empresa_id', $empresaId)
+            ->where('lan_tipo', 'despesa')
+            ->where('lan_status', 'pago')
+            ->where('COALESCE(lan_data_pagamento, lan_data_lancamento) >=', $inicio, false)
+            ->where('COALESCE(lan_data_pagamento, lan_data_lancamento) <=', $fim, false)
+            ->get()
+            ->getRow();
+        $totalDespesas = (float) ($despesas->total ?? 0);
 
-            $dataBase = (string) ($l['lan_data_pagamento'] ?? '');
-            if ($dataBase === '') {
-                $dataBase = (string) ($l['lan_data_lancamento'] ?? '');
-            }
-            if ($dataBase === '') {
-                continue;
-            }
-
-            $ts = strtotime($dataBase);
-            if (!$ts) {
-                continue;
-            }
-
-            if ((int) date('m', $ts) !== $mes || (int) date('Y', $ts) !== $ano) {
-                continue;
-            }
-
-            $valor = $l['lan_valor_pago'] ?? null;
-            if ($valor === null || $valor === '') {
-                $valor = $l['lan_valor'] ?? 0;
-            }
-            $valor = (float) $valor;
-
-            $tipo = (string) ($l['lan_tipo'] ?? '');
-            if ($tipo === 'receita') {
-                $receitas += $valor;
-            } elseif ($tipo === 'despesa') {
-                $despesas += $valor;
-            }
-        }
-
-        return [$receitas, $despesas];
+        return [$totalReceitas, $totalDespesas];
     }
 
     /**

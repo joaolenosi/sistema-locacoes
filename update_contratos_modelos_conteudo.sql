@@ -38,6 +38,10 @@ SET `con_conteudo` = '<p><strong>CONTRATO DE LOCAÇÃO DE VEÍCULO AUTOMOTOR</st
 <p><strong>CLÁUSULA 8ª – DO FORO</strong></p>
 <p>Para dirimir quaisquer controvérsias oriundas deste contrato, as partes elegem o foro da comarca de {{locadora.cidade}} – {{locadora.estado}}, renunciando a qualquer outro, por mais privilegiado que seja.</p>
 
-<p>E, por estarem assim justas e contratadas, firmam o presente instrumento na data de {{data_de_hoje}}.</p>',
+<p>E, por estarem assim justas e contratadas, firmam o presente instrumento na data de {{data_de_hoje}}.</p>
+
+<p style="margin-top: 2.5em;"><strong>_________________________________________</strong><br>Assinatura do Locatário<br>{{locatario.nome_completo}}</p>
+
+<p style="margin-top: 2em;"><strong>_________________________________________</strong><br>Assinatura da Locadora / Empresa<br>{{locadora.nome_completo}}</p>',
     `updated_at` = CURRENT_TIMESTAMP
 WHERE `id` = 1;

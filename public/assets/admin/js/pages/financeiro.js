@@ -457,7 +457,17 @@
   window.salvarReceita = () => save("receita");
   window.salvarDespesa = () => save("despesa");
 
-  // primeira renderização
-  updateCards(allData);
+  // Primeira renderização: usar totais do servidor (já corretos por mês) em vez de recalcular no cliente
+  const cards = bootstrapData.cards || {};
+  if (cards.receitasMesAtual != null || cards.despesasMesAtual != null || cards.lucroMesAtual != null) {
+    const elR = document.getElementById("kpi-receitas-mes-atual");
+    const elD = document.getElementById("kpi-despesas-mes-atual");
+    const elL = document.getElementById("kpi-lucro-mes-atual");
+    if (elR && cards.receitasMesAtual != null) elR.textContent = toMoneyBR(cards.receitasMesAtual);
+    if (elD && cards.despesasMesAtual != null) elD.textContent = toMoneyBR(cards.despesasMesAtual);
+    if (elL && cards.lucroMesAtual != null) elL.textContent = toMoneyBR(cards.lucroMesAtual);
+  } else {
+    updateCards(allData);
+  }
   renderGrid(allData);
 })();
