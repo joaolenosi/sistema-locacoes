@@ -19,6 +19,9 @@
 
 <style>
 #dashboard-toggle-valores { cursor: pointer; user-select: none; }
+.dashboard-help-btn { cursor: help; opacity: 0.9; font-size: 1rem; }
+.dashboard-help-btn:hover { opacity: 1; }
+.card-title.d-flex .dashboard-help-btn.text-white { color: rgba(255,255,255,0.9) !important; }
 </style>
 
 <!-- Faturamento do mês atual -->
@@ -28,7 +31,13 @@
                                         <div class="card-body">
                 <div class="row align-items-center">
                     <div class="col-md-8">
-                        <h5 class="text-white mb-3">Faturamento do mês atual</h5>
+                        <h5 class="text-white mb-1 d-flex align-items-center gap-1">
+                            Receitas do mês (faturamento)
+                            <span class="dashboard-help-btn text-white" data-bs-toggle="popover" data-bs-placement="bottom" data-bs-trigger="focus" data-bs-html="true" tabindex="0" role="button" title="O que é faturamento?" data-bs-content="<strong>Faturamento</strong> = o que você <em>recebeu</em> dos clientes no mês (receitas com pagamento recebido). Não é o que você pagou — são as entradas. Ex.: se um cliente te pagou R$ 200, esse valor entra aqui. Mês anterior e % Crescimento usam o mesmo critério." aria-label="Ajuda sobre faturamento">
+                                <iconify-icon icon="mdi:help-circle-outline"></iconify-icon>
+                            </span>
+                        </h5>
+                        <p class="text-white-50 small mb-2">Receitas recebidas no mês</p>
                         <h2 class="text-white mb-3"><span class="dashboard-valor" data-original="R$ <?= number_format($faturamento_mes_atual ?? 0, 2, ',', '.') ?>">R$ <?= number_format($faturamento_mes_atual ?? 0, 2, ',', '.') ?></span></h2>
                         <div class="d-flex gap-4">
                             <div>
@@ -56,8 +65,13 @@
     <div class="col-lg-8">
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title mb-1">Fluxo de Caixa</h5>
-                <p class="text-muted mb-3 small">Últimos 12 meses</p>
+                <h5 class="card-title mb-1 d-flex align-items-center gap-1">
+                    Fluxo de Caixa
+                    <span class="dashboard-help-btn text-muted" data-bs-toggle="popover" data-bs-placement="bottom" data-bs-trigger="focus" data-bs-html="true" tabindex="0" role="button" title="Como funciona" data-bs-content="Cada ponto = <strong>Receitas</strong> (o que você recebeu) <em>menos</em> <strong>Despesas</strong> (o que você pagou) naquele mês. A linha mostra a evolução do saldo mês a mês." aria-label="Ajuda sobre fluxo de caixa">
+                        <iconify-icon icon="mdi:help-circle-outline"></iconify-icon>
+                    </span>
+                </h5>
+                <p class="text-muted mb-3 small">Receitas − Despesas por mês (últimos 12 meses)</p>
                 <div id="fluxo-caixa-chart" class="apex-charts" style="min-height: 300px;"></div>
             </div>
         </div>
@@ -67,8 +81,13 @@
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title mb-1">Tipos de movimentação</h5>
-                        <p class="text-muted mb-2 small">+ Utilizadas</p>
+                        <h5 class="card-title mb-1 d-flex align-items-center gap-1">
+                        Tipos de movimentação
+                        <span class="dashboard-help-btn text-body-secondary" data-bs-toggle="popover" data-bs-placement="bottom" data-bs-trigger="focus" data-bs-html="true" tabindex="0" role="button" title="Como funciona" data-bs-content="Proporção entre <strong>Receitas</strong> (entradas — o que você recebeu) e <strong>Despesas</strong> (saídas — o que você pagou) em todo o histórico." aria-label="Ajuda">
+                            <iconify-icon icon="mdi:help-circle-outline"></iconify-icon>
+                        </span>
+                    </h5>
+                        <p class="text-muted mb-2 small">Receitas vs Despesas (todo o histórico)</p>
                         <div id="tipos-movimentacao-chart" class="apex-charts" style="min-height: 220px;"></div>
                     </div>
                 </div>
@@ -78,7 +97,12 @@
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title mb-1">Veículos por Status</h5>
+                        <h5 class="card-title mb-1 d-flex align-items-center gap-1">
+                        Veículos por Status
+                        <span class="dashboard-help-btn text-body-secondary" data-bs-toggle="popover" data-bs-placement="bottom" data-bs-trigger="focus" data-bs-html="true" tabindex="0" role="button" title="Como funciona" data-bs-content="Distribuição dos veículos por situação: <strong>Ocupados</strong> (locados), <strong>Livres</strong> (disponíveis), <strong>Manutenção</strong> ou <strong>Inativo</strong>. Os percentuais são calculados sobre o total de veículos." aria-label="Ajuda">
+                            <iconify-icon icon="mdi:help-circle-outline"></iconify-icon>
+                        </span>
+                    </h5>
                         <p class="text-muted mb-2 small">Distribuição atual</p>
                         <div id="veiculos-status-chart" class="apex-charts" style="min-height: 220px;"></div>
                     </div>
@@ -93,23 +117,42 @@
         <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);">
             <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between mb-3">
-                    <h5 class="text-white mb-0">Caixa Total</h5>
+                    <h5 class="text-white mb-0 d-flex align-items-center gap-1">
+                        Caixa Total
+                        <span class="dashboard-help-btn text-white" data-bs-toggle="popover" data-bs-placement="left" data-bs-trigger="focus" data-bs-html="true" tabindex="0" role="button" title="O que é?" data-bs-content="Saldo acumulado: <strong>Receitas</strong> (tudo que você recebeu) − <strong>Despesas</strong> (tudo que você pagou), em todo o tempo. Por isso pode ter valor (ex.: R$ 850) mesmo com Receitas e Lucro do mês em zero — o mês atual só entra quando houver receitas/despesas pagas neste mês." aria-label="Ajuda sobre caixa total">
+                            <iconify-icon icon="mdi:help-circle-outline"></iconify-icon>
+                        </span>
+                    </h5>
                     <iconify-icon icon="iconamoon:wallet-duotone" class="text-white" style="font-size: 32px;"></iconify-icon>
-                                                </div>
+                </div>
+                <p class="text-white-50 small mb-1">Receitas − Despesas (acumulado)</p>
                 <h2 class="text-white mb-0"><span class="dashboard-valor" data-original="R$ <?= number_format($caixa_total ?? 0, 2, ',', '.') ?>">R$ <?= number_format($caixa_total ?? 0, 2, ',', '.') ?></span></h2>
                                         </div>
                                     </div>
                                     <!-- end card -->
         <div class="card mt-3">
-                                        <div class="card-body">
-                <h5 class="card-title mb-1">Lucro do mês atual</h5>
-                <div class="d-flex align-items-center justify-content-between">
-                    <h3 class="mb-0"><span class="dashboard-valor" data-original="R$ <?= number_format($lucro_mes_atual ?? 0, 2, ',', '.') ?>">R$ <?= number_format($lucro_mes_atual ?? 0, 2, ',', '.') ?></span></h3>
-                    <iconify-icon icon="iconamoon:trend-up-bold" class="text-success" style="font-size: 32px;"></iconify-icon>
-                                                    </div>
-                                                </div>
-                                    </div>
-                                    <!-- end card -->
+            <div class="card-body">
+                <h5 class="card-title mb-3 d-flex align-items-center gap-1">
+                    Receitas e despesas do mês
+                    <span class="dashboard-help-btn text-body-secondary" data-bs-toggle="popover" data-bs-placement="left" data-bs-trigger="focus" data-bs-html="true" tabindex="0" role="button" title="Como funciona" data-bs-content="<strong>Receitas</strong> = o que você recebeu no mês. <strong>Despesas</strong> = o que você pagou no mês. <strong>Lucro</strong> = Receitas − Despesas. Ex.: recebeu R$ 200 e não pagou nada → Lucro R$ 200." aria-label="Ajuda sobre receitas e despesas">
+                        <iconify-icon icon="mdi:help-circle-outline"></iconify-icon>
+                    </span>
+                </h5>
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                    <span class="text-muted">Receitas (entradas)</span>
+                    <strong class="text-success"><span class="dashboard-valor" data-original="R$ <?= number_format($receitas_mes_atual ?? 0, 2, ',', '.') ?>">R$ <?= number_format($receitas_mes_atual ?? 0, 2, ',', '.') ?></span></strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                    <span class="text-muted">Despesas (saídas)</span>
+                    <strong class="text-danger"><span class="dashboard-valor" data-original="R$ <?= number_format($despesas_mes_atual ?? 0, 2, ',', '.') ?>">R$ <?= number_format($despesas_mes_atual ?? 0, 2, ',', '.') ?></span></strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center pt-1">
+                    <span class="fw-semibold">Lucro (receitas − despesas)</span>
+                    <h4 class="mb-0 text-primary"><span class="dashboard-valor" data-original="R$ <?= number_format($lucro_mes_atual ?? 0, 2, ',', '.') ?>">R$ <?= number_format($lucro_mes_atual ?? 0, 2, ',', '.') ?></span></h4>
+                </div>
+            </div>
+        </div>
+        <!-- end card -->
         <!-- Cards Informativos -->
         <div class="row g-3 mt-0">
             <!-- Cobranças em atraso -->
@@ -122,7 +165,12 @@
                             </div>
                         </div>
                         <h4 class="mb-1"><span class="dashboard-valor" data-original="<?= esc($cobrancas_atraso ?? 0) ?>"><?= esc($cobrancas_atraso ?? 0) ?></span></h4>
-                        <p class="text-muted mb-0 small">Cobranças em atraso</p>
+                        <p class="text-muted mb-0 small d-flex align-items-center justify-content-center gap-1">
+                            Cobranças em atraso
+                            <span class="dashboard-help-btn" data-bs-toggle="popover" data-bs-placement="top" data-bs-trigger="focus" data-bs-html="true" tabindex="0" role="button" title="Como funciona" data-bs-content="Quantidade de <strong>receitas pendentes</strong> com data de vencimento já passada. São valores que a empresa ainda deve receber e estão em atraso." aria-label="Ajuda">
+                                <iconify-icon icon="mdi:help-circle-outline"></iconify-icon>
+                            </span>
+                        </p>
                                                 </div>
                                             </div>
                                         </div>
@@ -137,7 +185,12 @@
                             </div>
                         </div>
                         <h4 class="mb-1"><span class="dashboard-valor" data-original="<?= esc($precisa_manutencao ?? 0) ?>"><?= esc($precisa_manutencao ?? 0) ?></span></h4>
-                        <p class="text-muted mb-0 small">Precisa de manutenção</p>
+                        <p class="text-muted mb-0 small d-flex align-items-center justify-content-center gap-1">
+                            Precisa de manutenção
+                            <span class="dashboard-help-btn" data-bs-toggle="popover" data-bs-placement="top" data-bs-trigger="focus" data-bs-html="true" tabindex="0" role="button" title="Como funciona" data-bs-content="Quantidade de <strong>ordens de manutenção</strong> com status <em>aberta</em>. São veículos ou itens com manutenção em andamento ou aguardando execução." aria-label="Ajuda">
+                                <iconify-icon icon="mdi:help-circle-outline"></iconify-icon>
+                            </span>
+                        </p>
                     </div>
                                         </div>
                                     </div>
@@ -152,7 +205,12 @@
                                                         </div>
                                                     </div>
                         <h4 class="mb-1"><span class="dashboard-valor" data-original="<?= esc($veiculos_disponiveis ?? 0) ?> de <?= esc($total_veiculos ?? 0) ?>"><?= esc($veiculos_disponiveis ?? 0) ?> de <?= esc($total_veiculos ?? 0) ?></span></h4>
-                        <p class="text-muted mb-0 small">Veículos disponíveis</p>
+                        <p class="text-muted mb-0 small d-flex align-items-center justify-content-center gap-1">
+                            Veículos disponíveis
+                            <span class="dashboard-help-btn" data-bs-toggle="popover" data-bs-placement="top" data-bs-trigger="focus" data-bs-html="true" tabindex="0" role="button" title="Como funciona" data-bs-content="<strong>Disponíveis</strong> = veículos com status disponível ou livre. O número à direita é o <strong>total</strong> de veículos cadastrados na empresa." aria-label="Ajuda">
+                                <iconify-icon icon="mdi:help-circle-outline"></iconify-icon>
+                            </span>
+                        </p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -167,7 +225,12 @@
                             </div>
                         </div>
                         <h4 class="mb-1"><span class="dashboard-valor" data-original="<?= esc($cnhs_vencidas ?? 0) ?>"><?= esc($cnhs_vencidas ?? 0) ?></span></h4>
-                        <p class="text-muted mb-0 small">CNH's vencidas</p>
+                        <p class="text-muted mb-0 small d-flex align-items-center justify-content-center gap-1">
+                            CNH's vencidas
+                            <span class="dashboard-help-btn" data-bs-toggle="popover" data-bs-placement="top" data-bs-trigger="focus" data-bs-html="true" tabindex="0" role="button" title="Como funciona" data-bs-content="Quantidade de <strong>clientes/locatários</strong> cuja data de validade da CNH já passou. Útil para lembrar de solicitar documentação atualizada." aria-label="Ajuda">
+                                <iconify-icon icon="mdi:help-circle-outline"></iconify-icon>
+                            </span>
+                        </p>
                     </div>
                                         </div>
                                     </div>
@@ -235,8 +298,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (document.querySelector("#fluxo-caixa-chart")) {
         const fluxoCaixaOptions = {
         series: [{
-            name: 'Fluxo de Caixa',
-            data: fluxoCaixaData || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2304]
+            name: 'Receitas − Despesas',
+            data: fluxoCaixaData || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         }],
         chart: {
             height: 300,
@@ -342,7 +405,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 show: false
             }
         },
-        labels: tiposMovimentacaoLabels || ['Entrada', 'Saída'],
+        labels: tiposMovimentacaoLabels || ['Receitas', 'Despesas'],
         colors: ['#20c997', '#dc3545'],
         legend: {
             show: true,
@@ -390,8 +453,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     show: false
                 }
             },
-            labels: veiculosStatusLabels || ['Ocupados', 'Livres', 'Manutenção'],
-            colors: ['#ffc107', '#22c55e', '#dc3545'],
+            labels: veiculosStatusLabels || ['Ocupados', 'Livres', 'Manutenção', 'Inativo'],
+            colors: ['#ffc107', '#22c55e', '#dc3545', '#6c757d'],
             legend: {
                 show: true,
                 position: 'bottom',
@@ -416,6 +479,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const veiculosStatusChart = new ApexCharts(document.querySelector("#veiculos-status-chart"), veiculosStatusOptions);
         veiculosStatusChart.render();
     }
+});
+
+// Inicializar popovers de ajuda do dashboard
+document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(el) {
+    new bootstrap.Popover(el, { sanitize: false });
 });
 </script>
 

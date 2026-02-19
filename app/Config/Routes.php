@@ -37,6 +37,7 @@ $routes->post('admin/contratos/criar', 'Contratos::criar');
 $routes->get('admin/contratos/ver/(:num)', 'Contratos::ver/$1');
 $routes->get('admin/contratos/pdf/(:num)', 'Contratos::pdf/$1');
 $routes->post('admin/contratos/marcar-gerado/(:num)', 'Contratos::marcarGerado/$1');
+$routes->post('admin/contratos/modelo/atualizar/(:num)', 'Contratos::atualizarModelo/$1');
 $routes->get('admin/cobrancas', 'Cobrancas::index');
 $routes->get('admin/cobrancas/listar', 'Cobrancas::listar');
 $routes->post('admin/cobrancas/quitar/(:num)', 'Cobrancas::quitar/$1');

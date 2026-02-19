@@ -72,9 +72,58 @@
       }
     });
 
-    // Botão salvar (UI apenas por enquanto)
-    document.getElementById("btnSalvarModeloContrato")?.addEventListener("click", () => {
-      alert("Modelo pronto para salvar (teste de UI).");
+    // Botão salvar: POST para backend e feedback
+    document.getElementById("btnSalvarModeloContrato")?.addEventListener("click", async () => {
+      const btn = document.getElementById("btnSalvarModeloContrato");
+      const modeloIdEl = document.getElementById("con_modelo_id");
+      const modeloId = modeloIdEl ? parseInt(modeloIdEl.value, 10) : 0;
+      if (!modeloId) {
+        alert("ID do modelo não encontrado.");
+        return;
+      }
+      const conNome = (document.getElementById("con_nome")?.value || "").trim();
+      const conDescricao = (document.getElementById("con_descricao")?.value || "").trim();
+      const conConteudo = quill ? quill.root.innerHTML : (document.getElementById("contrato-modelo-conteudo-html")?.value || "");
+
+      const getBaseUrl = () => {
+        const base = window.__BASE_URL__ || (window.location.origin + (window.location.pathname.indexOf("/sistema") !== -1 ? "/sistema/" : "/"));
+        return base.endsWith("/") ? base : base + "/";
+      };
+      const url = getBaseUrl() + "admin/contratos/modelo/atualizar/" + modeloId;
+
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Salvando...";
+      }
+      try {
+        const formData = new FormData();
+        formData.set("con_nome", conNome);
+        formData.set("con_descricao", conDescricao);
+        formData.set("con_conteudo", conConteudo);
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" },
+          body: formData,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success) {
+          if (typeof toastr !== "undefined") toastr.success("Modelo salvo com sucesso.");
+          else alert("Modelo salvo com sucesso.");
+        } else {
+          const msg = data.message || "Erro ao salvar o modelo.";
+          if (typeof toastr !== "undefined") toastr.error(msg);
+          else alert(msg);
+        }
+      } catch (err) {
+        const msg = "Erro de conexão ao salvar.";
+        if (typeof toastr !== "undefined") toastr.error(msg);
+        else alert(msg);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "Salvar alterações";
+        }
+      }
     });
   };
 

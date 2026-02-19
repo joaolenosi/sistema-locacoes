@@ -13,13 +13,17 @@ class Home extends BaseController
     {
         $empresaId = get_empresa_id();
 
+        [$receitasMes, $despesasMes] = $this->getReceitasEDespesasMesAtual($empresaId);
+
         $data = [
             'title' => 'Dashboard',
-            'faturamento_mes_atual'   => $this->getFaturamentoMes($empresaId, (int) date('n'), (int) date('Y')),
+            'faturamento_mes_atual'   => $receitasMes, // faturamento = receitas recebidas no mês
             'faturamento_mes_anterior' => $this->getFaturamentoMesAnterior($empresaId),
             'crescimento_percentual' => 0, // filled below
             'caixa_total'            => $this->getCaixaTotal($empresaId),
-            'lucro_mes_atual'        => $this->getLucroMesAtual($empresaId),
+            'receitas_mes_atual'     => $receitasMes,
+            'despesas_mes_atual'     => $despesasMes,
+            'lucro_mes_atual'        => $receitasMes - $despesasMes,
             'veiculos_disponiveis'   => $this->getVeiculosDisponiveis($empresaId),
             'total_veiculos'         => $this->getTotalVeiculos($empresaId),
             'cobrancas_atraso'       => $this->getCobrancasAtraso($empresaId),
@@ -108,9 +112,12 @@ class Home extends BaseController
     }
 
     /**
-     * Lucro do mês atual = receitas pagas do mês - despesas pagas do mês.
+     * Receitas e despesas do mês atual (recebidas/pagas no mês).
+     * Faturamento = receitas (o que você recebeu). Lucro = receitas - despesas.
+     *
+     * @return array{0: float, 1: float} [receitas, despesas]
      */
-    private function getLucroMesAtual(int $empresaId): float
+    private function getReceitasEDespesasMesAtual(int $empresaId): array
     {
         $db = \Config\Database::connect();
         $inicio = date('Y-m-01');
@@ -138,7 +145,7 @@ class Home extends BaseController
             ->getRow();
         $totalDespesas = (float) ($despesas->total ?? 0);
 
-        return $totalReceitas - $totalDespesas;
+        return [$totalReceitas, $totalDespesas];
     }
 
     /**
@@ -275,13 +282,13 @@ class Home extends BaseController
         $total = $totalReceitas + $totalDespesas;
         if ($total <= 0) {
             return [
-                ['tipo' => 'Entrada', 'valor' => 50],
-                ['tipo' => 'Saída', 'valor' => 50],
+                ['tipo' => 'Receitas', 'valor' => 50],
+                ['tipo' => 'Despesas', 'valor' => 50],
             ];
         }
         return [
-            ['tipo' => 'Entrada', 'valor' => round(($totalReceitas / $total) * 100, 0)],
-            ['tipo' => 'Saída', 'valor' => round(($totalDespesas / $total) * 100, 0)],
+            ['tipo' => 'Receitas', 'valor' => round(($totalReceitas / $total) * 100, 0)],
+            ['tipo' => 'Despesas', 'valor' => round(($totalDespesas / $total) * 100, 0)],
         ];
     }
 

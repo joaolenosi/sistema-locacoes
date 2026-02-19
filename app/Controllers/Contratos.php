@@ -218,6 +218,28 @@ class Contratos extends BaseController
     }
 
     /**
+     * Garante que o helper de contrato está carregado (substituirVariaveisContrato).
+     * Carrega via require_once se helper() não tiver carregado (ex.: servidor case-sensitive).
+     */
+    private function ensureContratoHelper(): void
+    {
+        if (function_exists('substituirVariaveisContrato')) {
+            return;
+        }
+        $path = APPPATH . 'Helpers/Contrato_helper.php';
+        if (file_exists($path)) {
+            require_once $path;
+            return;
+        }
+        $pathLower = APPPATH . 'Helpers/contrato_helper.php';
+        if (file_exists($pathLower)) {
+            require_once $pathLower;
+            return;
+        }
+        helper('contrato');
+    }
+
+    /**
      * API: listar contratos para consumo via AJAX (tabela contratos ou fallback locações)
      */
     public function listar()
@@ -388,7 +410,7 @@ class Contratos extends BaseController
         $empresaArray = $empresa ?: [];
         $conteudoSubstituido = '';
         if ($modelo && !empty($modelo['con_conteudo'])) {
-            helper('contrato');
+            $this->ensureContratoHelper();
             $conteudoSubstituido = \substituirVariaveisContrato(
                 $modelo['con_conteudo'],
                 $locacaoArray,
@@ -410,6 +432,44 @@ class Contratos extends BaseController
         ];
 
         return view('admin/contratos/ver', $data);
+    }
+
+    /**
+     * Converte o conteúdo do contrato (já com variáveis substituídas) para HTML do PDF.
+     * Se já for HTML (contém tags), usa como está. Se for texto puro, converte: título e
+     * linhas "CLÁUSULA Xª" em negrito, demais linhas em parágrafos.
+     */
+    private function conteudoContratoParaPdfHtml(string $conteudo): string
+    {
+        $conteudo = trim($conteudo);
+        if ($conteudo === '') {
+            return '';
+        }
+        // Conteúdo já em HTML (ex.: do editor Quill ou do UPDATE no banco)
+        if (strpos($conteudo, '<') !== false && strpos($conteudo, '>') !== false) {
+            return $conteudo;
+        }
+        // Fallback: texto puro -> HTML com título e cláusulas em destaque
+        $linhas = preg_split('/\r\n|\r|\n/', $conteudo);
+        $out = '';
+        $primeira = true;
+        foreach ($linhas as $linha) {
+            $trim = trim($linha);
+            if ($trim === '') {
+                $out .= '<p>&nbsp;</p>';
+                continue;
+            }
+            if (stripos($trim, 'CLÁUSULA') === 0) {
+                $out .= '<p class="clausula"><strong>' . htmlspecialchars($trim, ENT_QUOTES, 'UTF-8') . '</strong></p>';
+            } elseif ($primeira && (stripos($trim, 'CONTRATO') !== false || strlen($trim) > 40)) {
+                $out .= '<p class="titulo-contrato">' . htmlspecialchars($trim, ENT_QUOTES, 'UTF-8') . '</p>';
+                $primeira = false;
+            } else {
+                $out .= '<p>' . htmlspecialchars($trim, ENT_QUOTES, 'UTF-8') . '</p>';
+                $primeira = false;
+            }
+        }
+        return $out;
     }
 
     /**
@@ -443,7 +503,7 @@ class Contratos extends BaseController
 
         $conteudoSubstituido = '';
         if ($modelo && !empty($modelo['con_conteudo'])) {
-            helper('contrato');
+            $this->ensureContratoHelper();
             $conteudoSubstituido = \substituirVariaveisContrato(
                 $modelo['con_conteudo'],
                 $locacao ?: [],
@@ -453,10 +513,13 @@ class Contratos extends BaseController
             );
         }
 
+        $bodyContent = $this->conteudoContratoParaPdfHtml($conteudoSubstituido);
         $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 11pt; line-height: 1.4; padding: 20px; }
-        p { margin: 0 0 0.5em 0; }
-        </style></head><body><pre style="white-space: pre-wrap;">' . nl2br(htmlspecialchars($conteudoSubstituido)) . '</pre></body></html>';
+        body { font-family: DejaVu Serif, serif; font-size: 11pt; line-height: 1.5; margin: 24px; }
+        .titulo-contrato { font-size: 14pt; font-weight: bold; margin-top: 1em; margin-bottom: 0.6em; text-align: center; }
+        .clausula { font-weight: bold; margin-top: 0.8em; margin-bottom: 0.3em; }
+        p { margin: 0.4em 0; }
+        </style></head><body>' . $bodyContent . '</body></html>';
 
         try {
             $dompdf = new \Dompdf\Dompdf();
@@ -474,6 +537,54 @@ class Contratos extends BaseController
             ->setHeader('Content-Type', 'application/pdf')
             ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
             ->setBody($pdfOutput);
+    }
+
+    /**
+     * POST: atualizar modelo de contrato (nome, descrição, conteúdo).
+     * Aceita apenas modelos de empresa logada ou modelo padrão (con_empresa_id NULL).
+     */
+    public function atualizarModelo(int $id)
+    {
+        $empresaId = get_empresa_id();
+        if ($empresaId < 1) {
+            return $this->response->setStatusCode(403)->setJSON(['success' => false, 'message' => 'Acesso negado.']);
+        }
+
+        $modeloModel = new ContratoModeloModel();
+        $modelo = $modeloModel->find($id);
+        if (!$modelo) {
+            return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'Modelo não encontrado.']);
+        }
+
+        $modeloEmpresaId = isset($modelo['con_empresa_id']) ? (int) $modelo['con_empresa_id'] : null;
+        if ($modeloEmpresaId !== null && $modeloEmpresaId !== $empresaId) {
+            return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'Modelo não encontrado.']);
+        }
+
+        $conNome = $this->request->getPost('con_nome');
+        $conDescricao = $this->request->getPost('con_descricao');
+        $conConteudo = $this->request->getPost('con_conteudo');
+
+        $conNome = is_string($conNome) ? trim($conNome) : '';
+        $conDescricao = is_string($conDescricao) ? trim($conDescricao) : '';
+        $conConteudo = is_string($conConteudo) ? $conConteudo : '';
+
+        if ($conNome === '') {
+            return $this->response->setJSON(['success' => false, 'message' => 'Nome do modelo é obrigatório.']);
+        }
+
+        // Permitir apenas tags seguras (Quill: p, strong, br, ul, li, etc.)
+        $allowedTags = '<p><br><strong><b><em><i><u><ul><ol><li><span><h1><h2><h3><h4><blockquote><code><pre>';
+        $conConteudo = strip_tags($conConteudo, $allowedTags);
+
+        $modeloModel->update($id, [
+            'con_nome'       => $conNome,
+            'con_descricao'  => $conDescricao,
+            'con_conteudo'   => $conConteudo,
+            'updated_at'     => date('Y-m-d H:i:s'),
+        ]);
+
+        return $this->response->setJSON(['success' => true]);
     }
 
     /**

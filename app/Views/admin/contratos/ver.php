@@ -2,6 +2,15 @@
 <?= $this->extend('admin/layout') ?>
 
 <?= $this->section('content') ?>
+<style>
+/* Contrato ver: fontes proporcionais ao layout */
+.contratos-ver-dados .contrato-card .row { font-size: 1rem; }
+.contratos-ver-dados .contrato-card .text-muted { font-size: 0.95rem; }
+.contratos-ver-dados .contrato-card h6 { font-size: 1.1rem; }
+.contratos-ver-dados .contrato-card p { font-size: 1rem; margin-bottom: 0.35rem; }
+.contratos-ver-dados .badge { font-size: 0.85rem; }
+.contratos-ver-previa .contrato-conteudo-previa { font-size: 1rem; line-height: 1.5; }
+</style>
 <?php
 $contrato = $contrato ?? [];
 $locacao = $locacao ?? [];
@@ -52,17 +61,17 @@ $baseUrl = base_url();
                     </li>
                 </ul>
 
-                <div class="tab-content">
+                <div class="tab-content contratos-ver-dados">
                     <!-- Tab Dados -->
                     <div class="tab-pane active" id="tab-dados" role="tabpanel">
                         <div class="row g-3">
                             <div class="col-12">
-                                <div class="border rounded p-3">
+                                <div class="border rounded p-3 contrato-card">
                                     <h6 class="d-flex align-items-center gap-2 mb-3">
                                         <iconify-icon icon="solar:document-text-bold-duotone" class="fs-20 text-primary"></iconify-icon>
                                         Locação
                                     </h6>
-                                    <div class="row g-2 small">
+                                    <div class="row g-2">
                                         <div class="col-md-4"><span class="text-muted">Número:</span> #<?= str_pad((string)($locacao['id'] ?? 0), 6, '0', STR_PAD_LEFT) ?></div>
                                         <div class="col-md-4"><span class="text-muted">Data da retirada:</span> <?= esc(formatarDataBR($locacao['loc_data_inicio'] ?? '')) ?></div>
                                         <div class="col-md-4"><span class="text-muted">Início do pagamento:</span> <?= esc(formatarDataBR($locacao['loc_data_inicio_pagamento'] ?? $locacao['loc_data_inicio'] ?? '')) ?></div>
@@ -77,41 +86,41 @@ $baseUrl = base_url();
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="border rounded p-3">
+                                <div class="border rounded p-3 contrato-card">
                                     <h6 class="d-flex align-items-center gap-2 mb-3">
                                         <iconify-icon icon="solar:user-bold-duotone" class="fs-20 text-primary"></iconify-icon>
                                         Locatário
                                     </h6>
                                     <p class="mb-1 fw-semibold"><?= esc($cliente['cli_nome'] ?? '-') ?></p>
                                     <?php if (!empty($cliente['cli_whatsapp'])): ?>
-                                        <p class="mb-1 small">
+                                        <p class="mb-1">
                                             <iconify-icon icon="logos:whatsapp-icon" class="align-middle"></iconify-icon>
                                             <?= esc($cliente['cli_whatsapp']) ?>
                                         </p>
                                     <?php endif; ?>
-                                    <p class="mb-0 small text-muted">CPF: <?= esc(formatarCPFCNPJ($cliente['cli_cpf_cnpj'] ?? '')) ?></p>
+                                    <p class="mb-0 text-muted">CPF: <?= esc(formatarCPFCNPJ($cliente['cli_cpf_cnpj'] ?? '')) ?></p>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="border rounded p-3">
+                                <div class="border rounded p-3 contrato-card">
                                     <h6 class="d-flex align-items-center gap-2 mb-3">
                                         <iconify-icon icon="solar:car-bold-duotone" class="fs-20 text-primary"></iconify-icon>
                                         Veículo
                                     </h6>
                                     <p class="mb-1 fw-semibold"><?= esc($veiculo['vei_placa'] ?? '-') ?></p>
-                                    <p class="mb-1 small"><?= esc($veiculo['vei_marca'] ?? '') ?> <?= esc($veiculo['vei_modelo'] ?? '') ?></p>
-                                    <p class="mb-1 small text-muted">Ano: <?= esc($veiculo['vei_ano'] ?? '-') ?></p>
-                                    <p class="mb-0 small text-muted">KM atual: <?= esc($veiculo['vei_km_atual'] ?? $locacao['loc_km_retirada'] ?? '-') ?> KM</p>
+                                    <p class="mb-1"><?= esc($veiculo['vei_marca'] ?? '') ?> <?= esc($veiculo['vei_modelo'] ?? '') ?></p>
+                                    <p class="mb-1 text-muted">Ano: <?= esc($veiculo['vei_ano'] ?? '-') ?></p>
+                                    <p class="mb-0 text-muted">KM atual: <?= esc($veiculo['vei_km_atual'] ?? $locacao['loc_km_retirada'] ?? '-') ?> KM</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Tab Visualização -->
-                    <div class="tab-pane" id="tab-visualizacao" role="tabpanel">
+                    <div class="tab-pane contratos-ver-previa" id="tab-visualizacao" role="tabpanel">
                         <div class="mb-3">
                             <h6 class="mb-2">Prévia do contrato</h6>
-                            <p class="text-muted small">
+                            <p class="text-muted">
                                 Veja como o seu cliente vai visualizar o contrato e prepare-se para enviá-lo.
                                 Para baixar em PDF, use o botão <strong>Download PDF</strong> no topo da página.
                             </p>
@@ -141,13 +150,13 @@ $baseUrl = base_url();
             <div class="modal-body">
                 <p class="mb-3">Envie o link do contrato para o cliente pelo meio que preferir.</p>
                 <div class="mb-3">
-                    <label class="form-label small text-muted">Link do contrato</label>
+                    <label class="form-label text-muted">Link do contrato</label>
                     <div class="input-group">
                         <input type="text" class="form-control" id="input-link-contrato" readonly value="">
                         <button type="button" class="btn btn-outline-primary" id="btn-copiar-link">Copiar</button>
                     </div>
                 </div>
-                <p class="small text-danger mb-0">
+                <p class="text-danger mb-0">
                     Ao copiar o link, o contrato será considerado como <strong>Gerado</strong>. A partir deste momento, não será mais possível editar o contrato!
                 </p>
             </div>

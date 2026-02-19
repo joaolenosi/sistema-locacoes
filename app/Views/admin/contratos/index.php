@@ -267,6 +267,7 @@
                             </button>
                         </div>
 
+                        <input type="hidden" id="con_modelo_id" value="<?= (int)($modelo_padrao['id'] ?? 1) ?>">
                         <div class="row g-3">
                             <div class="col-12">
                                 <label class="form-label">Nome</label>

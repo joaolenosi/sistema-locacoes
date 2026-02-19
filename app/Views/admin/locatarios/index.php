@@ -154,6 +154,23 @@
         bottom: 0;
         z-index: 10;
     }
+
+    /* Texto dos inputs preto */
+    #modalLocatario .form-control,
+    #modalLocatario .form-select,
+    #modalLocatario textarea.form-control,
+    #filtros-container .form-control,
+    #filtros-container .form-select {
+        color: #000 !important;
+    }
+
+    /* Placeholder cinza mais claro */
+    #modalLocatario .form-control::placeholder,
+    #modalLocatario textarea.form-control::placeholder,
+    #filtros-container .form-control::placeholder {
+        color: #adb5bd !important;
+        opacity: 1;
+    }
 </style>
 
 <!-- ========== Page Title Start ========== -->
