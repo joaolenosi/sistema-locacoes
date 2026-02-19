@@ -312,7 +312,7 @@
 
 <!-- Gridjs Plugin js -->
 <script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
-
+<script>window.__BASE_URL__ = '<?= base_url() ?>';</script>
 <!-- Gridjs Contratos js -->
 <script src="<?= asset_url('assets/admin/js/pages/contratos.js') ?>"></script>
 
@@ -320,7 +320,7 @@
 <script src="<?= asset_url('assets/admin/js/pages/contratos-modelos.js') ?>"></script>
 
 <script>
-// Dados do controller para a tabela "Meus contratos"
+// Legado: dados do controller (a tabela agora carrega via API admin/contratos/listar)
 window.__MEUS_CONTRATOS__ = <?= json_encode($meus_contratos ?? []) ?>;
 </script>
 

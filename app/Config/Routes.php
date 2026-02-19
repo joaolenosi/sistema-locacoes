@@ -31,6 +31,7 @@ $routes->post('admin/locacoes/atualizar/(:num)', 'Locoes::atualizar/$1');
 $routes->get('admin/locacoes/veiculos-por-cliente/(:num)', 'Locoes::veiculosPorCliente/$1');
 $routes->get('admin/locacoes/cliente-por-veiculo/(:num)', 'Locoes::clientePorVeiculo/$1');
 $routes->get('admin/contratos', 'Contratos::index');
+$routes->get('admin/contratos/listar', 'Contratos::listar');
 $routes->get('admin/cobrancas', 'Cobrancas::index');
 $routes->get('admin/cobrancas/listar', 'Cobrancas::listar');
 $routes->post('admin/cobrancas/quitar/(:num)', 'Cobrancas::quitar/$1');

@@ -158,4 +158,24 @@ class Contratos extends BaseController
         $sequencial = str_pad((string) $locacaoId, 3, '0', STR_PAD_LEFT);
         return "CT-{$ano}-{$sequencial}";
     }
+
+    /**
+     * API: listar contratos (baseado nas locações) para consumo via AJAX
+     */
+    public function listar()
+    {
+        try {
+            $contratos = $this->buscarContratosDasLocacoes();
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $contratos,
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao listar contratos: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao listar contratos.',
+            ]);
+        }
+    }
 }
