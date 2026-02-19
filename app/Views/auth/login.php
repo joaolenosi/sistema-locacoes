@@ -1,6 +1,6 @@
 <?php helper('asset'); ?>
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-bs-theme="light">
 <head>
     <meta charset="utf-8" />
     <title><?= esc($title ?? 'Login') ?> | Sistema de Locações</title>
@@ -11,7 +11,43 @@
     <link href="<?= asset_url('assets/admin/css/vendor.min.css') ?>" rel="stylesheet" type="text/css" />
     <link href="<?= asset_url('assets/admin/css/icons.min.css') ?>" rel="stylesheet" type="text/css" />
     <link href="<?= asset_url('assets/admin/css/app.min.css') ?>" rel="stylesheet" type="text/css" />
+    <script>
+        // Forçar tema light na página de login, ignorando sessionStorage
+        (function() {
+            var html = document.documentElement;
+            html.setAttribute('data-bs-theme', 'light');
+            // Limpar qualquer configuração de tema do sessionStorage temporariamente
+            var savedConfig = sessionStorage.getItem('__REBACK_CONFIG__');
+            if (savedConfig) {
+                try {
+                    var config = JSON.parse(savedConfig);
+                    config.theme = 'light';
+                    sessionStorage.setItem('__REBACK_CONFIG__', JSON.stringify(config));
+                } catch(e) {
+                    // Ignorar erros
+                }
+            }
+        })();
+    </script>
     <script src="<?= asset_url('assets/admin/js/config.js') ?>"></script>
+    <script>
+        // Garantir que o tema permaneça light após config.js ser executado
+        (function() {
+            var html = document.documentElement;
+            html.setAttribute('data-bs-theme', 'light');
+            // Atualizar config se existir
+            if (window.config) {
+                window.config.theme = 'light';
+                if (sessionStorage) {
+                    try {
+                        sessionStorage.setItem('__REBACK_CONFIG__', JSON.stringify(window.config));
+                    } catch(e) {
+                        // Ignorar erros
+                    }
+                }
+            }
+        })();
+    </script>
     <style>
         body.login-page { background-color: #e9ecef; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
         .login-card { max-width: 480px; width: 100%; }
