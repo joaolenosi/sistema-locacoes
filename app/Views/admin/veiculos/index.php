@@ -296,19 +296,6 @@
                                 <option value="suv">SUV</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label" for="vei_marca">Marca <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="vei_marca" name="vei_marca" placeholder="Ex.: Hyundai" required>
-                        </div>
-
-                        <div class="col-md-8">
-                            <label class="form-label" for="vei_modelo">Modelo <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="vei_modelo" name="vei_modelo" placeholder="Ex.: HB20" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label" for="vei_ano">Ano <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="vei_ano" name="vei_ano" placeholder="Ex.: 2022" required>
-                        </div>
 
                         <div class="col-md-6">
                             <label class="form-label" for="vei_placa">Placa <span class="text-danger">*</span></label>
@@ -320,6 +307,25 @@
                             </div>
                             <div class="form-text">Digite o código da placa para pesquisar.</div>
                         </div>
+
+
+                        <div class="col-md-4">
+                            <label class="form-label" for="vei_marca">Marca <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="vei_marca" name="vei_marca" placeholder="Ex.: Hyundai" required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label" for="vei_modelo">Modelo <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="vei_modelo" name="vei_modelo" placeholder="Ex.: HB20" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="vei_ano">Ano <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="vei_ano" name="vei_ano" placeholder="Ex.: 2022" required>
+                        </div>
+
+                     
+
+
                         <div class="col-md-6">
                             <label class="form-label" for="vei_cor">Cor</label>
                             <input type="text" class="form-control" id="vei_cor" name="vei_cor" placeholder="Ex.: Prata">
@@ -385,10 +391,11 @@
 
 <script>
 window.__VEICULOS__ = <?= json_encode($veiculos ?? []) ?>;
-window.__BASE_URL__ = '<?= base_url() ?>';
+window.__BASE_URL__ = '<?= rtrim(base_url(), '/') . '/' ?>';
 // Debug: verificar se os dados estão sendo passados
 console.log('Veículos carregados:', window.__VEICULOS__);
 console.log('Total de veículos:', window.__VEICULOS__?.length || 0);
+console.log('Base URL:', window.__BASE_URL__);
 </script>
 
 <!-- Gridjs Veículos js -->

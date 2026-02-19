@@ -167,6 +167,49 @@
         background-color: #e9ecef !important;
         cursor: not-allowed;
     }
+
+    /* Garantir que o texto digitado seja totalmente preto */
+    .form-control,
+    .form-select,
+    .form-control:focus,
+    .form-select:focus {
+        color: #000000 !important;
+    }
+
+    /* Placeholders em cinza mais claro */
+    .form-control::placeholder,
+    .form-control::-webkit-input-placeholder,
+    .form-control::-moz-placeholder,
+    .form-control:-ms-input-placeholder {
+        color: #adb5bd !important;
+        opacity: 1 !important;
+    }
+
+    /* Aplicar também nos modais */
+    #modalLocacao .form-control,
+    #modalLocacao .form-select,
+    #modalEscolherLocatario .form-control,
+    #modalEscolherLocatario .form-select,
+    #modalEscolherVeiculo .form-control,
+    #modalEscolherVeiculo .form-select {
+        color: #000000 !important;
+    }
+
+    #modalLocacao .form-control::placeholder,
+    #modalLocacao .form-control::-webkit-input-placeholder,
+    #modalLocacao .form-control::-moz-placeholder,
+    #modalLocacao .form-control:-ms-input-placeholder,
+    #modalEscolherLocatario .form-control::placeholder,
+    #modalEscolherLocatario .form-control::-webkit-input-placeholder,
+    #modalEscolherLocatario .form-control::-moz-placeholder,
+    #modalEscolherLocatario .form-control:-ms-input-placeholder,
+    #modalEscolherVeiculo .form-control::placeholder,
+    #modalEscolherVeiculo .form-control::-webkit-input-placeholder,
+    #modalEscolherVeiculo .form-control::-moz-placeholder,
+    #modalEscolherVeiculo .form-control:-ms-input-placeholder {
+        color: #adb5bd !important;
+        opacity: 1 !important;
+    }
 </style>
 
 <!-- ========== Page Title Start ========== -->

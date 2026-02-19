@@ -163,6 +163,18 @@
         color: #adb5bd !important;
         opacity: 1 !important;
     }
+
+    /* Estilos para modal de pagamento */
+    #formPagamento input[type="text"],
+    #formPagamento input[type="date"],
+    #formPagamento select {
+        color: #000000 !important;
+    }
+
+    #formPagamento .form-control-plaintext {
+        color: #000000 !important;
+        font-weight: 500;
+    }
 </style>
 
 <!-- ========== Page Title Start ========== -->
@@ -346,6 +358,14 @@ window.__FINANCEIRO_BOOTSTRAP__ = {
         if (btnSalvarDespesa && typeof window.salvarDespesa === 'function') {
             btnSalvarDespesa.addEventListener('click', function() {
                 window.salvarDespesa();
+            });
+        }
+        
+        // Botão de efetuar pagamento
+        const btnEfetuarPagamento = document.getElementById('btnEfetuarPagamento');
+        if (btnEfetuarPagamento && typeof window.efetuarPagamento === 'function') {
+            btnEfetuarPagamento.addEventListener('click', function() {
+                window.efetuarPagamento();
             });
         }
     }
@@ -655,6 +675,69 @@ window.__FINANCEIRO_BOOTSTRAP__ = {
     </div>
 </div>
 
+<!-- Modal Pagamento -->
+<div class="modal fade" id="modalPagamento" tabindex="-1" aria-labelledby="modalPagamentoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalPagamentoLabel">Efetuar Pagamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formPagamento">
+                    <input type="hidden" id="pagamento_id" value="">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Descrição</label>
+                        <div class="form-control-plaintext" id="pagamento_descricao">-</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Valor</label>
+                        <div class="form-control-plaintext" id="pagamento_valor">-</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="pagamento_data_pagamento" class="form-label">Data do Pagamento <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="pagamento_data_pagamento" name="lan_data_pagamento" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="pagamento_valor_pago" class="form-label">Valor Pago</label>
+                        <input type="text" class="form-control money" id="pagamento_valor_pago" name="lan_valor_pago" placeholder="Ex.: 150,00">
+                        <div class="form-text">Deixe em branco para usar o valor total do lançamento.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="pagamento_forma_pagamento" class="form-label">Forma de Pagamento</label>
+                        <select class="form-select" id="pagamento_forma_pagamento" name="lan_forma_pagamento">
+                            <option value="">Selecione...</option>
+                            <option value="dinheiro">Dinheiro</option>
+                            <option value="pix">PIX</option>
+                            <option value="cartao_credito">Cartão de Crédito</option>
+                            <option value="cartao_debito">Cartão de Débito</option>
+                            <option value="boleto">Boleto</option>
+                            <option value="transferencia">Transferência</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="pagamento_referencia" class="form-label">Referência</label>
+                        <input type="text" class="form-control" id="pagamento_referencia" name="lan_referencia" placeholder="NSU, código PIX, comprovante, etc.">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btnEfetuarPagamento">
+                    <iconify-icon icon="iconamoon:check-circle-1-duotone"></iconify-icon>
+                    <span class="btn-label">Efetuar Pagamento</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Script para expandir/colapsar campos e máscaras -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -733,6 +816,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Reaplicar máscaras quando modais forem abertos
     const modalReceitaEl = document.getElementById('modalReceita');
     const modalDespesaEl = document.getElementById('modalDespesa');
+    const modalPagamentoEl = document.getElementById('modalPagamento');
     
     if (modalReceitaEl) {
         modalReceitaEl.addEventListener('shown.bs.modal', function() {
@@ -742,6 +826,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (modalDespesaEl) {
         modalDespesaEl.addEventListener('shown.bs.modal', function() {
+            setTimeout(aplicarMascaraMonetaria, 100);
+        });
+    }
+    
+    if (modalPagamentoEl) {
+        modalPagamentoEl.addEventListener('shown.bs.modal', function() {
             setTimeout(aplicarMascaraMonetaria, 100);
         });
     }

@@ -355,15 +355,23 @@
       },
       {
         name: "Ações",
-        width: "120px",
+        width: "180px",
         formatter: (_cell, row) => {
           const id = row.cells[0].data;
           const tipo = row.cells[2].data;
+          const status = row.cells[6].data;
+          const isPendente = status === "pendente";
+          
           return gridjs.html(`
             <div class="d-flex gap-2">
               <button type="button" class="btn btn-sm btn-outline-primary btn-edit-lancamento" data-id="${id}" data-tipo="${tipo}" title="Editar">
                 <iconify-icon icon="iconamoon:edit-duotone" class="fs-18"></iconify-icon>
               </button>
+              ${isPendente ? `
+                <button type="button" class="btn btn-sm btn-success btn-efetuar-pagamento" data-id="${id}" title="Efetuar Pagamento">
+                  <iconify-icon icon="iconamoon:check-circle-1-duotone" class="fs-18"></iconify-icon>
+                </button>
+              ` : ''}
             </div>
           `);
         },
@@ -443,7 +451,18 @@
   // Delegação: click no botão editar dentro do grid
   tableEl.addEventListener("click", (e) => {
     const btn = e.target?.closest?.(".btn-edit-lancamento");
-    if (!btn) return;
+    if (!btn) {
+      // Verificar se é o botão de pagamento
+      const btnPagamento = e.target?.closest?.(".btn-efetuar-pagamento");
+      if (btnPagamento) {
+        e.preventDefault();
+        const id = btnPagamento.getAttribute("data-id");
+        if (id) {
+          openModalPagamento(id);
+        }
+      }
+      return;
+    }
     e.preventDefault();
     const id = btn.getAttribute("data-id");
     const tipo = btn.getAttribute("data-tipo") || "receita";
@@ -456,11 +475,122 @@
   modalReceitaEl?.addEventListener("hidden.bs.modal", () => setModalMode("receita", "new"));
   modalDespesaEl?.addEventListener("hidden.bs.modal", () => setModalMode("despesa", "new"));
 
+  const openModalPagamento = (id) => {
+    const modalEl = document.getElementById("modalPagamento");
+    if (!modalEl) return;
+
+    // Buscar dados do lançamento para preencher informações
+    const lancamento = allData.find((l) => String(l.id) === String(id));
+    
+    // Preencher informações do lançamento no modal
+    const descricaoEl = document.getElementById("pagamento_descricao");
+    const valorEl = document.getElementById("pagamento_valor");
+    const dataPagamentoEl = document.getElementById("pagamento_data_pagamento");
+    const valorPagoEl = document.getElementById("pagamento_valor_pago");
+    
+    if (descricaoEl && lancamento) {
+      descricaoEl.textContent = lancamento.lan_descricao || "-";
+    }
+    
+    if (valorEl && lancamento) {
+      valorEl.textContent = `R$ ${toMoneyBR(lancamento.lan_valor || 0)}`;
+    }
+    
+    if (dataPagamentoEl) {
+      dataPagamentoEl.value = new Date().toISOString().slice(0, 10);
+    }
+    
+    if (valorPagoEl && lancamento) {
+      valorPagoEl.value = toMoneyBR(lancamento.lan_valor || 0);
+    }
+
+    // Armazenar ID do lançamento
+    const idInput = document.getElementById("pagamento_id");
+    if (idInput) {
+      idInput.value = id;
+    }
+
+    // Limpar campos opcionais
+    const formaPagamentoEl = document.getElementById("pagamento_forma_pagamento");
+    const referenciaEl = document.getElementById("pagamento_referencia");
+    if (formaPagamentoEl) formaPagamentoEl.value = "";
+    if (referenciaEl) referenciaEl.value = "";
+
+    // Reaplicar máscara monetária
+    if (typeof $ !== "undefined" && $.fn.mask && valorPagoEl) {
+      $(valorPagoEl).mask("000.000.000.000.000,00", { reverse: true });
+    }
+
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+  };
+
+  const efetuarPagamento = async () => {
+    const idInput = document.getElementById("pagamento_id");
+    const dataPagamentoEl = document.getElementById("pagamento_data_pagamento");
+    const valorPagoEl = document.getElementById("pagamento_valor_pago");
+    const btn = document.getElementById("btnEfetuarPagamento");
+    const modalEl = document.getElementById("modalPagamento");
+
+    if (!idInput || !dataPagamentoEl || !modalEl) return;
+
+    const id = idInput.value;
+    const dataPagamento = dataPagamentoEl.value;
+
+    if (!dataPagamento) {
+      alert("Informe a data do pagamento.");
+      dataPagamentoEl.focus();
+      return;
+    }
+
+    const fd = new FormData();
+    fd.set("lan_data_pagamento", dataPagamento);
+
+    // Normalizar valor pago
+    if (valorPagoEl && valorPagoEl.value) {
+      const stripMoney = (s) => String(s || "").replace(/[^\d,]/g, "").replace(",", ".");
+      fd.set("lan_valor_pago", stripMoney(valorPagoEl.value));
+    }
+
+    // Forma de pagamento (opcional)
+    const formaPagamentoEl = document.getElementById("pagamento_forma_pagamento");
+    if (formaPagamentoEl && formaPagamentoEl.value) {
+      fd.set("lan_forma_pagamento", formaPagamentoEl.value);
+    }
+
+    // Referência (opcional)
+    const referenciaEl = document.getElementById("pagamento_referencia");
+    if (referenciaEl && referenciaEl.value) {
+      fd.set("lan_referencia", referenciaEl.value.trim());
+    }
+
+    try {
+      setButtonLoading(btn, true);
+      const json = await fetchJson(`${getBaseUrl()}admin/financeiro/efetuar-pagamento/${id}`, {
+        method: "POST",
+        body: fd,
+      });
+
+      const modal = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.hide();
+
+      await reload();
+      alert(json?.message || "Pagamento efetuado com sucesso.");
+    } catch (e) {
+      const errorMsg = e?.message || "Erro ao efetuar pagamento.";
+      console.error("Erro ao efetuar pagamento:", e);
+      alert(errorMsg);
+    } finally {
+      setButtonLoading(btn, false);
+    }
+  };
+
   // Expor funções globais usadas pela view
   window.abrirModalReceita = (id = null) => openModal("receita", id);
   window.abrirModalDespesa = (id = null) => openModal("despesa", id);
   window.salvarReceita = () => save("receita");
   window.salvarDespesa = () => save("despesa");
+  window.efetuarPagamento = efetuarPagamento;
 
   // Primeira renderização: usar totais do servidor (já corretos por mês) em vez de recalcular no cliente
   const cards = bootstrapData.cards || {};

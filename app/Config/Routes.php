@@ -48,6 +48,7 @@ $routes->get('admin/financeiro/listar', 'Financeiro::listar');
 $routes->post('admin/financeiro/criar', 'Financeiro::criar');
 $routes->get('admin/financeiro/editar/(:num)', 'Financeiro::editar/$1');
 $routes->post('admin/financeiro/atualizar/(:num)', 'Financeiro::atualizar/$1');
+$routes->post('admin/financeiro/efetuar-pagamento/(:num)', 'Financeiro::efetuarPagamento/$1');
 $routes->get('admin/financeiro/categorias/(:segment)', 'Financeiro::getCategorias/$1');
 $routes->get('admin/manutencao', 'Manutencao::index');
 $routes->get('admin/manutencao-inteligente', 'ManutencaoInteligente::index');

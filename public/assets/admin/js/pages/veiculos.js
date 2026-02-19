@@ -407,6 +407,7 @@
         ? `${getBaseUrl()}admin/veiculos/atualizar/${id}`
         : `${getBaseUrl()}admin/veiculos/criar`;
 
+      console.log('URL da requisição:', url);
       const json = await fetchJson(url, { method: "POST", body: fd });
       getBsModal()?.hide();
       await reload();

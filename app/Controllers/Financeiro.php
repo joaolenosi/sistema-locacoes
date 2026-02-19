@@ -195,6 +195,97 @@ class Financeiro extends BaseController
         }
     }
 
+    public function efetuarPagamento($id)
+    {
+        try {
+            $lancamentoModel = new LancamentoFinanceiroModel();
+            $existing = $lancamentoModel->find((int) $id);
+            
+            if (!$existing) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => 'Lançamento não encontrado.',
+                ]);
+            }
+
+            // Verificar se pertence à empresa
+            if ((int) ($existing['lan_empresa_id'] ?? 0) !== get_empresa_id()) {
+                return $this->response->setStatusCode(403)->setJSON([
+                    'success' => false,
+                    'message' => 'Acesso negado.',
+                ]);
+            }
+
+            // Verificar se já está pago
+            if (($existing['lan_status'] ?? '') === 'pago') {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => 'Este lançamento já está pago.',
+                ]);
+            }
+
+            $payload = (array) $this->request->getPost();
+            $dataPagamento = trim((string) ($payload['lan_data_pagamento'] ?? ''));
+            
+            if ($dataPagamento === '') {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'success' => false,
+                    'message' => 'Informe a data do pagamento.',
+                ]);
+            }
+
+            // Validar formato da data
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dataPagamento)) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'success' => false,
+                    'message' => 'Data inválida.',
+                ]);
+            }
+
+            $valorPago = $this->parseMoney($payload['lan_valor_pago'] ?? null);
+            if ($valorPago === null) {
+                $valorPago = (float) ($existing['lan_valor'] ?? 0);
+            }
+
+            $updateData = [
+                'lan_status' => 'pago',
+                'lan_data_pagamento' => $dataPagamento,
+                'lan_valor_pago' => $valorPago,
+            ];
+
+            // Opcional: forma de pagamento e referência
+            if (isset($payload['lan_forma_pagamento']) && $payload['lan_forma_pagamento'] !== '') {
+                $allowedForma = ['dinheiro', 'pix', 'cartao_credito', 'cartao_debito', 'boleto', 'transferencia'];
+                if (in_array($payload['lan_forma_pagamento'], $allowedForma, true)) {
+                    $updateData['lan_forma_pagamento'] = $payload['lan_forma_pagamento'];
+                }
+            }
+
+            if (isset($payload['lan_referencia']) && trim($payload['lan_referencia']) !== '') {
+                $updateData['lan_referencia'] = trim($payload['lan_referencia']);
+            }
+
+            $ok = $lancamentoModel->update((int) $id, $updateData);
+            if (!$ok) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'message' => 'Não foi possível efetuar o pagamento.',
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Pagamento efetuado com sucesso.',
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao efetuar pagamento: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao efetuar pagamento.',
+            ]);
+        }
+    }
+
     public function getCategorias($tipo)
     {
         try {

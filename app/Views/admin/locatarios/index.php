@@ -276,12 +276,12 @@
                             <input type="email" class="form-control" id="cli_email" name="cli_email" placeholder="exemplo@email.com">
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label" for="cli_telefone">Telefone</label>
-                            <input type="text" class="form-control" id="cli_telefone" name="cli_telefone" placeholder="(00) 0000-0000">
-                        </div>
-                        <div class="col-md-3">
                             <label class="form-label" for="cli_whatsapp">WhatsApp</label>
                             <input type="text" class="form-control" id="cli_whatsapp" name="cli_whatsapp" placeholder="(00) 00000-0000">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="cli_telefone">Telefone</label>
+                            <input type="text" class="form-control" id="cli_telefone" name="cli_telefone" placeholder="(00) 0000-0000">
                         </div>
 
                         <div class="col-md-4">

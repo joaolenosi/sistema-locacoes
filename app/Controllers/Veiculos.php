@@ -117,9 +117,12 @@ class Veiculos extends BaseController
                 'id' => $id,
             ]);
         } catch (\Throwable $e) {
+            log_message('error', 'Erro ao cadastrar veículo: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
             return $this->response->setStatusCode(500)->setJSON([
                 'success' => false,
                 'message' => 'Erro ao cadastrar veículo.',
+                'error' => CI_DEBUG ? $e->getMessage() : null,
             ]);
         }
     }
