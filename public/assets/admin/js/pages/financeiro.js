@@ -373,7 +373,7 @@
     if (!grid) {
       grid = new gridjs.Grid({
         columns,
-        pagination: { limit: 5 },
+        pagination: { limit: 10 },
         sort: true,
         search: true,
         language: ptBR,

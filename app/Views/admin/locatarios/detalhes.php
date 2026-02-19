@@ -66,58 +66,75 @@ $statusLocacao = [
     </div>
 </div>
 
+<style>
+    /* Cards resumo (padrão financeiro) */
+    .fin-kpi-card {
+        border: 0;
+        border-radius: 16px;
+        color: #fff;
+        overflow: hidden;
+        min-height: 110px;
+    }
+
+    .fin-kpi-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.22);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+
 <!-- Cards de resumo -->
-<div class="row">
+<div class="row g-3 mb-3">
     <div class="col-12 col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 me-3">
-                        <span class="avatar-title bg-primary-subtle text-primary rounded-circle fs-20">
-                            <iconify-icon icon="solar:wallet-money-bold-duotone"></iconify-icon>
-                        </span>
+        <div class="card fin-kpi-card" style="background: #2d7ef7;">
+            <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="fw-medium" style="opacity: .95;">Total em aberto</div>
+                    <div class="fw-semibold" style="font-size: 2rem; line-height: 1.1;">
+                        R$ <?= number_format($totalAberto, 2, ',', '.') ?>
                     </div>
-                    <div>
-                        <h6 class="text-muted text-uppercase mb-1">Total em aberto</h6>
-                        <h4 class="mb-0">R$ <?= number_format($totalAberto, 2, ',', '.') ?></h4>
-                    </div>
+                </div>
+                <div class="fin-kpi-icon" aria-hidden="true">
+                    <iconify-icon icon="iconamoon:wallet-duotone" class="fs-22 text-white"></iconify-icon>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-12 col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 me-3">
-                        <span class="avatar-title bg-info-subtle text-info rounded-circle fs-20">
-                            <iconify-icon icon="solar:car-bold-duotone"></iconify-icon>
-                        </span>
+        <div class="card fin-kpi-card" style="background: #22c55e;">
+            <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="fw-medium" style="opacity: .95;">Total de veículos alugados</div>
+                    <div class="fw-semibold" style="font-size: 2rem; line-height: 1.1;">
+                        <?= (int) $totalLocacoes ?>
                     </div>
-                    <div>
-                        <h6 class="text-muted text-uppercase mb-1">Total de veículos alugados</h6>
-                        <h4 class="mb-0"><?= (int) $totalLocacoes ?></h4>
-                    </div>
+                    <?php if ($temVeiculoLocado && !empty($locacaoAtiva)): ?>
+                        <div class="fw-medium" style="opacity: .85; font-size: 0.875rem; margin-top: 0.25rem;">
+                            <?= esc($locacaoAtiva['vei_placa'] ?? '') ?> – <?= esc($locacaoAtiva['vei_marca'] ?? '') ?> <?= esc($locacaoAtiva['vei_modelo'] ?? '') ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                <div class="fin-kpi-icon" aria-hidden="true">
+                    <iconify-icon icon="iconamoon:car-duotone" class="fs-22 text-white"></iconify-icon>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-12 col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 me-3">
-                        <span class="avatar-title <?= $temVeiculoLocado ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' ?> rounded-circle fs-20">
-                            <iconify-icon icon="solar:key-bold-duotone"></iconify-icon>
-                        </span>
+        <div class="card fin-kpi-card" style="background: <?= $temVeiculoLocado ? '#22c55e' : '#6c757d' ?>;">
+            <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="fw-medium" style="opacity: .95;">Veículo locado</div>
+                    <div class="fw-semibold" style="font-size: 2rem; line-height: 1.1;">
+                        <?= $temVeiculoLocado ? 'Sim' : 'Não' ?>
                     </div>
-                    <div>
-                        <h6 class="text-muted text-uppercase mb-1">Veículo locado</h6>
-                        <h4 class="mb-0"><?= $temVeiculoLocado ? 'Sim' : 'Não' ?></h4>
-                        <?php if ($temVeiculoLocado && !empty($locacaoAtiva)): ?>
-                            <p class="text-muted small mb-0"><?= esc($locacaoAtiva['vei_placa'] ?? '') ?> – <?= esc($locacaoAtiva['vei_marca'] ?? '') ?> <?= esc($locacaoAtiva['vei_modelo'] ?? '') ?></p>
-                        <?php endif; ?>
-                    </div>
+                </div>
+                <div class="fin-kpi-icon" aria-hidden="true">
+                    <iconify-icon icon="iconamoon:key-duotone" class="fs-22 text-white"></iconify-icon>
                 </div>
             </div>
         </div>
