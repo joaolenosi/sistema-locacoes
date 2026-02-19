@@ -251,11 +251,14 @@
       },
       {
         name: "Ações",
-        width: "120px",
+        width: "180px",
         formatter: (_cell, row) => {
           const id = row.cells[0].data;
           return gridjs.html(`
             <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-outline-info btn-detalhes-locacao" data-id="${id}" title="Ver detalhes">
+                <iconify-icon icon="iconamoon:eye-duotone" class="fs-18"></iconify-icon>
+              </button>
               <button type="button" class="btn btn-sm btn-outline-primary btn-edit-locacao" data-id="${id}" title="Editar">
                 <iconify-icon icon="iconamoon:edit-duotone" class="fs-18"></iconify-icon>
               </button>
@@ -817,10 +820,19 @@
 
   // ======= Eventos =======
   tableEl.addEventListener("click", (e) => {
-    const btn = e.target?.closest?.(".btn-edit-locacao");
-    if (!btn) return;
-    e.preventDefault();
-    openLocacaoModal(btn.getAttribute("data-id"));
+    const btnEdit = e.target?.closest?.(".btn-edit-locacao");
+    if (btnEdit) {
+      e.preventDefault();
+      openLocacaoModal(btnEdit.getAttribute("data-id"));
+      return;
+    }
+    
+    const btnDetalhes = e.target?.closest?.(".btn-detalhes-locacao");
+    if (btnDetalhes) {
+      e.preventDefault();
+      openDetalhesLocacao(btnDetalhes.getAttribute("data-id"));
+      return;
+    }
   });
 
   // Usar delegação de eventos no documento para garantir que funcione mesmo quando o grid é renderizado dinamicamente
@@ -877,6 +889,175 @@
     resetLocacaoForm();
     setLocacaoModalMode("new");
   });
+
+  const openDetalhesLocacao = async (id) => {
+    if (!id) return;
+    
+    try {
+      const json = await fetchJson(`${getBaseUrl()}admin/locacoes/editar/${id}`);
+      if (!json.success || !json.data) {
+        alert("Erro ao carregar detalhes da locação.");
+        return;
+      }
+      
+      const loc = json.data;
+      preencherDetalhesLocacao(loc, id);
+      
+      const modalEl = document.getElementById("modalDetalhesLocacao");
+      if (modalEl) {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      }
+    } catch (e) {
+      alert("Erro ao carregar detalhes da locação: " + (e?.message || "Erro desconhecido"));
+    }
+  };
+
+  const preencherDetalhesLocacao = (l, id) => {
+    // Formatar datas
+    const formatDate = (dateStr) => {
+      if (!dateStr) return "-";
+      const date = new Date(dateStr + "T00:00:00");
+      const days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+      const dayName = days[date.getDay()];
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const year = date.getFullYear();
+      return `${day}/${month}/${year} (${dayName})`;
+    };
+
+    const formatDateSimple = (dateStr) => {
+      if (!dateStr) return "-";
+      const date = new Date(dateStr + "T00:00:00");
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    };
+
+    // Status labels
+    const statusLabels = {
+      reservada: "Reservada",
+      ativa: "Ativa",
+      atrasada: "Atrasada",
+      inadimplente: "Inadimplente",
+      finalizada: "Finalizada",
+      cancelada: "Cancelada",
+    };
+
+    const statusBadges = {
+      reservada: "bg-info-subtle text-info",
+      ativa: "bg-success-subtle text-success",
+      atrasada: "bg-warning-subtle text-warning",
+      inadimplente: "bg-danger-subtle text-danger",
+      finalizada: "bg-secondary-subtle text-secondary",
+      cancelada: "bg-dark-subtle text-dark",
+    };
+
+    // Preencher campos
+    document.getElementById("detalhes-loc-id").textContent = `#${String(l.id || "").padStart(6, "0")}`;
+    document.getElementById("detalhes-loc-cliente").textContent = l.cli_nome || "-";
+    document.getElementById("detalhes-loc-veiculo-placa").textContent = l.vei_placa || "-";
+    document.getElementById("detalhes-loc-veiculo-modelo").textContent = l.vei_marca && l.vei_modelo 
+      ? `${l.vei_marca} ${l.vei_modelo}` 
+      : (l.vei_modelo || "-");
+    
+    document.getElementById("detalhes-loc-data-inicio").textContent = formatDateSimple(l.loc_data_inicio);
+    document.getElementById("detalhes-loc-data-fim-prevista").textContent = formatDateSimple(l.loc_data_fim_prevista);
+    document.getElementById("detalhes-loc-data-fim-real").textContent = l.loc_data_fim_real 
+      ? formatDateSimple(l.loc_data_fim_real) 
+      : "-";
+    
+    document.getElementById("detalhes-loc-status").textContent = statusLabels[l.loc_status] || l.loc_status || "-";
+    document.getElementById("detalhes-loc-status").className = `badge ${statusBadges[l.loc_status] || "bg-secondary-subtle text-secondary"}`;
+    
+    document.getElementById("detalhes-loc-valor-locacao").textContent = toMoneyBR(l.loc_valor_locacao || 0);
+    document.getElementById("detalhes-loc-valor-caucao").textContent = l.loc_valor_caucao 
+      ? toMoneyBR(l.loc_valor_caucao) 
+      : "-";
+    document.getElementById("detalhes-loc-valor-total").textContent = toMoneyBR(l.loc_valor_total || l.loc_valor_locacao || 0);
+    
+    document.getElementById("detalhes-loc-recorrencia").textContent = l.loc_recorrencia_pagamento 
+      ? l.loc_recorrencia_pagamento.charAt(0).toUpperCase() + l.loc_recorrencia_pagamento.slice(1)
+      : "-";
+    document.getElementById("detalhes-loc-data-inicio-pagamento").textContent = l.loc_data_inicio_pagamento 
+      ? formatDateSimple(l.loc_data_inicio_pagamento) 
+      : "-";
+    
+    document.getElementById("detalhes-loc-taxa-juros").textContent = l.loc_taxa_juros 
+      ? toMoneyBR(l.loc_taxa_juros) 
+      : "-";
+    document.getElementById("detalhes-loc-taxa-multa").textContent = l.loc_taxa_multa 
+      ? toMoneyBR(l.loc_taxa_multa) 
+      : "-";
+    
+    document.getElementById("detalhes-loc-km-retirada").textContent = l.loc_km_retirada || "-";
+    document.getElementById("detalhes-loc-km-devolucao").textContent = l.loc_km_devolucao || "-";
+    
+    const valoresRecebidos = l.loc_valores_recebidos == 1;
+    document.getElementById("detalhes-loc-valores-recebidos").textContent = valoresRecebidos ? "Sim" : "Não";
+    const valoresRecebidosBadge = document.getElementById("detalhes-loc-valores-recebidos-badge");
+    if (valoresRecebidosBadge) {
+      valoresRecebidosBadge.textContent = valoresRecebidos ? "Sim" : "Não";
+      valoresRecebidosBadge.className = valoresRecebidos 
+        ? "badge bg-success-subtle text-success" 
+        : "badge bg-warning-subtle text-warning";
+    }
+    
+    document.getElementById("detalhes-loc-obs-operacionais").textContent = l.loc_obs_operacionais || "-";
+    document.getElementById("detalhes-loc-obs-financeiras").textContent = l.loc_obs_financeiras || "-";
+    
+    // Duplicar datas para exibição em dois lugares
+    const dataInicio = formatDateSimple(l.loc_data_inicio);
+    const dataFimPrevista = formatDateSimple(l.loc_data_fim_prevista);
+    const dataInicioDup = document.getElementById("detalhes-loc-data-inicio-duplicado");
+    const dataFimPrevistaDup = document.getElementById("detalhes-loc-data-fim-prevista-duplicado");
+    if (dataInicioDup) dataInicioDup.textContent = dataInicio;
+    if (dataFimPrevistaDup) dataFimPrevistaDup.textContent = dataFimPrevista;
+    
+    // Configurar botão de editar
+    const btnEditar = document.getElementById("btnEditarLocacaoDetalhes");
+    if (btnEditar) {
+      btnEditar.onclick = () => {
+        bootstrap.Modal.getInstance(document.getElementById("modalDetalhesLocacao"))?.hide();
+        setTimeout(() => openLocacaoModal(id), 300);
+      };
+    }
+
+    // Calcular próximo pagamento
+    if (l.loc_data_inicio_pagamento && l.loc_recorrencia_pagamento) {
+      const dataInicio = new Date(l.loc_data_inicio_pagamento + "T00:00:00");
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      
+      let diasRecorrencia = 0;
+      switch (l.loc_recorrencia_pagamento) {
+        case "diaria": diasRecorrencia = 1; break;
+        case "semanal": diasRecorrencia = 7; break;
+        case "quinzenal": diasRecorrencia = 15; break;
+        case "mensal": diasRecorrencia = 30; break;
+      }
+      
+      let proximaData = new Date(dataInicio);
+      while (proximaData <= hoje) {
+        proximaData.setDate(proximaData.getDate() + diasRecorrencia);
+      }
+      
+      const proximoPagamentoEl = document.getElementById("detalhes-loc-proximo-pagamento");
+      const valorPagamentoEl = document.getElementById("detalhes-loc-valor-proximo-pagamento");
+      
+      if (proximoPagamentoEl) {
+        proximoPagamentoEl.textContent = formatDate(proximaData.toISOString().slice(0, 10));
+      }
+      if (valorPagamentoEl && l.loc_valor_locacao) {
+        valorPagamentoEl.textContent = toMoneyBR(l.loc_valor_locacao);
+      }
+    } else {
+      const proximoPagamentoEl = document.getElementById("detalhes-loc-proximo-pagamento");
+      const valorPagamentoEl = document.getElementById("detalhes-loc-valor-proximo-pagamento");
+      if (proximoPagamentoEl) proximoPagamentoEl.textContent = "-";
+      if (valorPagamentoEl) valorPagamentoEl.textContent = "-";
+    }
+  };
 
   // Expor funções globais usadas pela view
   window.abrirModalLocacao = (id = null) => openLocacaoModal(id);

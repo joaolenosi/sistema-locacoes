@@ -538,6 +538,220 @@ window.__LOCACOES_BOOTSTRAP__ = {
   </div>
 </div>
 
+<!-- Modal: Detalhes da Locação -->
+<div class="modal fade" id="modalDetalhesLocacao" tabindex="-1" aria-labelledby="modalDetalhesLocacaoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalDetalhesLocacaoLabel">
+          <iconify-icon icon="iconamoon:info-duotone" class="text-primary"></iconify-icon>
+          Detalhes da Locação
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Cabeçalho com ID e Status -->
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <h4 class="text-muted mb-0" id="detalhes-loc-id">#000000</h4>
+            <p class="text-muted mb-0 mt-1">
+              <strong id="detalhes-loc-cliente">-</strong>
+            </p>
+            <p class="text-primary mb-0 mt-1">
+              <span id="detalhes-loc-veiculo-placa">-</span> | 
+              <span id="detalhes-loc-veiculo-modelo">-</span>
+            </p>
+          </div>
+          <div class="col-md-6 text-end">
+            <div class="mb-2">
+              <span class="badge fs-6" id="detalhes-loc-status">-</span>
+            </div>
+            <div class="text-muted small">
+              <div>Início: <span id="detalhes-loc-data-inicio">-</span></div>
+              <div>Fim previsto: <span id="detalhes-loc-data-fim-prevista">-</span></div>
+            </div>
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- Informações Financeiras -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-12">
+            <h6 class="fw-semibold mb-3">
+              <iconify-icon icon="iconamoon:wallet-duotone" class="text-primary"></iconify-icon>
+              Informações Financeiras
+            </h6>
+          </div>
+          <div class="col-md-4">
+            <div class="card border-0 bg-light">
+              <div class="card-body text-center">
+                <div class="mb-2">
+                  <iconify-icon icon="iconamoon:arrow-down-2-duotone" class="fs-24 text-success"></iconify-icon>
+                </div>
+                <div class="fw-semibold text-success fs-5" id="detalhes-loc-valor-locacao">R$ 0,00</div>
+                <div class="text-muted small">Valor da Locação</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card border-0 bg-light">
+              <div class="card-body text-center">
+                <div class="mb-2">
+                  <iconify-icon icon="iconamoon:shield-check-duotone" class="fs-24 text-info"></iconify-icon>
+                </div>
+                <div class="fw-semibold text-info fs-5" id="detalhes-loc-valor-caucao">R$ 0,00</div>
+                <div class="text-muted small">Valor do Caução</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card border-0 bg-light">
+              <div class="card-body text-center">
+                <div class="mb-2">
+                  <iconify-icon icon="iconamoon:calculator-duotone" class="fs-24 text-primary"></iconify-icon>
+                </div>
+                <div class="fw-semibold text-primary fs-5" id="detalhes-loc-valor-total">R$ 0,00</div>
+                <div class="text-muted small">Valor Total</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Próximo Pagamento -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-12">
+            <div class="alert alert-info mb-0">
+              <div class="d-flex align-items-center justify-content-between">
+                <div>
+                  <strong>Próximo pagamento:</strong> 
+                  <span id="detalhes-loc-proximo-pagamento">-</span>
+                </div>
+                <div class="fw-semibold">
+                  No valor de <span class="text-primary" id="detalhes-loc-valor-proximo-pagamento">R$ 0,00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Informações Detalhadas -->
+        <div class="row g-3">
+          <div class="col-md-6">
+            <h6 class="fw-semibold mb-3">
+              <iconify-icon icon="iconamoon:calendar-duotone" class="text-primary"></iconify-icon>
+              Datas
+            </h6>
+            <table class="table table-sm">
+              <tbody>
+                <tr>
+                  <td class="text-muted" style="width: 40%;">Início:</td>
+                  <td><strong id="detalhes-loc-data-inicio-duplicado">-</strong></td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Fim previsto:</td>
+                  <td><strong id="detalhes-loc-data-fim-prevista-duplicado">-</strong></td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Fim real:</td>
+                  <td><strong id="detalhes-loc-data-fim-real">-</strong></td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Início pagamento:</td>
+                  <td><strong id="detalhes-loc-data-inicio-pagamento">-</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="col-md-6">
+            <h6 class="fw-semibold mb-3">
+              <iconify-icon icon="iconamoon:settings-duotone" class="text-primary"></iconify-icon>
+              Configurações
+            </h6>
+            <table class="table table-sm">
+              <tbody>
+                <tr>
+                  <td class="text-muted" style="width: 40%;">Recorrência:</td>
+                  <td><strong id="detalhes-loc-recorrencia">-</strong></td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Taxa de juros:</td>
+                  <td><strong id="detalhes-loc-taxa-juros">-</strong></td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Taxa de multa:</td>
+                  <td><strong id="detalhes-loc-taxa-multa">-</strong></td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Valores recebidos:</td>
+                  <td>
+                    <span class="badge" id="detalhes-loc-valores-recebidos-badge">-</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Quilometragem -->
+        <div class="row g-3 mt-2">
+          <div class="col-md-6">
+            <h6 class="fw-semibold mb-3">
+              <iconify-icon icon="iconamoon:car-duotone" class="text-primary"></iconify-icon>
+              Quilometragem
+            </h6>
+            <table class="table table-sm">
+              <tbody>
+                <tr>
+                  <td class="text-muted" style="width: 40%;">KM na retirada:</td>
+                  <td><strong id="detalhes-loc-km-retirada">-</strong></td>
+                </tr>
+                <tr>
+                  <td class="text-muted">KM na devolução:</td>
+                  <td><strong id="detalhes-loc-km-devolucao">-</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Observações -->
+        <div class="row g-3 mt-2">
+          <div class="col-md-6">
+            <h6 class="fw-semibold mb-3">
+              <iconify-icon icon="iconamoon:note-duotone" class="text-primary"></iconify-icon>
+              Observações Operacionais
+            </h6>
+            <div class="card bg-light">
+              <div class="card-body">
+                <p class="mb-0" id="detalhes-loc-obs-operacionais" style="white-space: pre-wrap;">-</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <h6 class="fw-semibold mb-3">
+              <iconify-icon icon="iconamoon:wallet-duotone" class="text-primary"></iconify-icon>
+              Observações Financeiras
+            </h6>
+            <div class="card bg-light">
+              <div class="card-body">
+                <p class="mb-0" id="detalhes-loc-obs-financeiras" style="white-space: pre-wrap;">-</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+        <button type="button" class="btn btn-primary" id="btnEditarLocacaoDetalhes">
+          <iconify-icon icon="iconamoon:edit-duotone" class="fs-18"></iconify-icon>
+          Editar Locação
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: Ajuda sobre Status -->
 <div class="modal fade" id="modalAjudaStatus" tabindex="-1" aria-labelledby="modalAjudaStatusLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">

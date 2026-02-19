@@ -2,7 +2,9 @@
 
 namespace App\Controllers;
 
+use App\Models\CategoriaFinanceiraModel;
 use App\Models\ClienteModel;
+use App\Models\LancamentoFinanceiroModel;
 use App\Models\LocacaoModel;
 use App\Models\VeiculoModel;
 
@@ -135,6 +137,14 @@ class Locoes extends BaseController
                 ]);
             }
 
+            // Criar lançamento de receita para caução se necessário
+            try {
+                $this->criarLancamentoReceitaCaucao((int) $id, $data);
+            } catch (\Throwable $e) {
+                // Logar erro mas não impedir o salvamento da locação
+                log_message('error', 'Erro ao criar lançamento de receita após criar locação: ' . $e->getMessage());
+            }
+
             return $this->response->setJSON([
                 'success' => true,
                 'message' => 'Locação cadastrada com sucesso.',
@@ -192,6 +202,46 @@ class Locoes extends BaseController
                     'success' => false,
                     'message' => 'Não foi possível atualizar a locação.',
                 ]);
+            }
+
+            // Verificar se precisa criar lançamento de receita para caução
+            $valoresRecebidos = (int) ($data['loc_valores_recebidos'] ?? 0);
+            $valorCaucao = $data['loc_valor_caucao'] ?? null;
+            
+            if ($valoresRecebidos === 1 && $valorCaucao !== null && (float) $valorCaucao > 0) {
+                try {
+                    // Verificar se já existe lançamento para esta locação com categoria "Pagamento Caução"
+                    $lancamentoModel = new LancamentoFinanceiroModel();
+                    $categoriaModel = new CategoriaFinanceiraModel();
+                    
+                    // Buscar categoria "Pagamento Caução"
+                    $categoria = $categoriaModel
+                        ->where('cat_nome', 'Pagamento Caução')
+                        ->where('cat_tipo', 'receita')
+                        ->first();
+                    
+                    if ($categoria && isset($categoria['id'])) {
+                        $categoriaId = (int) $categoria['id'];
+                        
+                        // Verificar se já existe lançamento vinculado a esta locação com esta categoria
+                        $lancamentoExistente = $lancamentoModel
+                            ->where('lan_locacao_id', (int) $id)
+                            ->where('lan_categoria_id', $categoriaId)
+                            ->where('lan_tipo', 'receita')
+                            ->first();
+                        
+                        // Só criar se não existir
+                        if (!$lancamentoExistente) {
+                            $this->criarLancamentoReceitaCaucao((int) $id, $data);
+                        }
+                    } else {
+                        // Se categoria não existe, criar categoria e lançamento
+                        $this->criarLancamentoReceitaCaucao((int) $id, $data);
+                    }
+                } catch (\Throwable $e) {
+                    // Logar erro mas não impedir a atualização da locação
+                    log_message('error', 'Erro ao criar lançamento de receita após atualizar locação: ' . $e->getMessage());
+                }
             }
 
             return $this->response->setJSON([
@@ -324,6 +374,103 @@ class Locoes extends BaseController
         if ($raw === '') return null;
 
         return (float) $raw;
+    }
+
+    /**
+     * Busca ou cria a categoria "Pagamento Caução" do tipo receita
+     * @return int ID da categoria
+     */
+    private function criarOuBuscarCategoriaPagamentoCaucao(): int
+    {
+        try {
+            $categoriaModel = new CategoriaFinanceiraModel();
+            
+            // Buscar categoria existente
+            $categoria = $categoriaModel
+                ->where('cat_nome', 'Pagamento Caução')
+                ->where('cat_tipo', 'receita')
+                ->first();
+            
+            if ($categoria && isset($categoria['id'])) {
+                return (int) $categoria['id'];
+            }
+            
+            // Criar nova categoria se não existir
+            $data = [
+                'cat_nome' => 'Pagamento Caução',
+                'cat_tipo' => 'receita',
+                'cat_padrao' => 0,
+            ];
+            
+            $id = $categoriaModel->insert($data, true);
+            if (!$id) {
+                log_message('error', 'Erro ao criar categoria "Pagamento Caução": ' . json_encode($categoriaModel->errors()));
+                throw new \Exception('Não foi possível criar a categoria.');
+            }
+            
+            return (int) $id;
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao buscar/criar categoria Pagamento Caução: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Cria um lançamento de receita para o caução da locação
+     * @param int $locacaoId ID da locação
+     * @param array $data Dados da locação normalizados
+     * @return int|null ID do lançamento criado ou null em caso de erro
+     */
+    private function criarLancamentoReceitaCaucao(int $locacaoId, array $data): ?int
+    {
+        try {
+            // Verificar se deve criar o lançamento
+            $valoresRecebidos = (int) ($data['loc_valores_recebidos'] ?? 0);
+            $valorCaucao = $data['loc_valor_caucao'] ?? null;
+            
+            if ($valoresRecebidos !== 1 || $valorCaucao === null || (float) $valorCaucao <= 0) {
+                return null;
+            }
+            
+            // Buscar ou criar categoria
+            $categoriaId = $this->criarOuBuscarCategoriaPagamentoCaucao();
+            
+            // Preparar dados do lançamento
+            $dataLancamento = date('Y-m-d');
+            $dataVencimento = !empty($data['loc_data_inicio']) ? $data['loc_data_inicio'] : $dataLancamento;
+            
+            $lancamentoData = [
+                'lan_empresa_id' => get_empresa_id(),
+                'lan_tipo' => 'receita',
+                'lan_categoria_id' => $categoriaId,
+                'lan_descricao' => 'Lançamento automático feito pelo módulo de locação.',
+                'lan_data_lancamento' => $dataLancamento,
+                'lan_data_vencimento' => $dataVencimento,
+                'lan_data_pagamento' => $dataLancamento,
+                'lan_valor' => (float) $valorCaucao,
+                'lan_valor_pago' => (float) $valorCaucao,
+                'lan_status' => 'pago',
+                'lan_locacao_id' => $locacaoId,
+                'lan_veiculo_id' => (int) ($data['loc_vei_id'] ?? 0) > 0 ? (int) $data['loc_vei_id'] : null,
+                'lan_forma_pagamento' => null,
+                'lan_referencia' => null,
+                'lan_obs' => null,
+            ];
+            
+            $lancamentoModel = new LancamentoFinanceiroModel();
+            $lancamentoId = $lancamentoModel->insert($lancamentoData, true);
+            
+            if (!$lancamentoId) {
+                $errors = $lancamentoModel->errors();
+                log_message('error', 'Erro ao criar lançamento de receita para caução: ' . json_encode($errors));
+                return null;
+            }
+            
+            return (int) $lancamentoId;
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao criar lançamento de receita para caução: ' . $e->getMessage());
+            return null;
+        }
     }
 
     /**
