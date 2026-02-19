@@ -953,48 +953,57 @@
       cancelada: "bg-dark-subtle text-dark",
     };
 
+    // Helper para definir textContent com verificação de null
+    const setTextContent = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    };
+
     // Preencher campos
-    document.getElementById("detalhes-loc-id").textContent = `#${String(l.id || "").padStart(6, "0")}`;
-    document.getElementById("detalhes-loc-cliente").textContent = l.cli_nome || "-";
-    document.getElementById("detalhes-loc-veiculo-placa").textContent = l.vei_placa || "-";
-    document.getElementById("detalhes-loc-veiculo-modelo").textContent = l.vei_marca && l.vei_modelo 
+    setTextContent("detalhes-loc-id", `#${String(l.id || "").padStart(6, "0")}`);
+    setTextContent("detalhes-loc-cliente", l.cli_nome || "-");
+    setTextContent("detalhes-loc-veiculo-placa", l.vei_placa || "-");
+    setTextContent("detalhes-loc-veiculo-modelo", l.vei_marca && l.vei_modelo 
       ? `${l.vei_marca} ${l.vei_modelo}` 
-      : (l.vei_modelo || "-");
+      : (l.vei_modelo || "-"));
     
-    document.getElementById("detalhes-loc-data-inicio").textContent = formatDateSimple(l.loc_data_inicio);
-    document.getElementById("detalhes-loc-data-fim-prevista").textContent = formatDateSimple(l.loc_data_fim_prevista);
-    document.getElementById("detalhes-loc-data-fim-real").textContent = l.loc_data_fim_real 
+    setTextContent("detalhes-loc-data-inicio", formatDateSimple(l.loc_data_inicio));
+    setTextContent("detalhes-loc-data-fim-prevista", formatDateSimple(l.loc_data_fim_prevista));
+    setTextContent("detalhes-loc-data-fim-real", l.loc_data_fim_real 
       ? formatDateSimple(l.loc_data_fim_real) 
-      : "-";
+      : "-");
     
-    document.getElementById("detalhes-loc-status").textContent = statusLabels[l.loc_status] || l.loc_status || "-";
-    document.getElementById("detalhes-loc-status").className = `badge ${statusBadges[l.loc_status] || "bg-secondary-subtle text-secondary"}`;
+    const statusEl = document.getElementById("detalhes-loc-status");
+    if (statusEl) {
+      statusEl.textContent = statusLabels[l.loc_status] || l.loc_status || "-";
+      statusEl.className = `badge ${statusBadges[l.loc_status] || "bg-secondary-subtle text-secondary"}`;
+    }
     
-    document.getElementById("detalhes-loc-valor-locacao").textContent = toMoneyBR(l.loc_valor_locacao || 0);
-    document.getElementById("detalhes-loc-valor-caucao").textContent = l.loc_valor_caucao 
+    setTextContent("detalhes-loc-valor-locacao", toMoneyBR(l.loc_valor_locacao || 0));
+    setTextContent("detalhes-loc-valor-caucao", l.loc_valor_caucao 
       ? toMoneyBR(l.loc_valor_caucao) 
-      : "-";
-    document.getElementById("detalhes-loc-valor-total").textContent = toMoneyBR(l.loc_valor_total || l.loc_valor_locacao || 0);
+      : "-");
+    setTextContent("detalhes-loc-valor-total", toMoneyBR(l.loc_valor_total || l.loc_valor_locacao || 0));
     
-    document.getElementById("detalhes-loc-recorrencia").textContent = l.loc_recorrencia_pagamento 
+    setTextContent("detalhes-loc-recorrencia", l.loc_recorrencia_pagamento 
       ? l.loc_recorrencia_pagamento.charAt(0).toUpperCase() + l.loc_recorrencia_pagamento.slice(1)
-      : "-";
-    document.getElementById("detalhes-loc-data-inicio-pagamento").textContent = l.loc_data_inicio_pagamento 
+      : "-");
+    setTextContent("detalhes-loc-data-inicio-pagamento", l.loc_data_inicio_pagamento 
       ? formatDateSimple(l.loc_data_inicio_pagamento) 
-      : "-";
+      : "-");
     
-    document.getElementById("detalhes-loc-taxa-juros").textContent = l.loc_taxa_juros 
+    setTextContent("detalhes-loc-taxa-juros", l.loc_taxa_juros 
       ? toMoneyBR(l.loc_taxa_juros) 
-      : "-";
-    document.getElementById("detalhes-loc-taxa-multa").textContent = l.loc_taxa_multa 
+      : "-");
+    setTextContent("detalhes-loc-taxa-multa", l.loc_taxa_multa 
       ? toMoneyBR(l.loc_taxa_multa) 
-      : "-";
+      : "-");
     
-    document.getElementById("detalhes-loc-km-retirada").textContent = l.loc_km_retirada || "-";
-    document.getElementById("detalhes-loc-km-devolucao").textContent = l.loc_km_devolucao || "-";
+    setTextContent("detalhes-loc-km-retirada", l.loc_km_retirada || "-");
+    setTextContent("detalhes-loc-km-devolucao", l.loc_km_devolucao || "-");
     
     const valoresRecebidos = l.loc_valores_recebidos == 1;
-    document.getElementById("detalhes-loc-valores-recebidos").textContent = valoresRecebidos ? "Sim" : "Não";
+    setTextContent("detalhes-loc-valores-recebidos", valoresRecebidos ? "Sim" : "Não");
     const valoresRecebidosBadge = document.getElementById("detalhes-loc-valores-recebidos-badge");
     if (valoresRecebidosBadge) {
       valoresRecebidosBadge.textContent = valoresRecebidos ? "Sim" : "Não";
@@ -1003,16 +1012,14 @@
         : "badge bg-warning-subtle text-warning";
     }
     
-    document.getElementById("detalhes-loc-obs-operacionais").textContent = l.loc_obs_operacionais || "-";
-    document.getElementById("detalhes-loc-obs-financeiras").textContent = l.loc_obs_financeiras || "-";
+    setTextContent("detalhes-loc-obs-operacionais", l.loc_obs_operacionais || "-");
+    setTextContent("detalhes-loc-obs-financeiras", l.loc_obs_financeiras || "-");
     
     // Duplicar datas para exibição em dois lugares
     const dataInicio = formatDateSimple(l.loc_data_inicio);
     const dataFimPrevista = formatDateSimple(l.loc_data_fim_prevista);
-    const dataInicioDup = document.getElementById("detalhes-loc-data-inicio-duplicado");
-    const dataFimPrevistaDup = document.getElementById("detalhes-loc-data-fim-prevista-duplicado");
-    if (dataInicioDup) dataInicioDup.textContent = dataInicio;
-    if (dataFimPrevistaDup) dataFimPrevistaDup.textContent = dataFimPrevista;
+    setTextContent("detalhes-loc-data-inicio-duplicado", dataInicio);
+    setTextContent("detalhes-loc-data-fim-prevista-duplicado", dataFimPrevista);
     
     // Configurar botão de editar
     const btnEditar = document.getElementById("btnEditarLocacaoDetalhes");
@@ -1042,20 +1049,13 @@
         proximaData.setDate(proximaData.getDate() + diasRecorrencia);
       }
       
-      const proximoPagamentoEl = document.getElementById("detalhes-loc-proximo-pagamento");
-      const valorPagamentoEl = document.getElementById("detalhes-loc-valor-proximo-pagamento");
-      
-      if (proximoPagamentoEl) {
-        proximoPagamentoEl.textContent = formatDate(proximaData.toISOString().slice(0, 10));
-      }
-      if (valorPagamentoEl && l.loc_valor_locacao) {
-        valorPagamentoEl.textContent = toMoneyBR(l.loc_valor_locacao);
+      setTextContent("detalhes-loc-proximo-pagamento", formatDate(proximaData.toISOString().slice(0, 10)));
+      if (l.loc_valor_locacao) {
+        setTextContent("detalhes-loc-valor-proximo-pagamento", toMoneyBR(l.loc_valor_locacao));
       }
     } else {
-      const proximoPagamentoEl = document.getElementById("detalhes-loc-proximo-pagamento");
-      const valorPagamentoEl = document.getElementById("detalhes-loc-valor-proximo-pagamento");
-      if (proximoPagamentoEl) proximoPagamentoEl.textContent = "-";
-      if (valorPagamentoEl) valorPagamentoEl.textContent = "-";
+      setTextContent("detalhes-loc-proximo-pagamento", "-");
+      setTextContent("detalhes-loc-valor-proximo-pagamento", "-");
     }
   };
 
