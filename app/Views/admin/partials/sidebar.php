@@ -40,7 +40,7 @@
                 </a>
             </li>
 
-            <li class="menu-title">Sistema</li>
+            <li class="menu-title">Operações</li>
 
             <li class="nav-item">
                 <a class="nav-link" href="<?= base_url('admin/veiculos') ?>">
@@ -98,6 +98,8 @@
                 </a>
             </li>
 
+            <li class="menu-title">Financeiro</li>
+
             <li class="nav-item">
                 <a class="nav-link" href="<?= base_url('admin/financeiro') ?>">
                     <span class="nav-icon">
@@ -108,6 +110,8 @@
                     <span class="nav-text"> Financeiro </span>
                 </a>
             </li>
+
+            <li class="menu-title">Manutenção</li>
 
             <li class="nav-item">
                 <a class="nav-link" href="<?= base_url('admin/manutencao') ?>">
@@ -197,7 +201,7 @@
                 </div>
             </li>
 
-            <li class="menu-title">Sistema</li>
+            <li class="menu-title">Conta</li>
 
             <li class="nav-item">
                 <a class="nav-link" href="<?= base_url('admin/configuracoes') ?>">
