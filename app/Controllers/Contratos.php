@@ -75,9 +75,11 @@ class Contratos extends BaseController
             $modelosList = $modeloPadrao ? [['id' => $modeloPadrao['id'], 'con_nome' => $modeloPadrao['con_nome'] ?? 'Modelo padrão']] : [];
         }
 
-        // Para o editor: sempre enviar texto puro (converte HTML do banco em texto legível)
+        // Para o editor: passar o conteúdo original (HTML ou texto) para o Quill renderizar corretamente
+        // O Quill vai detectar se é HTML e renderizar com formatação, ou se é texto puro
         if ($modeloPadrao !== null && array_key_exists('con_conteudo', $modeloPadrao)) {
-            $modeloPadrao['con_conteudo_editor'] = $this->htmlParaTextoEditor($modeloPadrao['con_conteudo'] ?? '');
+            $conteudoOriginal = $modeloPadrao['con_conteudo'] ?? '';
+            $modeloPadrao['con_conteudo_editor'] = $conteudoOriginal; // Passa o conteúdo original (HTML ou texto)
         }
 
         $data = [

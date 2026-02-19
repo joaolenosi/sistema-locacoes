@@ -42,6 +42,7 @@ $routes->get('admin/cobrancas', 'Cobrancas::index');
 $routes->get('admin/cobrancas/listar', 'Cobrancas::listar');
 $routes->post('admin/cobrancas/quitar/(:num)', 'Cobrancas::quitar/$1');
 $routes->get('admin/financeiro', 'Financeiro::index');
+$routes->get('admin/financeiro/debug-queries', 'Financeiro::debugQueries');
 $routes->get('admin/financeiro/movimentacoes', 'Financeiro::movimentacoes');
 $routes->get('admin/financeiro/listar', 'Financeiro::listar');
 $routes->post('admin/financeiro/criar', 'Financeiro::criar');

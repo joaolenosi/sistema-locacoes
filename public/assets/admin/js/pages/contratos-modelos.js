@@ -32,8 +32,16 @@
       },
     });
 
-    const initialText = document.getElementById("contrato-modelo-conteudo")?.value || "";
-    quill.setText(initialText.replace(/\r\n/g, "\n"));
+    const initialContent = document.getElementById("contrato-modelo-conteudo")?.value || "";
+    // Detectar se o conteúdo é HTML (contém tags) ou texto puro
+    const isHtml = initialContent.includes("<") && initialContent.includes(">");
+    if (isHtml) {
+      // Se for HTML, usar dangerouslyPasteHTML para preservar formatação
+      quill.clipboard.dangerouslyPasteHTML(0, initialContent);
+    } else {
+      // Se for texto puro, usar setText normalmente
+      quill.setText(initialContent.replace(/\r\n/g, "\n"));
+    }
 
     const htmlOut = document.getElementById("contrato-modelo-conteudo-html");
     if (htmlOut) {

@@ -49,7 +49,7 @@ class Home extends BaseController
 
     /**
      * Faturamento (receitas pagas) em um mês/ano.
-     * Data do fato: COALESCE(lan_data_pagamento, lan_data_lancamento).
+     * Mês: COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento).
      */
     private function getFaturamentoMes(int $empresaId, int $mes, int $ano): float
     {
@@ -62,8 +62,8 @@ class Home extends BaseController
             ->where('lan_empresa_id', $empresaId)
             ->where('lan_tipo', 'receita')
             ->where('lan_status', 'pago')
-            ->where('COALESCE(lan_data_pagamento, lan_data_lancamento) >=', $inicio, false)
-            ->where('COALESCE(lan_data_pagamento, lan_data_lancamento) <=', $fim, false)
+            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) >= ?', [$inicio])
+            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) <= ?', [$fim])
             ->get()
             ->getRow();
 
@@ -128,8 +128,8 @@ class Home extends BaseController
             ->where('lan_empresa_id', $empresaId)
             ->where('lan_tipo', 'receita')
             ->where('lan_status', 'pago')
-            ->where('COALESCE(lan_data_pagamento, lan_data_lancamento) >=', $inicio, false)
-            ->where('COALESCE(lan_data_pagamento, lan_data_lancamento) <=', $fim, false)
+            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) >= ?', [$inicio])
+            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) <= ?', [$fim])
             ->get()
             ->getRow();
         $totalReceitas = (float) ($receitas->total ?? 0);
@@ -139,8 +139,8 @@ class Home extends BaseController
             ->where('lan_empresa_id', $empresaId)
             ->where('lan_tipo', 'despesa')
             ->where('lan_status', 'pago')
-            ->where('COALESCE(lan_data_pagamento, lan_data_lancamento) >=', $inicio, false)
-            ->where('COALESCE(lan_data_pagamento, lan_data_lancamento) <=', $fim, false)
+            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) >= ?', [$inicio])
+            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) <= ?', [$fim])
             ->get()
             ->getRow();
         $totalDespesas = (float) ($despesas->total ?? 0);
@@ -230,8 +230,8 @@ class Home extends BaseController
                 ->where('lan_empresa_id', $empresaId)
                 ->where('lan_tipo', 'receita')
                 ->where('lan_status', 'pago')
-                ->where('COALESCE(lan_data_pagamento, lan_data_lancamento) >=', $inicio, false)
-                ->where('COALESCE(lan_data_pagamento, lan_data_lancamento) <=', $fim, false)
+                ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) >= ?', [$inicio])
+                ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) <= ?', [$fim])
                 ->get()
                 ->getRow();
             $totalReceitas = (float) ($receitas->total ?? 0);
@@ -241,8 +241,8 @@ class Home extends BaseController
                 ->where('lan_empresa_id', $empresaId)
                 ->where('lan_tipo', 'despesa')
                 ->where('lan_status', 'pago')
-                ->where('COALESCE(lan_data_pagamento, lan_data_lancamento) >=', $inicio, false)
-                ->where('COALESCE(lan_data_pagamento, lan_data_lancamento) <=', $fim, false)
+                ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) >= ?', [$inicio])
+                ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) <= ?', [$fim])
                 ->get()
                 ->getRow();
             $totalDespesas = (float) ($despesas->total ?? 0);

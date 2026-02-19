@@ -95,12 +95,17 @@
 
     let receitas = 0;
     let despesas = 0;
+    // Mesmo critério do backend: data = pagamento || vencimento || lançamento
+    const dataBase = (l) => (l.lan_data_pagamento || l.lan_data_vencimento || l.lan_data_lancamento || "").slice(0, 10);
 
     (items || []).forEach((l) => {
       if (String(l.lan_status || "") !== "pago") return;
-      const base = (l.lan_data_pagamento || l.lan_data_lancamento || "").slice(0, 10);
+      const base = dataBase(l);
       if (!base) return;
-      const [y, m] = base.split("-").map((x) => Number(x));
+      const parts = base.split("-");
+      if (parts.length < 2) return;
+      const y = Number(parts[0]);
+      const m = Number(parts[1]);
       if (y !== ano || m !== mes) return;
 
       const v = valorLancamento(l);

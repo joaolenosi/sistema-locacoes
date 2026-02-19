@@ -256,8 +256,9 @@ class Financeiro extends BaseController
     }
 
     /**
-     * Receitas e despesas do mês atual (recebidas/pagas no mês).
-     * Usa consulta direta por período para não depender de formato de data em PHP.
+     * Receitas e despesas do mês atual.
+     * Mês do lançamento: data pagamento, ou (se nula) data vencimento, ou data lançamento.
+     * Assim, registro pago com vencimento 18/02 e data pagamento nula entra em fevereiro.
      *
      * @return array{0: float, 1: float} [receitas, despesas]
      */
@@ -272,8 +273,8 @@ class Financeiro extends BaseController
             ->where('lan_empresa_id', $empresaId)
             ->where('lan_tipo', 'receita')
             ->where('lan_status', 'pago')
-            ->where('COALESCE(lan_data_pagamento, lan_data_lancamento) >=', $inicio, false)
-            ->where('COALESCE(lan_data_pagamento, lan_data_lancamento) <=', $fim, false)
+            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) >= ?', [$inicio])
+            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) <= ?', [$fim])
             ->get()
             ->getRow();
         $totalReceitas = (float) ($receitas->total ?? 0);
@@ -283,13 +284,136 @@ class Financeiro extends BaseController
             ->where('lan_empresa_id', $empresaId)
             ->where('lan_tipo', 'despesa')
             ->where('lan_status', 'pago')
-            ->where('COALESCE(lan_data_pagamento, lan_data_lancamento) >=', $inicio, false)
-            ->where('COALESCE(lan_data_pagamento, lan_data_lancamento) <=', $fim, false)
+            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) >= ?', [$inicio])
+            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) <= ?', [$fim])
             ->get()
             ->getRow();
         $totalDespesas = (float) ($despesas->total ?? 0);
 
         return [$totalReceitas, $totalDespesas];
+    }
+
+    /**
+     * DEBUG: Retorna os SELECTs SQL usados nos cards e na listagem.
+     * Acesse: /admin/financeiro/debug-queries
+     */
+    public function debugQueries()
+    {
+        $empresaId = get_empresa_id();
+        $db = \Config\Database::connect();
+        $inicio = date('Y-m-01');
+        $fim   = date('Y-m-t');
+
+        // Query para receitas do mês (cards)
+        $builderReceitas = $db->table('lancamentos_financeiros')
+            ->select('SUM(COALESCE(lan_valor_pago, lan_valor)) as total', false)
+            ->where('lan_empresa_id', $empresaId)
+            ->where('lan_tipo', 'receita')
+            ->where('lan_status', 'pago')
+            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) >= ?', [$inicio])
+            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) <= ?', [$fim]);
+        $sqlReceitas = $builderReceitas->getCompiledSelect(false);
+
+        // Query para despesas do mês (cards)
+        $builderDespesas = $db->table('lancamentos_financeiros')
+            ->select('SUM(COALESCE(lan_valor_pago, lan_valor)) as total', false)
+            ->where('lan_empresa_id', $empresaId)
+            ->where('lan_tipo', 'despesa')
+            ->where('lan_status', 'pago')
+            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) >= ?', [$inicio])
+            ->whereRaw('COALESCE(lan_data_pagamento, lan_data_vencimento, lan_data_lancamento) <= ?', [$fim]);
+        $sqlDespesas = $builderDespesas->getCompiledSelect(false);
+
+        // Query para listagem completa
+        $lancamentoModel = new LancamentoFinanceiroModel();
+        $builderListagem = $lancamentoModel
+            ->builderWithCategoria()
+            ->where('lancamentos_financeiros.lan_empresa_id', $empresaId)
+            ->orderBy('lancamentos_financeiros.created_at', 'DESC');
+        $sqlListagem = $builderListagem->getCompiledSelect(false);
+
+        // Executar e pegar resultados
+        $resultReceitas = $builderReceitas->get()->getRow();
+        $resultDespesas = $builderDespesas->get()->getRow();
+        $resultListagem = $builderListagem->get()->getResultArray();
+
+        // Filtrar registros de fevereiro para análise
+        $registrosFev = [];
+        foreach ($resultListagem as $r) {
+            $dataPag = $r['lan_data_pagamento'] ?? null;
+            $dataVenc = $r['lan_data_vencimento'] ?? null;
+            $dataLanc = $r['lan_data_lancamento'] ?? null;
+            $data = $dataPag ?: ($dataVenc ?: $dataLanc);
+            if ($data) {
+                $data = substr($data, 0, 10);
+                if ($data >= $inicio && $data <= $fim) {
+                    $registrosFev[] = [
+                        'id' => $r['id'],
+                        'tipo' => $r['lan_tipo'],
+                        'status' => $r['lan_status'],
+                        'data_pagamento' => $dataPag,
+                        'data_vencimento' => $dataVenc,
+                        'data_lancamento' => $dataLanc,
+                        'data_usada' => $data,
+                        'valor' => $r['lan_valor'],
+                        'valor_pago' => $r['lan_valor_pago'],
+                        'descricao' => $r['lan_descricao'],
+                    ];
+                }
+            }
+        }
+
+        $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Debug Financeiro - Queries SQL</title>';
+        $html .= '<style>body{font-family:monospace;padding:20px;background:#f5f5f5;}';
+        $html .= '.query-box{background:white;padding:15px;margin:15px 0;border-left:4px solid #0d6efd;border-radius:4px;}';
+        $html .= '.result-box{background:#e7f3ff;padding:15px;margin:15px 0;border-left:4px solid #22c55e;border-radius:4px;}';
+        $html .= 'pre{background:#f8f9fa;padding:10px;border-radius:4px;overflow-x:auto;}';
+        $html .= 'h2{color:#333;border-bottom:2px solid #0d6efd;padding-bottom:5px;}';
+        $html .= 'table{border-collapse:collapse;width:100%;margin:15px 0;}';
+        $html .= 'th,td{padding:8px;text-align:left;border:1px solid #ddd;}';
+        $html .= 'th{background:#0d6efd;color:white;}</style></head><body>';
+        $html .= '<h1>🔍 Debug Financeiro - Queries SQL</h1>';
+        
+        $html .= '<div class="result-box"><strong>Empresa ID:</strong> ' . $empresaId . '<br>';
+        $html .= '<strong>Mês atual:</strong> ' . date('m/Y') . ' (início: ' . $inicio . ', fim: ' . $fim . ')</div>';
+
+        $html .= '<h2>1. SELECT para Receitas do Mês (Cards)</h2>';
+        $html .= '<div class="query-box"><pre>' . htmlspecialchars($sqlReceitas) . '</pre></div>';
+        $html .= '<div class="result-box"><strong>Resultado:</strong> R$ ' . number_format((float) ($resultReceitas->total ?? 0), 2, ',', '.') . '</div>';
+
+        $html .= '<h2>2. SELECT para Despesas do Mês (Cards)</h2>';
+        $html .= '<div class="query-box"><pre>' . htmlspecialchars($sqlDespesas) . '</pre></div>';
+        $html .= '<div class="result-box"><strong>Resultado:</strong> R$ ' . number_format((float) ($resultDespesas->total ?? 0), 2, ',', '.') . '</div>';
+
+        $html .= '<h2>3. SELECT para Listagem Completa</h2>';
+        $html .= '<div class="query-box"><pre>' . htmlspecialchars($sqlListagem) . '</pre></div>';
+        $html .= '<div class="result-box"><strong>Total de registros:</strong> ' . count($resultListagem) . '</div>';
+
+        $html .= '<h2>4. Registros de Fevereiro (Filtrados)</h2>';
+        $html .= '<div class="result-box"><strong>Total encontrados:</strong> ' . count($registrosFev) . '</div>';
+        if (count($registrosFev) > 0) {
+            $html .= '<table><tr><th>ID</th><th>Tipo</th><th>Status</th><th>Data Pagamento</th><th>Data Vencimento</th><th>Data Lançamento</th><th>Data Usada</th><th>Valor</th><th>Valor Pago</th><th>Descrição</th></tr>';
+            foreach ($registrosFev as $r) {
+                $html .= '<tr>';
+                $html .= '<td>' . htmlspecialchars($r['id']) . '</td>';
+                $html .= '<td>' . htmlspecialchars($r['tipo']) . '</td>';
+                $html .= '<td>' . htmlspecialchars($r['status']) . '</td>';
+                $html .= '<td>' . htmlspecialchars($r['data_pagamento'] ?? '-') . '</td>';
+                $html .= '<td>' . htmlspecialchars($r['data_vencimento'] ?? '-') . '</td>';
+                $html .= '<td>' . htmlspecialchars($r['data_lancamento'] ?? '-') . '</td>';
+                $html .= '<td><strong>' . htmlspecialchars($r['data_usada']) . '</strong></td>';
+                $html .= '<td>R$ ' . number_format((float) ($r['valor'] ?? 0), 2, ',', '.') . '</td>';
+                $html .= '<td>R$ ' . number_format((float) ($r['valor_pago'] ?? 0), 2, ',', '.') . '</td>';
+                $html .= '<td>' . htmlspecialchars($r['descricao'] ?? '-') . '</td>';
+                $html .= '</tr>';
+            }
+            $html .= '</table>';
+        } else {
+            $html .= '<p style="color:red;">⚠️ Nenhum registro encontrado para fevereiro com status "pago"!</p>';
+        }
+
+        $html .= '</body></html>';
+        return $html;
     }
 
     /**
