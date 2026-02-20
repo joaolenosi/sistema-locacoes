@@ -286,6 +286,47 @@ class Financeiro extends BaseController
         }
     }
 
+    public function excluir($id)
+    {
+        try {
+            $lancamentoModel = new LancamentoFinanceiroModel();
+            $existing = $lancamentoModel->find((int) $id);
+
+            if (!$existing) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => 'Lançamento não encontrado.',
+                ]);
+            }
+
+            if ((int) ($existing['lan_empresa_id'] ?? 0) !== get_empresa_id()) {
+                return $this->response->setStatusCode(403)->setJSON([
+                    'success' => false,
+                    'message' => 'Acesso negado.',
+                ]);
+            }
+
+            $ok = $lancamentoModel->delete((int) $id);
+            if (!$ok) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'message' => 'Não foi possível excluir o lançamento.',
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Lançamento excluído com sucesso.',
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao excluir lançamento: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao excluir lançamento.',
+            ]);
+        }
+    }
+
     public function getCategorias($tipo)
     {
         try {

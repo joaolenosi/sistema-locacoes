@@ -355,7 +355,7 @@
       },
       {
         name: "Ações",
-        width: "180px",
+        width: "220px",
         formatter: (_cell, row) => {
           const id = row.cells[0].data;
           const tipo = row.cells[2].data;
@@ -372,6 +372,9 @@
                   <iconify-icon icon="iconamoon:check-circle-1-duotone" class="fs-18"></iconify-icon>
                 </button>
               ` : ''}
+              <button type="button" class="btn btn-sm btn-outline-danger btn-excluir-lancamento" data-id="${id}" title="Excluir">
+                <iconify-icon icon="iconamoon:trash-duotone" class="fs-18"></iconify-icon>
+              </button>
             </div>
           `);
         },
@@ -448,25 +451,47 @@
     applyFilters();
   };
 
-  // Delegação: click no botão editar dentro do grid
-  tableEl.addEventListener("click", (e) => {
-    const btn = e.target?.closest?.(".btn-edit-lancamento");
-    if (!btn) {
-      // Verificar se é o botão de pagamento
-      const btnPagamento = e.target?.closest?.(".btn-efetuar-pagamento");
-      if (btnPagamento) {
-        e.preventDefault();
-        const id = btnPagamento.getAttribute("data-id");
-        if (id) {
-          openModalPagamento(id);
-        }
-      }
+  const excluirLancamento = async (id) => {
+    if (!confirm("Deseja realmente excluir este lançamento? Esta ação não pode ser desfeita.")) {
       return;
     }
-    e.preventDefault();
-    const id = btn.getAttribute("data-id");
-    const tipo = btn.getAttribute("data-tipo") || "receita";
-    openModal(tipo, id);
+    try {
+      const json = await fetchJson(`${getBaseUrl()}admin/financeiro/excluir/${id}`, {
+        method: "POST",
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+      await reload();
+      alert(json?.message || "Lançamento excluído com sucesso.");
+    } catch (e) {
+      const errorMsg = e?.message || "Erro ao excluir lançamento.";
+      console.error("Erro ao excluir:", e);
+      alert(errorMsg);
+    }
+  };
+
+  // Delegação: click no botão editar, pagamento ou excluir dentro do grid
+  tableEl.addEventListener("click", (e) => {
+    const btnEdit = e.target?.closest?.(".btn-edit-lancamento");
+    if (btnEdit) {
+      e.preventDefault();
+      const id = btnEdit.getAttribute("data-id");
+      const tipo = btnEdit.getAttribute("data-tipo") || "receita";
+      openModal(tipo, id);
+      return;
+    }
+    const btnPagamento = e.target?.closest?.(".btn-efetuar-pagamento");
+    if (btnPagamento) {
+      e.preventDefault();
+      const id = btnPagamento.getAttribute("data-id");
+      if (id) openModalPagamento(id);
+      return;
+    }
+    const btnExcluir = e.target?.closest?.(".btn-excluir-lancamento");
+    if (btnExcluir) {
+      e.preventDefault();
+      const id = btnExcluir.getAttribute("data-id");
+      if (id) excluirLancamento(id);
+    }
   });
 
   // Reset UI ao fechar modais

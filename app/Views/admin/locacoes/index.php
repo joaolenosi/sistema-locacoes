@@ -210,6 +210,64 @@
         color: #adb5bd !important;
         opacity: 1 !important;
     }
+
+    /* Estilos para modal de detalhes - Cards financeiros */
+    #modalDetalhesLocacao .card[style*="background: #"] {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    #modalDetalhesLocacao .card[style*="background: #"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Card de próximo pagamento */
+    #modalDetalhesLocacao .card[style*="background: linear-gradient"] {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Cards de informações detalhadas */
+    #modalDetalhesLocacao .card.border {
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    }
+
+    /* Tema escuro - ajustes para cards coloridos */
+    [data-bs-theme="dark"] #modalDetalhesLocacao .card[style*="background: #"],
+    [data-bs-theme="dark"] #modalDetalhesLocacao .card[style*="background: linear-gradient"] {
+        opacity: 0.95;
+    }
+
+    /* Garantir legibilidade no tema escuro */
+    [data-bs-theme="dark"] #modalDetalhesLocacao .card.border {
+        background-color: #252836 !important;
+        border-color: #2f3542 !important;
+    }
+
+    [data-bs-theme="dark"] #modalDetalhesLocacao .card.border .text-dark {
+        color: #e9ecef !important;
+    }
+
+    [data-bs-theme="dark"] #modalDetalhesLocacao .card.border .text-muted {
+        color: #adb5bd !important;
+    }
+
+    [data-bs-theme="dark"] #modalDetalhesLocacao .card[style*="background: #f8f9fa"] {
+        background-color: #252836 !important;
+        border-color: #2f3542 !important;
+    }
+
+    [data-bs-theme="dark"] #modalDetalhesLocacao .card[style*="background: #f8f9fa"] .text-dark {
+        color: #e9ecef !important;
+    }
+
+    [data-bs-theme="dark"] #modalDetalhesLocacao .card[style*="background: linear-gradient(135deg, #f8f9fa"] {
+        background: linear-gradient(135deg, #252836 0%, #1f232e 100%) !important;
+    }
+
+    [data-bs-theme="dark"] #modalDetalhesLocacao .card[style*="background: linear-gradient(135deg, #f8f9fa"] .text-dark {
+        color: #e9ecef !important;
+    }
 </style>
 
 <!-- ========== Page Title Start ========== -->
@@ -542,93 +600,117 @@ window.__LOCACOES_BOOTSTRAP__ = {
 <div class="modal fade" id="modalDetalhesLocacao" tabindex="-1" aria-labelledby="modalDetalhesLocacaoLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modalDetalhesLocacaoLabel">
+      <div class="modal-header py-2">
+        <h5 class="modal-title" id="modalDetalhesLocacaoLabel" style="font-size: 1.1rem;">
           <iconify-icon icon="iconamoon:info-duotone" class="text-primary"></iconify-icon>
           Detalhes da Locação
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body py-3 px-3">
         <!-- Cabeçalho com ID e Status -->
-        <div class="row mb-4">
-          <div class="col-md-6">
-            <h4 class="text-muted mb-0" id="detalhes-loc-id">#000000</h4>
-            <p class="text-muted mb-0 mt-1">
-              <strong id="detalhes-loc-cliente">-</strong>
-            </p>
-            <p class="text-primary mb-0 mt-1">
-              <span id="detalhes-loc-veiculo-placa">-</span> | 
-              <span id="detalhes-loc-veiculo-modelo">-</span>
-            </p>
-          </div>
-          <div class="col-md-6 text-end">
-            <div class="mb-2">
-              <span class="badge fs-6" id="detalhes-loc-status">-</span>
-            </div>
-            <div class="text-muted small">
-              <div>Início: <span id="detalhes-loc-data-inicio">-</span></div>
-              <div>Fim previsto: <span id="detalhes-loc-data-fim-prevista">-</span></div>
+        <div class="card border-0 mb-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px;">
+          <div class="card-body py-2 px-3">
+            <div class="row align-items-center">
+              <div class="col-md-6">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <div style="width: 36px; height: 36px; border-radius: 8px; background: #0d6efd; display: inline-flex; align-items: center; justify-content: center;">
+                    <iconify-icon icon="iconamoon:file-duotone" class="fs-18 text-white"></iconify-icon>
+                  </div>
+                  <div>
+                    <h5 class="mb-0 text-dark fw-bold" id="detalhes-loc-id" style="font-size: 1.1rem;">#000000</h5>
+                    <p class="text-muted mb-0 small" style="font-size: 0.8rem;">
+                      <strong id="detalhes-loc-cliente">-</strong>
+                    </p>
+                  </div>
+                </div>
+                <p class="text-primary mb-0 mt-1 fw-medium small">
+                  <iconify-icon icon="iconamoon:car-duotone" class="fs-16"></iconify-icon>
+                  <span id="detalhes-loc-veiculo-placa">-</span> | 
+                  <span id="detalhes-loc-veiculo-modelo">-</span>
+                </p>
+              </div>
+              <div class="col-md-6 text-end">
+                <div class="mb-1">
+                  <span class="badge px-2 py-1" id="detalhes-loc-status" style="border-radius: 6px; font-size: 0.75rem;">-</span>
+                </div>
+                <div class="text-dark small" style="font-size: 0.8rem;">
+                  <div><strong>Início:</strong> <span id="detalhes-loc-data-inicio">-</span></div>
+                  <div><strong>Fim previsto:</strong> <span id="detalhes-loc-data-fim-prevista">-</span></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <hr>
-
         <!-- Informações Financeiras -->
-        <div class="row g-3 mb-4">
+        <div class="row g-2 mb-3">
           <div class="col-md-12">
-            <h6 class="fw-semibold mb-3">
+            <h6 class="fw-semibold mb-2" style="font-size: 0.9rem;">
               <iconify-icon icon="iconamoon:wallet-duotone" class="text-primary"></iconify-icon>
               Informações Financeiras
             </h6>
           </div>
           <div class="col-md-4">
-            <div class="card border-0 bg-light">
-              <div class="card-body text-center">
-                <div class="mb-2">
-                  <iconify-icon icon="iconamoon:arrow-down-2-duotone" class="fs-24 text-success"></iconify-icon>
+            <div class="card border-0" style="background: #22c55e; border-radius: 10px; overflow: hidden;">
+              <div class="card-body text-center text-white py-2 px-2">
+                <div class="mb-1">
+                  <div style="width: 32px; height: 32px; border-radius: 999px; background: rgba(255, 255, 255, 0.22); display: inline-flex; align-items: center; justify-content: center;">
+                    <iconify-icon icon="iconamoon:arrow-down-2-duotone" class="fs-18 text-white"></iconify-icon>
+                  </div>
                 </div>
-                <div class="fw-semibold text-success fs-5" id="detalhes-loc-valor-locacao">R$ 0,00</div>
-                <div class="text-muted small">Valor da Locação</div>
+                <div class="fw-semibold text-white" style="font-size: 1.25rem; line-height: 1.1;" id="detalhes-loc-valor-locacao">R$ 0,00</div>
+                <div class="text-white" style="opacity: 0.95; font-size: 0.75rem;">Valor da Locação</div>
               </div>
             </div>
           </div>
           <div class="col-md-4">
-            <div class="card border-0 bg-light">
-              <div class="card-body text-center">
-                <div class="mb-2">
-                  <iconify-icon icon="iconamoon:shield-check-duotone" class="fs-24 text-info"></iconify-icon>
+            <div class="card border-0" style="background: #2d7ef7; border-radius: 10px; overflow: hidden;">
+              <div class="card-body text-center text-white py-2 px-2">
+                <div class="mb-1">
+                  <div style="width: 32px; height: 32px; border-radius: 999px; background: rgba(255, 255, 255, 0.22); display: inline-flex; align-items: center; justify-content: center;">
+                    <iconify-icon icon="iconamoon:shield-check-duotone" class="fs-18 text-white"></iconify-icon>
+                  </div>
                 </div>
-                <div class="fw-semibold text-info fs-5" id="detalhes-loc-valor-caucao">R$ 0,00</div>
-                <div class="text-muted small">Valor do Caução</div>
+                <div class="fw-semibold text-white" style="font-size: 1.25rem; line-height: 1.1;" id="detalhes-loc-valor-caucao">R$ 0,00</div>
+                <div class="text-white" style="opacity: 0.95; font-size: 0.75rem;">Valor do Caução</div>
               </div>
             </div>
           </div>
           <div class="col-md-4">
-            <div class="card border-0 bg-light">
-              <div class="card-body text-center">
-                <div class="mb-2">
-                  <iconify-icon icon="iconamoon:calculator-duotone" class="fs-24 text-primary"></iconify-icon>
+            <div class="card border-0" style="background: #6366f1; border-radius: 10px; overflow: hidden;">
+              <div class="card-body text-center text-white py-2 px-2">
+                <div class="mb-1">
+                  <div style="width: 32px; height: 32px; border-radius: 999px; background: rgba(255, 255, 255, 0.22); display: inline-flex; align-items: center; justify-content: center;">
+                    <iconify-icon icon="iconamoon:calculator-duotone" class="fs-18 text-white"></iconify-icon>
+                  </div>
                 </div>
-                <div class="fw-semibold text-primary fs-5" id="detalhes-loc-valor-total">R$ 0,00</div>
-                <div class="text-muted small">Valor Total</div>
+                <div class="fw-semibold text-white" style="font-size: 1.25rem; line-height: 1.1;" id="detalhes-loc-valor-total">R$ 0,00</div>
+                <div class="text-white" style="opacity: 0.95; font-size: 0.75rem;">Valor Total</div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Próximo Pagamento -->
-        <div class="row g-3 mb-4">
+        <div class="row g-2 mb-3">
           <div class="col-md-12">
-            <div class="alert alert-info mb-0">
-              <div class="d-flex align-items-center justify-content-between">
-                <div>
-                  <strong>Próximo pagamento:</strong> 
-                  <span id="detalhes-loc-proximo-pagamento">-</span>
-                </div>
-                <div class="fw-semibold">
-                  No valor de <span class="text-primary" id="detalhes-loc-valor-proximo-pagamento">R$ 0,00</span>
+            <div class="card border-0 mb-0" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); border-radius: 10px;">
+              <div class="card-body py-2 px-3">
+                <div class="d-flex align-items-center justify-content-between text-white">
+                  <div class="d-flex align-items-center gap-2">
+                    <div style="width: 28px; height: 28px; border-radius: 999px; background: rgba(255, 255, 255, 0.22); display: inline-flex; align-items: center; justify-content: center;">
+                      <iconify-icon icon="iconamoon:calendar-duotone" class="fs-16 text-white"></iconify-icon>
+                    </div>
+                    <div>
+                      <span class="opacity-90" style="font-size: 0.75rem;">Próximo pagamento</span>
+                      <span class="fw-semibold d-block" style="font-size: 0.95rem;" id="detalhes-loc-proximo-pagamento">-</span>
+                    </div>
+                  </div>
+                  <div class="text-end">
+                    <span class="opacity-90" style="font-size: 0.75rem;">Valor</span>
+                    <span class="fw-bold d-block" style="font-size: 1.1rem;" id="detalhes-loc-valor-proximo-pagamento">R$ 0,00</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -636,106 +718,86 @@ window.__LOCACOES_BOOTSTRAP__ = {
         </div>
 
         <!-- Informações Detalhadas -->
-        <div class="row g-3">
+        <div class="row g-2">
           <div class="col-md-6">
-            <h6 class="fw-semibold mb-3">
+            <h6 class="fw-semibold mb-2" style="font-size: 0.9rem;">
               <iconify-icon icon="iconamoon:calendar-duotone" class="text-primary"></iconify-icon>
               Datas
             </h6>
-            <table class="table table-sm">
-              <tbody>
-                <tr>
-                  <td class="text-muted" style="width: 40%;">Início:</td>
-                  <td><strong id="detalhes-loc-data-inicio-duplicado">-</strong></td>
-                </tr>
-                <tr>
-                  <td class="text-muted">Fim previsto:</td>
-                  <td><strong id="detalhes-loc-data-fim-prevista-duplicado">-</strong></td>
-                </tr>
-                <tr>
-                  <td class="text-muted">Fim real:</td>
-                  <td><strong id="detalhes-loc-data-fim-real">-</strong></td>
-                </tr>
-                <tr>
-                  <td class="text-muted">Início pagamento:</td>
-                  <td><strong id="detalhes-loc-data-inicio-pagamento">-</strong></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="col-md-6">
-            <h6 class="fw-semibold mb-3">
-              <iconify-icon icon="iconamoon:settings-duotone" class="text-primary"></iconify-icon>
-              Configurações
-            </h6>
-            <table class="table table-sm">
-              <tbody>
-                <tr>
-                  <td class="text-muted" style="width: 40%;">Recorrência:</td>
-                  <td><strong id="detalhes-loc-recorrencia">-</strong></td>
-                </tr>
-                <tr>
-                  <td class="text-muted">Taxa de juros:</td>
-                  <td><strong id="detalhes-loc-taxa-juros">-</strong></td>
-                </tr>
-                <tr>
-                  <td class="text-muted">Taxa de multa:</td>
-                  <td><strong id="detalhes-loc-taxa-multa">-</strong></td>
-                </tr>
-                <tr>
-                  <td class="text-muted">Valores recebidos:</td>
-                  <td>
-                    <span class="badge" id="detalhes-loc-valores-recebidos-badge">-</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Quilometragem -->
-        <div class="row g-3 mt-2">
-          <div class="col-md-6">
-            <h6 class="fw-semibold mb-3">
-              <iconify-icon icon="iconamoon:car-duotone" class="text-primary"></iconify-icon>
-              Quilometragem
-            </h6>
-            <table class="table table-sm">
-              <tbody>
-                <tr>
-                  <td class="text-muted" style="width: 40%;">KM na retirada:</td>
-                  <td><strong id="detalhes-loc-km-retirada">-</strong></td>
-                </tr>
-                <tr>
-                  <td class="text-muted">KM na devolução:</td>
-                  <td><strong id="detalhes-loc-km-devolucao">-</strong></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Observações -->
-        <div class="row g-3 mt-2">
-          <div class="col-md-6">
-            <h6 class="fw-semibold mb-3">
-              <iconify-icon icon="iconamoon:note-duotone" class="text-primary"></iconify-icon>
-              Observações Operacionais
-            </h6>
-            <div class="card bg-light">
-              <div class="card-body">
-                <p class="mb-0" id="detalhes-loc-obs-operacionais" style="white-space: pre-wrap;">-</p>
+            <div class="card border" style="background: #ffffff; border-color: #e9ecef !important; border-radius: 8px;">
+              <div class="card-body p-0">
+                <table class="table table-sm table-borderless mb-0" style="font-size: 0.85rem;">
+                  <tbody>
+                    <tr style="border-bottom: 1px solid #f1f3f5;"><td class="text-muted fw-medium" style="width: 40%; padding: 0.4rem 0.75rem;">Início:</td><td style="padding: 0.4rem 0.75rem;"><strong class="text-dark" id="detalhes-loc-data-inicio-duplicado">-</strong></td></tr>
+                    <tr style="border-bottom: 1px solid #f1f3f5;"><td class="text-muted fw-medium" style="padding: 0.4rem 0.75rem;">Fim previsto:</td><td style="padding: 0.4rem 0.75rem;"><strong class="text-dark" id="detalhes-loc-data-fim-prevista-duplicado">-</strong></td></tr>
+                    <tr style="border-bottom: 1px solid #f1f3f5;"><td class="text-muted fw-medium" style="padding: 0.4rem 0.75rem;">Fim real:</td><td style="padding: 0.4rem 0.75rem;"><strong class="text-dark" id="detalhes-loc-data-fim-real">-</strong></td></tr>
+                    <tr><td class="text-muted fw-medium" style="padding: 0.4rem 0.75rem;">Início pagamento:</td><td style="padding: 0.4rem 0.75rem;"><strong class="text-dark" id="detalhes-loc-data-inicio-pagamento">-</strong></td></tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
           <div class="col-md-6">
-            <h6 class="fw-semibold mb-3">
+            <h6 class="fw-semibold mb-2" style="font-size: 0.9rem;">
+              <iconify-icon icon="iconamoon:settings-duotone" class="text-primary"></iconify-icon>
+              Configurações
+            </h6>
+            <div class="card border" style="background: #ffffff; border-color: #e9ecef !important; border-radius: 8px;">
+              <div class="card-body p-0">
+                <table class="table table-sm table-borderless mb-0" style="font-size: 0.85rem;">
+                  <tbody>
+                    <tr style="border-bottom: 1px solid #f1f3f5;"><td class="text-muted fw-medium" style="width: 40%; padding: 0.4rem 0.75rem;">Recorrência:</td><td style="padding: 0.4rem 0.75rem;"><strong class="text-dark" id="detalhes-loc-recorrencia">-</strong></td></tr>
+                    <tr style="border-bottom: 1px solid #f1f3f5;"><td class="text-muted fw-medium" style="padding: 0.4rem 0.75rem;">Taxa de juros:</td><td style="padding: 0.4rem 0.75rem;"><strong class="text-dark" id="detalhes-loc-taxa-juros">-</strong></td></tr>
+                    <tr style="border-bottom: 1px solid #f1f3f5;"><td class="text-muted fw-medium" style="padding: 0.4rem 0.75rem;">Taxa de multa:</td><td style="padding: 0.4rem 0.75rem;"><strong class="text-dark" id="detalhes-loc-taxa-multa">-</strong></td></tr>
+                    <tr><td class="text-muted fw-medium" style="padding: 0.4rem 0.75rem;">Valores recebidos:</td><td style="padding: 0.4rem 0.75rem;"><span class="badge" id="detalhes-loc-valores-recebidos-badge">-</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quilometragem -->
+        <div class="row g-2 mt-1">
+          <div class="col-md-6">
+            <h6 class="fw-semibold mb-2" style="font-size: 0.9rem;">
+              <iconify-icon icon="iconamoon:car-duotone" class="text-primary"></iconify-icon>
+              Quilometragem
+            </h6>
+            <div class="card border" style="background: #ffffff; border-color: #e9ecef !important; border-radius: 8px;">
+              <div class="card-body p-0">
+                <table class="table table-sm table-borderless mb-0" style="font-size: 0.85rem;">
+                  <tbody>
+                    <tr style="border-bottom: 1px solid #f1f3f5;"><td class="text-muted fw-medium" style="width: 40%; padding: 0.4rem 0.75rem;">KM na retirada:</td><td style="padding: 0.4rem 0.75rem;"><strong class="text-dark" id="detalhes-loc-km-retirada">-</strong></td></tr>
+                    <tr><td class="text-muted fw-medium" style="padding: 0.4rem 0.75rem;">KM na devolução:</td><td style="padding: 0.4rem 0.75rem;"><strong class="text-dark" id="detalhes-loc-km-devolucao">-</strong></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Observações -->
+        <div class="row g-2 mt-1">
+          <div class="col-md-6">
+            <h6 class="fw-semibold mb-2" style="font-size: 0.9rem;">
+              <iconify-icon icon="iconamoon:note-duotone" class="text-primary"></iconify-icon>
+              Observações Operacionais
+            </h6>
+            <div class="card border" style="background: #f8f9fa; border-color: #e9ecef !important; border-radius: 8px;">
+              <div class="card-body py-2 px-3" style="font-size: 0.85rem;">
+                <p class="mb-0 text-dark" id="detalhes-loc-obs-operacionais" style="white-space: pre-wrap;">-</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <h6 class="fw-semibold mb-2" style="font-size: 0.9rem;">
               <iconify-icon icon="iconamoon:wallet-duotone" class="text-primary"></iconify-icon>
               Observações Financeiras
             </h6>
-            <div class="card bg-light">
-              <div class="card-body">
-                <p class="mb-0" id="detalhes-loc-obs-financeiras" style="white-space: pre-wrap;">-</p>
+            <div class="card border" style="background: #f8f9fa; border-color: #e9ecef !important; border-radius: 8px;">
+              <div class="card-body py-2 px-3" style="font-size: 0.85rem;">
+                <p class="mb-0 text-dark" id="detalhes-loc-obs-financeiras" style="white-space: pre-wrap;">-</p>
               </div>
             </div>
           </div>
