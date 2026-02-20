@@ -52,6 +52,11 @@ $routes->post('admin/financeiro/efetuar-pagamento/(:num)', 'Financeiro::efetuarP
 $routes->post('admin/financeiro/excluir/(:num)', 'Financeiro::excluir/$1');
 $routes->get('admin/financeiro/categorias/(:segment)', 'Financeiro::getCategorias/$1');
 $routes->get('admin/manutencao', 'Manutencao::index');
+$routes->get('admin/manutencao/detalhes/(:num)', 'ManutencaoInteligente::detalhesView/$1');
+$routes->post('admin/manutencao/(:num)/fotos', 'ManutencaoInteligente::uploadFoto/$1');
+$routes->post('admin/manutencao/fotos/deletar/(:num)', 'ManutencaoInteligente::deletarFoto/$1');
+$routes->get('admin/manutencao/(:num)/pdf', 'ManutencaoInteligente::pdf/$1');
+$routes->get('admin/manutencao-inteligente/foto/(:num)', 'ManutencaoInteligente::foto/$1');
 $routes->get('admin/manutencao-inteligente', 'ManutencaoInteligente::index');
 $routes->get('admin/manutencao-inteligente/listar', 'ManutencaoInteligente::listar');
 $routes->post('admin/manutencao-inteligente/criar', 'ManutencaoInteligente::criar');

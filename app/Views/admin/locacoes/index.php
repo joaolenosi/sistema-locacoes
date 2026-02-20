@@ -448,7 +448,7 @@ window.__LOCACOES_BOOTSTRAP__ = {
                 <option value="15">15 dias</option>
                 <option value="30">30 dias</option>
                 <option value="365">1 ano</option>
-                <option value="730">2 anos</option>
+                <option value="730">2 anos</option>  
               </select>
               <div class="form-text">Opcional: sugere a data fim prevista (você pode alterar).</div>
             </div>

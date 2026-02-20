@@ -62,9 +62,13 @@
                 var label = statusLabel[c] || c;
                 return gridjs.html('<span class="badge ' + cls + '">' + label + '</span>');
             }},
-            { name: 'Ações', width: '100px', formatter: function (cell, row) {
+            { name: 'Ações', width: '180px', formatter: function (cell, row) {
                 var id = row.cells[0].data;
-                return gridjs.html('<button type="button" class="btn btn-sm btn-outline-primary btn-edit-manutencao" data-id="' + id + '" title="Editar"><iconify-icon icon="iconamoon:edit-duotone" class="fs-18"></iconify-icon> Editar</button>');
+                var base = (window.__BASE_URL__ || (window.location.origin + '/')).replace(/\/$/, '') + '/';
+                return gridjs.html(
+                    '<a href="' + base + 'admin/manutencao/detalhes/' + id + '" class="btn btn-sm btn-outline-secondary me-1" title="Ver Detalhes"><iconify-icon icon="iconamoon:info-duotone" class="fs-18"></iconify-icon> Detalhes</a>' +
+                    '<button type="button" class="btn btn-sm btn-outline-primary btn-edit-manutencao" data-id="' + id + '" title="Editar"><iconify-icon icon="iconamoon:edit-duotone" class="fs-18"></iconify-icon> Editar</button>'
+                );
             }}
         ];
 

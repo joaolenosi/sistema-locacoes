@@ -3,11 +3,13 @@
 namespace App\Controllers;
 
 use App\Models\ManutencaoModel;
+use App\Models\ManutencaoFotoModel;
 use App\Models\VeiculoControleModel;
 use App\Models\VeiculoModel;
 use App\Models\ServicoModel;
 use App\Models\ProdutoModel;
 use App\Models\LocacaoModel;
+use App\Models\EmpresaModel;
 
 class ManutencaoInteligente extends BaseController
 {
@@ -283,23 +285,338 @@ class ManutencaoInteligente extends BaseController
     public function detalhes($id)
     {
         try {
+            $empresaId = get_empresa_id();
+            if ($empresaId < 1) {
+                return $this->response->setStatusCode(401)->setJSON(['success' => false, 'message' => 'Sessão inválida.']);
+            }
             $manutencaoModel = new ManutencaoModel();
             $manutencao = $manutencaoModel
-                ->select('manutencoes.*, veiculos.vei_placa, veiculos.vei_modelo, veiculos.vei_km_atual')
+                ->select('manutencoes.*, veiculos.vei_placa, veiculos.vei_modelo, veiculos.vei_marca, veiculos.vei_ano, veiculos.vei_cor, veiculos.vei_km_atual')
                 ->join('veiculos', 'veiculos.id = manutencoes.man_veiculo_id', 'left')
                 ->where('manutencoes.id', (int) $id)
-                ->where('manutencoes.man_empresa_id', get_empresa_id())
+                ->where('manutencoes.man_empresa_id', $empresaId)
                 ->first();
 
             if (!$manutencao) {
                 return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'Manutenção não encontrada.']);
             }
 
+            $fotoModel = new ManutencaoFotoModel();
+            $fotos = $fotoModel->findByManutencao((int) $id, $empresaId);
+            $manutencao['fotos'] = $fotos;
+
             return $this->response->setJSON(['success' => true, 'data' => $manutencao]);
         } catch (\Throwable $e) {
             log_message('error', 'Erro ao carregar detalhes da manutenção: ' . $e->getMessage());
             return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Erro ao carregar detalhes da manutenção.']);
         }
+    }
+
+    /**
+     * Exibe a página de detalhes da manutenção (com fotos e botão PDF).
+     */
+    public function detalhesView($id)
+    {
+        $empresaId = get_empresa_id();
+        if ($empresaId < 1) {
+            return redirect()->to(base_url('login'))->with('error', 'Sessão inválida.');
+        }
+        $manutencaoModel = new ManutencaoModel();
+        $manutencao = $manutencaoModel
+            ->select('manutencoes.*, veiculos.vei_placa, veiculos.vei_modelo, veiculos.vei_marca, veiculos.vei_ano, veiculos.vei_cor, veiculos.vei_km_atual')
+            ->join('veiculos', 'veiculos.id = manutencoes.man_veiculo_id', 'left')
+            ->where('manutencoes.id', (int) $id)
+            ->where('manutencoes.man_empresa_id', $empresaId)
+            ->first();
+        if (!$manutencao) {
+            return redirect()->to(base_url('admin/manutencao'))->with('error', 'Manutenção não encontrada.');
+        }
+        $fotoModel = new ManutencaoFotoModel();
+        $manutencao['fotos'] = $fotoModel->findByManutencao((int) $id, $empresaId);
+        $data = [
+            'title' => 'Detalhes da Manutenção',
+            'manutencao' => $manutencao,
+        ];
+        return view('admin/manutencoes/detalhes', $data);
+    }
+
+    private const FOTO_MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    private const FOTO_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+
+    /**
+     * Upload de múltiplas fotos para uma manutenção.
+     */
+    public function uploadFoto($id)
+    {
+        try {
+            $empresaId = get_empresa_id();
+            if ($empresaId < 1) {
+                return $this->response->setStatusCode(401)->setJSON(['success' => false, 'message' => 'Sessão inválida.']);
+            }
+            $id = (int) $id;
+            $manutencaoModel = new ManutencaoModel();
+            $manutencao = $manutencaoModel->where('id', $id)->where('man_empresa_id', $empresaId)->first();
+            if (!$manutencao) {
+                return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'Manutenção não encontrada.']);
+            }
+
+            $files = $this->request->getFileMultiple('fotos');
+            if (empty($files) || (count($files) === 1 && ($files[0]->getError() === UPLOAD_ERR_NO_FILE || ($files[0]->getSize() === 0 && $files[0]->getError() === 0)))) {
+                return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => 'Nenhum arquivo enviado.']);
+            }
+
+            $writable = WRITEPATH . 'uploads/manutencoes/' . $empresaId . '/' . $id . '/';
+            if (!is_dir($writable)) {
+                if (!@mkdir($writable, 0755, true)) {
+                    return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Não foi possível criar o diretório de uploads.']);
+                }
+                $indexHtml = $writable . 'index.html';
+                if (!file_exists($indexHtml)) {
+                    file_put_contents($indexHtml, '<!DOCTYPE html><html><head><title>403</title></head><body><p>Forbidden</p></body></html>');
+                }
+            }
+
+            $fotoModel = new ManutencaoFotoModel();
+            $uploaded = [];
+            $ordem = (int) $fotoModel->where('maf_manutencao_id', $id)->countAllResults();
+
+            foreach ($files as $file) {
+                if (!$file->isValid() || $file->getError() !== UPLOAD_ERR_OK) {
+                    continue;
+                }
+                if ($file->getSize() > self::FOTO_MAX_SIZE) {
+                    continue;
+                }
+                $mime = $file->getMimeType();
+                if (!in_array($mime, self::FOTO_ALLOWED_TYPES, true)) {
+                    continue;
+                }
+                $ext = $file->getClientExtension() ?: 'jpg';
+                $nomeSeguro = bin2hex(random_bytes(8)) . '_' . time() . '.' . preg_replace('/[^a-z0-9]/i', '', $ext);
+                $file->move($writable, $nomeSeguro);
+                $caminhoRelativo = 'uploads/manutencoes/' . $empresaId . '/' . $id . '/' . $nomeSeguro;
+                $fotoModel->insert([
+                    'maf_empresa_id' => $empresaId,
+                    'maf_manutencao_id' => $id,
+                    'maf_nome_arquivo' => $file->getClientName(),
+                    'maf_caminho' => $caminhoRelativo,
+                    'maf_tamanho' => $file->getSize(),
+                    'maf_tipo' => $mime,
+                    'maf_ordem' => $ordem++,
+                ], true);
+                $uploaded[] = ['caminho' => $caminhoRelativo, 'nome' => $file->getClientName()];
+            }
+
+            $fotos = $fotoModel->findByManutencao($id, $empresaId);
+            return $this->response->setJSON(['success' => true, 'message' => 'Fotos enviadas.', 'fotos' => $fotos]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao enviar fotos da manutenção: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Erro ao enviar fotos.']);
+        }
+    }
+
+    /**
+     * Deleta uma foto da manutenção (por ID da foto).
+     */
+    public function deletarFoto($fotoId)
+    {
+        try {
+            $empresaId = get_empresa_id();
+            if ($empresaId < 1) {
+                return $this->response->setStatusCode(401)->setJSON(['success' => false, 'message' => 'Sessão inválida.']);
+            }
+            $fotoId = (int) $fotoId;
+            $fotoModel = new ManutencaoFotoModel();
+            $foto = $fotoModel->where('id', $fotoId)->where('maf_empresa_id', $empresaId)->first();
+            if (!$foto) {
+                return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'Foto não encontrada.']);
+            }
+            $path = WRITEPATH . $foto['maf_caminho'];
+            if (is_file($path)) {
+                @unlink($path);
+            }
+            $fotoModel->delete($fotoId);
+            return $this->response->setJSON(['success' => true, 'message' => 'Foto removida.']);
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao deletar foto: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Erro ao remover foto.']);
+        }
+    }
+
+    /**
+     * Serve o arquivo de uma foto (para exibir em img src).
+     */
+    public function foto($fotoId)
+    {
+        $empresaId = get_empresa_id();
+        if ($empresaId < 1) {
+            return $this->response->setStatusCode(403);
+        }
+        $fotoId = (int) $fotoId;
+        $fotoModel = new ManutencaoFotoModel();
+        $foto = $fotoModel->where('id', $fotoId)->where('maf_empresa_id', $empresaId)->first();
+        if (!$foto) {
+            return $this->response->setStatusCode(404);
+        }
+        $path = WRITEPATH . $foto['maf_caminho'];
+        if (!is_file($path)) {
+            return $this->response->setStatusCode(404);
+        }
+        $mime = $foto['maf_tipo'] ?: 'image/jpeg';
+        return $this->response
+            ->setHeader('Content-Type', $mime)
+            ->setBody(file_get_contents($path));
+    }
+
+    /**
+     * GET: gera e baixa PDF da manutenção (cabeçalho empresa, dados veículo, itens, fotos).
+     */
+    public function pdf($id)
+    {
+        $empresaId = get_empresa_id();
+        if ($empresaId < 1) {
+            return $this->response->setStatusCode(403);
+        }
+        $id = (int) $id;
+        $manutencaoModel = new ManutencaoModel();
+        $manutencao = $manutencaoModel
+            ->select('manutencoes.*, veiculos.vei_placa, veiculos.vei_modelo, veiculos.vei_marca, veiculos.vei_ano, veiculos.vei_cor, veiculos.vei_km_atual, veiculos.vei_chassi, veiculos.vei_renavam')
+            ->join('veiculos', 'veiculos.id = manutencoes.man_veiculo_id', 'left')
+            ->where('manutencoes.id', $id)
+            ->where('manutencoes.man_empresa_id', $empresaId)
+            ->first();
+        if (!$manutencao) {
+            return $this->response->setStatusCode(404);
+        }
+        $empresa = (new EmpresaModel())->find($empresaId);
+        $fotoModel = new ManutencaoFotoModel();
+        $fotos = $fotoModel->findByManutencao($id, $empresaId);
+        $db = \Config\Database::connect();
+        $itens = $db->table('manutencoes_itens')
+            ->where('mai_manutencao_id', $id)
+            ->where('mai_empresa_id', $empresaId)
+            ->orderBy('id', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $html = $this->buildManutencaoPdfHtml($manutencao, $empresa ?: [], $itens, $fotos);
+        try {
+            $dompdf = new \Dompdf\Dompdf();
+            $dompdf->getOptions()->setIsRemoteEnabled(true);
+            $dompdf->loadHtml($html, 'UTF-8');
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+            $pdfOutput = $dompdf->output();
+        } catch (\Throwable $e) {
+            log_message('error', 'Dompdf manutenção: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setBody('Erro ao gerar PDF.');
+        }
+        $placa = preg_replace('/\s+/', '', $manutencao['vei_placa'] ?? '');
+        $filename = 'manutencao-' . $id . '-' . ($placa ?: 'veiculo') . '.pdf';
+        return $this->response
+            ->setHeader('Content-Type', 'application/pdf')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->setBody($pdfOutput);
+    }
+
+    private function buildManutencaoPdfHtml(array $manutencao, array $empresa, array $itens, array $fotos): string
+    {
+        $empNome = htmlspecialchars($empresa['emp_fantasia'] ?? $empresa['emp_nome'] ?? 'Empresa', ENT_QUOTES, 'UTF-8');
+        $empCnpj = htmlspecialchars($empresa['emp_cpf_cnpj'] ?? '', ENT_QUOTES, 'UTF-8');
+        $empEnd = trim(($empresa['emp_rua'] ?? '') . ', ' . ($empresa['emp_numero'] ?? '') . ($empresa['emp_complemento'] ? ' - ' . $empresa['emp_complemento'] : '') . ' - ' . ($empresa['emp_cidade'] ?? '') . '/' . ($empresa['emp_estado'] ?? ''));
+        $empEnd = htmlspecialchars($empEnd, ENT_QUOTES, 'UTF-8');
+        $empTel = htmlspecialchars($empresa['emp_telefone'] ?? $empresa['emp_email'] ?? '', ENT_QUOTES, 'UTF-8');
+
+        $dataMan = $manutencao['man_data'] ?? '';
+        if ($dataMan && preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $dataMan, $m)) {
+            $dataMan = $m[3] . '/' . $m[2] . '/' . $m[1];
+        }
+        $tipo = $manutencao['man_tipo'] === 'preventiva' ? 'Preventiva' : 'Corretiva';
+        $status = $manutencao['man_status'] ?? '';
+        $statusLabel = ['aberta' => 'Aberta', 'finalizada' => 'Finalizada', 'rascunho' => 'Rascunho', 'cancelada' => 'Cancelada'][$status] ?? $status;
+        $veiPlaca = htmlspecialchars($manutencao['vei_placa'] ?? '-', ENT_QUOTES, 'UTF-8');
+        $veiModelo = htmlspecialchars($manutencao['vei_modelo'] ?? '-', ENT_QUOTES, 'UTF-8');
+        $veiMarca = htmlspecialchars($manutencao['vei_marca'] ?? '-', ENT_QUOTES, 'UTF-8');
+        $veiAno = htmlspecialchars($manutencao['vei_ano'] ?? '-', ENT_QUOTES, 'UTF-8');
+        $veiCor = htmlspecialchars($manutencao['vei_cor'] ?? '-', ENT_QUOTES, 'UTF-8');
+        $veiKm = isset($manutencao['man_km']) ? (int) $manutencao['man_km'] : null;
+        $veiKmStr = $veiKm !== null ? number_format($veiKm, 0, ',', '.') . ' km' : '-';
+        $obs = htmlspecialchars(trim($manutencao['man_obs'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $total = isset($manutencao['man_total']) ? number_format((float) $manutencao['man_total'], 2, ',', '.') : '0,00';
+
+        $header = '
+        <div class="cabecalho" style="border-bottom:2px solid #333; padding-bottom:10px; margin-bottom:15px;">
+            <h1 style="margin:0 0 5px 0; font-size:16pt;">' . $empNome . '</h1>
+            <p style="margin:0; font-size:9pt; color:#555;">CNPJ/CPF: ' . $empCnpj . '</p>
+            <p style="margin:0; font-size:9pt; color:#555;">' . $empEnd . '</p>
+            <p style="margin:0; font-size:9pt; color:#555;">Contato: ' . $empTel . '</p>
+        </div>
+        <h2 style="font-size:14pt; margin:0 0 12px 0; text-align:center;">Relatório de Manutenção</h2>';
+
+        $veiculoBlock = '
+        <table class="veiculo" style="width:100%; border-collapse:collapse; margin-bottom:15px; font-size:10pt;">
+            <tr style="background:#f0f0f0;"><th colspan="2" style="text-align:left; padding:8px;">Dados do Veículo</th></tr>
+            <tr><td style="padding:6px; width:30%;"><strong>Placa</strong></td><td style="padding:6px;">' . $veiPlaca . '</td></tr>
+            <tr><td style="padding:6px;"><strong>Marca / Modelo</strong></td><td style="padding:6px;">' . $veiMarca . ' / ' . $veiModelo . '</td></tr>
+            <tr><td style="padding:6px;"><strong>Ano / Cor</strong></td><td style="padding:6px;">' . $veiAno . ' / ' . $veiCor . '</td></tr>
+            <tr><td style="padding:6px;"><strong>Quilometragem</strong></td><td style="padding:6px;">' . $veiKmStr . '</td></tr>
+        </table>';
+
+        $manBlock = '
+        <table class="manutencao" style="width:100%; border-collapse:collapse; margin-bottom:15px; font-size:10pt;">
+            <tr style="background:#f0f0f0;"><th colspan="2" style="text-align:left; padding:8px;">Dados da Manutenção</th></tr>
+            <tr><td style="padding:6px; width:30%;"><strong>Data</strong></td><td style="padding:6px;">' . $dataMan . '</td></tr>
+            <tr><td style="padding:6px;"><strong>Tipo</strong></td><td style="padding:6px;">' . $tipo . '</td></tr>
+            <tr><td style="padding:6px;"><strong>Status</strong></td><td style="padding:6px;">' . $statusLabel . '</td></tr>
+            <tr><td style="padding:6px;"><strong>Valor total</strong></td><td style="padding:6px;">R$ ' . $total . '</td></tr>
+            ' . ($obs ? '<tr><td style="padding:6px;"><strong>Observações</strong></td><td style="padding:6px;">' . $obs . '</td></tr>' : '') . '
+        </table>';
+
+        $itensHtml = '';
+        if (!empty($itens)) {
+            $itensHtml = '<table style="width:100%; border-collapse:collapse; margin-bottom:15px; font-size:9pt;">';
+            $itensHtml .= '<tr style="background:#f0f0f0;"><th style="text-align:left; padding:6px;">Descrição</th><th style="padding:6px;">Qtd</th><th style="text-align:right; padding:6px;">Valor unit.</th><th style="text-align:right; padding:6px;">Total</th></tr>';
+            foreach ($itens as $item) {
+                $desc = htmlspecialchars($item['mai_descricao'] ?? '-', ENT_QUOTES, 'UTF-8');
+                $qtd = (int) ($item['mai_quantidade'] ?? 1);
+                $vu = number_format((float) ($item['mai_valor_unitario'] ?? 0), 2, ',', '.');
+                $vt = number_format((float) ($item['mai_valor_total'] ?? 0), 2, ',', '.');
+                $itensHtml .= '<tr><td style="padding:5px;">' . $desc . '</td><td style="padding:5px;">' . $qtd . '</td><td style="text-align:right; padding:5px;">R$ ' . $vu . '</td><td style="text-align:right; padding:5px;">R$ ' . $vt . '</td></tr>';
+            }
+            $itensHtml .= '</table>';
+        }
+
+        $fotosHtml = '';
+        if (!empty($fotos)) {
+            $fotosHtml = '<p style="font-weight:bold; margin:12px 0 6px 0;">Fotos anexadas</p><div style="margin-bottom:15px;">';
+            $count = 0;
+            foreach ($fotos as $f) {
+                $path = WRITEPATH . ($f['maf_caminho'] ?? '');
+                if (!is_file($path)) {
+                    continue;
+                }
+                $count++;
+                $bin = @file_get_contents($path);
+                if ($bin === false) {
+                    continue;
+                }
+                $b64 = base64_encode($bin);
+                $mime = $f['maf_tipo'] ?? 'image/jpeg';
+                $fotosHtml .= '<img src="data:' . $mime . ';base64,' . $b64 . '" alt="Foto ' . $count . '" style="max-width:48%; height:auto; margin:4px; vertical-align:top;" />';
+            }
+            $fotosHtml .= '</div>';
+        }
+
+        $footer = '<p style="font-size:8pt; color:#666; margin-top:20px; text-align:right;">Documento gerado em ' . date('d/m/Y H:i') . '</p>';
+
+        $css = '
+        body { font-family: DejaVu Sans, sans-serif; font-size: 10pt; line-height: 1.4; margin: 20px; }
+        .cabecalho h1 { font-size: 16pt; }
+        table { page-break-inside: avoid; }
+        img { max-width: 100%; }
+        ';
+        $body = $header . $veiculoBlock . $manBlock . $itensHtml . $fotosHtml . $footer;
+        return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' . $css . '</style></head><body>' . $body . '</body></html>';
     }
 
     public function completar($id)
