@@ -75,6 +75,14 @@ $imagemInicial = isset($imagem_desenho_url) && $imagem_desenho_url ? $imagem_des
                             <label class="form-label">Responsável devolução</label>
                             <input type="text" class="form-control" name="chk_responsavel_devolucao" value="<?= esc($chk['chk_responsavel_devolucao'] ?? '') ?>">
                         </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Data chegada</label>
+                            <input type="date" class="form-control" name="chk_data_chegada" value="<?= esc($chk['chk_data_chegada'] ?? '') ?>">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Data saída</label>
+                            <input type="date" class="form-control" name="chk_data_saida" value="<?= esc($chk['chk_data_saida'] ?? '') ?>">
+                        </div>
                         <div class="col-6">
                             <label class="form-label d-block">Tipo</label>
                             <div class="form-check form-check-inline">
@@ -86,14 +94,7 @@ $imagemInicial = isset($imagem_desenho_url) && $imagem_desenho_url ? $imagem_des
                                 <label class="form-check-label" for="chk_tipo_checkout">Check-out (saída)</label>
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Data chegada</label>
-                            <input type="date" class="form-control" name="chk_data_chegada" value="<?= esc($chk['chk_data_chegada'] ?? '') ?>">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Data saída</label>
-                            <input type="date" class="form-control" name="chk_data_saida" value="<?= esc($chk['chk_data_saida'] ?? '') ?>">
-                        </div>
+                       
                     </div>
                 </div>
             </div>
