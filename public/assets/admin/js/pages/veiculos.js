@@ -99,13 +99,17 @@
       },
       {
         name: "Ações",
-        width: "120px",
+        width: "140px",
         formatter: (_cell, row) => {
           const id = row.cells[0].data;
+          const placa = (row.cells[1].data || "").replace(/<[^>]+>/g, "").trim() || "-";
           return gridjs.html(`
             <div class="d-flex gap-2">
               <button type="button" class="btn btn-sm btn-outline-primary btn-edit-veiculo" data-id="${id}" title="Editar">
                 <iconify-icon icon="iconamoon:edit-duotone" class="fs-18"></iconify-icon>
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-danger btn-delete-veiculo" data-id="${id}" data-placa="${placa}" title="Excluir">
+                <iconify-icon icon="iconamoon:trash-duotone" class="fs-18"></iconify-icon>
               </button>
             </div>
           `);
@@ -426,10 +430,39 @@
   btnSave?.addEventListener("click", submit);
 
   document.addEventListener("click", (e) => {
-    const btn = e.target.closest?.(".btn-edit-veiculo");
-    if (!btn) return;
-    const id = btn.getAttribute("data-id");
-    if (id) openEdit(id);
+    const btnEdit = e.target.closest?.(".btn-edit-veiculo");
+    if (btnEdit) {
+      const id = btnEdit.getAttribute("data-id");
+      if (id) openEdit(id);
+      return;
+    }
+    const btnDelete = e.target.closest?.(".btn-delete-veiculo");
+    if (btnDelete) {
+      const id = btnDelete.getAttribute("data-id");
+      const placa = btnDelete.getAttribute("data-placa") || id;
+      if (!id) return;
+      if (!confirm(`Deseja realmente excluir o veículo ${placa}? Esta ação não pode ser desfeita.`)) return;
+      (async () => {
+        try {
+          const json = await fetchJson(`${getBaseUrl()}admin/veiculos/excluir/${id}`, { method: "POST" });
+          if (json?.success) {
+            await reload();
+            if (typeof window.toastr !== "undefined") {
+              window.toastr.success(json.message || "Veículo excluído.");
+            } else {
+              alert(json.message || "Veículo excluído.");
+            }
+          }
+        } catch (err) {
+          const msg = err?.message || "Erro ao excluir veículo.";
+          if (typeof window.toastr !== "undefined") {
+            window.toastr.error(msg);
+          } else {
+            alert(msg);
+          }
+        }
+      })();
+    }
   });
 
   modalEl?.addEventListener("hidden.bs.modal", () => {

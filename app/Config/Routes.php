@@ -17,6 +17,7 @@ $routes->post('admin/veiculos/criar', 'Veiculos::criar');
 $routes->get('admin/veiculos/editar/(:num)', 'Veiculos::editar/$1');
 $routes->post('admin/veiculos/atualizar/(:num)', 'Veiculos::atualizar/$1');
 $routes->get('admin/veiculos/consultar-placa/(:segment)', 'Veiculos::consultarPlaca/$1');
+$routes->post('admin/veiculos/excluir/(:num)', 'Veiculos::excluir/$1');
 $routes->get('admin/locatarios', 'Locatarios::index');
 $routes->get('admin/locatarios/listar', 'Locatarios::listar');
 $routes->post('admin/locatarios/criar', 'Locatarios::criar');

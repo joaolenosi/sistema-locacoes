@@ -171,6 +171,68 @@ class Veiculos extends BaseController
         }
     }
 
+    public function excluir($id)
+    {
+        try {
+            $id = (int) $id;
+            if ($id < 1) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => 'ID inválido.',
+                ]);
+            }
+
+            $veiculoModel = new VeiculoModel();
+            $veiculo = $veiculoModel->find($id);
+            if (!$veiculo) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => 'Veículo não encontrado.',
+                ]);
+            }
+
+            $empresaId = get_empresa_id();
+            if ((int) ($veiculo['vei_empresa_id'] ?? 0) !== (int) $empresaId) {
+                return $this->response->setStatusCode(403)->setJSON([
+                    'success' => false,
+                    'message' => 'Sem permissão para excluir este veículo.',
+                ]);
+            }
+
+            $db = \Config\Database::connect();
+            // Bloquear exclusão se houver locação ativa (reservado, em andamento, atrasado)
+            $locacaoAtiva = $db->table('locacoes')
+                ->where('loc_vei_id', $id)
+                ->whereIn('loc_status', ['reservado', 'em_andamento', 'atrasado'])
+                ->countAllResults();
+            if ($locacaoAtiva > 0) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'success' => false,
+                    'message' => 'Não é possível excluir: o veículo possui locação ativa.',
+                ]);
+            }
+
+            $veiculoModel->delete($id);
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Veículo excluído com sucesso.',
+            ]);
+        } catch (\Throwable $e) {
+            $msg = $e->getMessage();
+            if (strpos($msg, 'foreign key') !== false || strpos($msg, 'constraint') !== false) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'success' => false,
+                    'message' => 'Não é possível excluir: o veículo possui vínculos (locações, checklists, manutenções ou lançamentos).',
+                ]);
+            }
+            log_message('error', 'Erro ao excluir veículo: ' . $msg);
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao excluir veículo.',
+            ]);
+        }
+    }
+
     public function consultarPlaca($placa)
     {
         try {
