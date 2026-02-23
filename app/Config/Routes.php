@@ -84,3 +84,24 @@ $routes->get('admin/cadastro/categorias-financeiras/listar', 'CategoriasFinancei
 $routes->post('admin/cadastro/categorias-financeiras/criar', 'CategoriasFinanceiras::criar');
 $routes->get('admin/cadastro/categorias-financeiras/editar/(:num)', 'CategoriasFinanceiras::editar/$1');
 $routes->post('admin/cadastro/categorias-financeiras/atualizar/(:num)', 'CategoriasFinanceiras::atualizar/$1');
+$routes->get('admin/cadastro/checklist', 'ChecklistConfig::index');
+$routes->get('admin/cadastro/checklist/config', 'ChecklistConfig::getConfig');
+$routes->get('admin/cadastro/checklist/imagem', 'ChecklistConfig::imagem');
+$routes->post('admin/cadastro/checklist/config/imagem', 'ChecklistConfig::uploadImagem');
+$routes->get('admin/cadastro/checklist/itens', 'ChecklistConfig::listarItens');
+$routes->post('admin/cadastro/checklist/itens', 'ChecklistConfig::criarItem');
+$routes->post('admin/cadastro/checklist/itens/(:num)', 'ChecklistConfig::atualizarItem/$1');
+$routes->post('admin/cadastro/checklist/itens/deletar/(:num)', 'ChecklistConfig::deletarItem/$1');
+
+$routes->get('admin/checklist', 'Checklist::index');
+$routes->get('admin/checklist/listar', 'Checklist::listar');
+$routes->get('admin/checklist/novo', 'Checklist::novo');
+$routes->get('admin/checklist/editar/(:num)', 'Checklist::editar/$1');
+$routes->post('admin/checklist/salvar', 'Checklist::salvar');
+$routes->post('admin/checklist/(:num)/salvar-imagem', 'Checklist::salvarImagemDesenho/$1');
+$routes->post('admin/checklist/(:num)/anexos', 'Checklist::uploadAnexo/$1');
+$routes->post('admin/checklist/anexos/deletar/(:num)', 'Checklist::deletarAnexo/$1');
+$routes->post('admin/checklist/excluir/(:num)', 'Checklist::excluir/$1');
+$routes->get('admin/checklist/(:num)/pdf', 'Checklist::pdf/$1');
+$routes->get('admin/checklist/anexo/(:num)', 'Checklist::servirAnexo/$1');
+$routes->get('admin/checklist/desenho/(:num)', 'Checklist::desenho/$1');

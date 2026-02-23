@@ -76,6 +76,17 @@
             </li>
 
             <li class="nav-item">
+                <a class="nav-link" href="<?= base_url('admin/checklist') ?>">
+                    <span class="nav-icon">
+                        <iconify-icon
+                            icon="mdi:clipboard-check"
+                        ></iconify-icon>
+                    </span>
+                    <span class="nav-text"> Checklist </span>
+                </a>
+            </li>
+
+            <li class="nav-item">
                 <a class="nav-link" href="<?= base_url('admin/contratos') ?>">
                     <span class="nav-icon">
                         <iconify-icon
@@ -189,6 +200,12 @@
                             <a class="sub-nav-link" href="<?= base_url('admin/cadastro/categorias-financeiras') ?>">
                                 <iconify-icon icon="iconamoon:category-duotone" class="me-1"></iconify-icon>
                                 Categorias  
+                            </a>
+                        </li>
+                        <li class="sub-nav-item">
+                            <a class="sub-nav-link" href="<?= base_url('admin/cadastro/checklist') ?>">
+                                <iconify-icon icon="mdi:clipboard-check" class="me-1"></iconify-icon>
+                                Checklist
                             </a>
                         </li>
                         <li class="sub-nav-item">
