@@ -4,12 +4,16 @@ echo "=============================="
 echo "🚀 DEPLOY SOMENTE ALTERAÇÕES"
 echo "=============================="
 
-# Pega arquivos modificados e criados (não rastreados)
-MODIFIED=$(git diff --name-only)
-UNTRACKED=$(git ls-files --others --exclude-standard)
-
-# Combina ambos os tipos de arquivos
-FILES=$(echo -e "$MODIFIED\n$UNTRACKED" | grep -v '^$' | sort -u)
+# Se DEPLOY_FILES foi definido (ex.: pelo hook pre-push), usa essa lista
+if [ -n "$DEPLOY_FILES" ]; then
+    FILES=$(echo "$DEPLOY_FILES" | grep -v '^$' | sort -u)
+else
+    # Pega arquivos modificados e criados (não rastreados)
+    MODIFIED=$(git diff --name-only)
+    UNTRACKED=$(git ls-files --others --exclude-standard)
+    # Combina ambos os tipos de arquivos
+    FILES=$(echo -e "$MODIFIED\n$UNTRACKED" | grep -v '^$' | sort -u)
+fi
 
 if [ -z "$FILES" ]; then
     echo "⚠ Nenhum arquivo modificado ou criado."

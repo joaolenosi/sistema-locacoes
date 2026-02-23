@@ -107,11 +107,13 @@ class Checklist extends BaseController
         $post = $this->request->getPost();
         $id = isset($post['chk_id']) ? (int) $post['chk_id'] : 0;
         $checklistModel = new ChecklistModel();
+        $chkTipo = isset($post['chk_tipo']) && in_array($post['chk_tipo'], ['checkin', 'checkout'], true) ? $post['chk_tipo'] : 'checkout';
         $data = [
             'chk_empresa_id' => $empresaId,
             'chk_locacao_id' => !empty($post['chk_locacao_id']) ? (int) $post['chk_locacao_id'] : null,
             'chk_veiculo_id' => !empty($post['chk_veiculo_id']) ? (int) $post['chk_veiculo_id'] : null,
             'chk_data' => $post['chk_data'] ?? date('Y-m-d'),
+            'chk_tipo' => $chkTipo,
             'chk_hodometro_saida' => !empty($post['chk_hodometro_saida']) ? (int) preg_replace('/\D/', '', $post['chk_hodometro_saida']) : null,
             'chk_hodometro_chegada' => !empty($post['chk_hodometro_chegada']) ? (int) preg_replace('/\D/', '', $post['chk_hodometro_chegada']) : null,
             'chk_data_saida' => !empty($post['chk_data_saida']) ? $post['chk_data_saida'] : null,
@@ -378,6 +380,7 @@ class Checklist extends BaseController
         $respEntrega = htmlspecialchars($checklist['chk_responsavel_entrega'] ?? '-', ENT_QUOTES, 'UTF-8');
         $respDevolucao = htmlspecialchars($checklist['chk_responsavel_devolucao'] ?? '-', ENT_QUOTES, 'UTF-8');
         $hodometro = $checklist['chk_hodometro_saida'] ?? $checklist['chk_hodometro_chegada'] ?? '-';
+        $tipoLabel = (isset($checklist['chk_tipo']) && $checklist['chk_tipo'] === 'checkin') ? 'Check-in (chegada)' : 'Check-out (saída)';
         $anotacoes = htmlspecialchars(trim($checklist['chk_anotacoes'] ?? ''), ENT_QUOTES, 'UTF-8');
         $imgHtml = '';
         if ($imagemPath && is_file($imagemPath)) {
@@ -395,7 +398,7 @@ class Checklist extends BaseController
         $css = 'body{font-family:DejaVu Sans,sans-serif;font-size:10pt;margin:20px;} table{border-collapse:collapse;width:100%;margin:10px 0;} th,td{border:1px solid #333;padding:6px;} th{background:#f0f0f0;}';
         $body = '<div style="border-bottom:2px solid #333;padding-bottom:8px;margin-bottom:12px;"><h1 style="margin:0;font-size:14pt;">' . $empNome . '</h1><p style="margin:0;font-size:9pt;">CNPJ: ' . $empCnpj . '</p></div>';
         $body .= '<h2 style="text-align:center;font-size:12pt;">CHECKLIST DE VEÍCULOS</h2>';
-        $body .= '<table><tr><th colspan="2">Dados do veículo</th></tr><tr><td><strong>Placa</strong></td><td>' . $placa . '</td></tr><tr><td><strong>Modelo</strong></td><td>' . $modelo . '</td></tr><tr><td><strong>Data</strong></td><td>' . $data . '</td></tr><tr><td><strong>Hodômetro</strong></td><td>' . $hodometro . '</td></tr><tr><td><strong>Responsável entrega</strong></td><td>' . $respEntrega . '</td></tr><tr><td><strong>Responsável devolução</strong></td><td>' . $respDevolucao . '</td></tr></table>';
+        $body .= '<table><tr><th colspan="2">Dados do veículo</th></tr><tr><td><strong>Placa</strong></td><td>' . $placa . '</td></tr><tr><td><strong>Modelo</strong></td><td>' . $modelo . '</td></tr><tr><td><strong>Tipo</strong></td><td>' . htmlspecialchars($tipoLabel, ENT_QUOTES, 'UTF-8') . '</td></tr><tr><td><strong>Data</strong></td><td>' . $data . '</td></tr><tr><td><strong>Hodômetro</strong></td><td>' . $hodometro . '</td></tr><tr><td><strong>Responsável entrega</strong></td><td>' . $respEntrega . '</td></tr><tr><td><strong>Responsável devolução</strong></td><td>' . $respDevolucao . '</td></tr></table>';
         $body .= '<table><tr><th>Item</th><th width="60">OK</th><th width="60">NÃO</th></tr>' . $rows . '</table>';
         if ($imgHtml) $body .= $imgHtml;
         if ($anotacoes) $body .= '<p><strong>Anotações:</strong> ' . $anotacoes . '</p>';

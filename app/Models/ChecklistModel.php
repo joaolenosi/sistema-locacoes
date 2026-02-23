@@ -18,6 +18,7 @@ class ChecklistModel extends Model
         'chk_locacao_id',
         'chk_veiculo_id',
         'chk_data',
+        'chk_tipo',
         'chk_hodometro_saida',
         'chk_hodometro_chegada',
         'chk_data_saida',

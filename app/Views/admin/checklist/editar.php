@@ -75,13 +75,24 @@ $imagemInicial = isset($imagem_desenho_url) && $imagem_desenho_url ? $imagem_des
                             <label class="form-label">Responsável devolução</label>
                             <input type="text" class="form-control" name="chk_responsavel_devolucao" value="<?= esc($chk['chk_responsavel_devolucao'] ?? '') ?>">
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Data saída</label>
-                            <input type="date" class="form-control" name="chk_data_saida" value="<?= esc($chk['chk_data_saida'] ?? '') ?>">
+                        <div class="col-6">
+                            <label class="form-label d-block">Tipo</label>
+                            <div class="form-check form-check-inline">
+                                <input type="radio" class="form-check-input" name="chk_tipo" id="chk_tipo_checkin" value="checkin" <?= (isset($chk['chk_tipo']) && $chk['chk_tipo'] === 'checkin') ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="chk_tipo_checkin">Check-in (chegada)</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input type="radio" class="form-check-input" name="chk_tipo" id="chk_tipo_checkout" value="checkout" <?= (!isset($chk['chk_tipo']) || $chk['chk_tipo'] === 'checkout') ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="chk_tipo_checkout">Check-out (saída)</label>
+                            </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label">Data chegada</label>
                             <input type="date" class="form-control" name="chk_data_chegada" value="<?= esc($chk['chk_data_chegada'] ?? '') ?>">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Data saída</label>
+                            <input type="date" class="form-control" name="chk_data_saida" value="<?= esc($chk['chk_data_saida'] ?? '') ?>">
                         </div>
                     </div>
                 </div>
@@ -177,6 +188,7 @@ $imagemInicial = isset($imagem_desenho_url) && $imagem_desenho_url ? $imagem_des
 
 <div id="formChecklistAlert" class="alert alert-danger mt-3 d-none" role="alert"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 window.__CHECKLIST_ID__ = <?= $id ?>;
 window.__CHECKLIST_BASE_URL__ = '<?= base_url() ?>';

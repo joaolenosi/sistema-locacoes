@@ -23,19 +23,20 @@
         if (desenhoStatus) desenhoStatus.textContent = msg || '';
     }
 
-    function showSuccessMessage(msg) {
-        var el = document.getElementById('formChecklistSuccess');
-        if (!el) {
-            el = document.createElement('div');
-            el.id = 'formChecklistSuccess';
-            el.className = 'alert alert-success mt-3';
-            el.setAttribute('role', 'alert');
-            if (form && form.parentNode) form.parentNode.insertBefore(el, form.nextSibling);
-            else if (formAlert && formAlert.parentNode) formAlert.parentNode.insertBefore(el, formAlert);
+    function showSuccess(msg) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({ icon: 'success', title: 'Salvo!', text: msg || 'Registro salvo com sucesso.' });
+        } else {
+            alert(msg || 'Salvo.');
         }
-        el.textContent = msg;
-        el.classList.remove('d-none');
-        setTimeout(function () { el.classList.add('d-none'); }, 4000);
+    }
+
+    function showError(msg) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({ icon: 'error', title: 'Erro', text: msg || 'Ocorreu um erro.' });
+        } else {
+            alert(msg || 'Erro.');
+        }
     }
 
     function initCanvas() {
@@ -131,6 +132,7 @@
             .then(function (r) { return r.json(); })
             .then(function (res) {
                 setStatus(res.success ? 'Desenho salvo.' : (res.message || 'Erro'));
+                if (res.success && typeof Swal !== 'undefined') Swal.fire({ icon: 'success', title: 'Desenho salvo!', text: 'A imagem foi gravada.' });
                 if (res.success && res.caminho) {
                     imgEl.src = baseUrl + 'admin/checklist/desenho/' + checklistId + '?t=' + Date.now();
                     imgEl.onload = function () {
@@ -161,16 +163,13 @@
             .then(function (res) {
                 if (res.success) {
                     if (formAlert) formAlert.classList.add('d-none');
-                    if (typeof window.toastr !== 'undefined') {
-                        window.toastr.success(res.message || 'Salvo.');
-                    } else {
-                        showSuccessMessage(res.message || 'Salvo com sucesso!');
-                    }
+                    showSuccess(res.message || 'Registro salvo com sucesso.');
                 } else {
                     if (formAlert) {
                         formAlert.textContent = res.message || 'Erro ao salvar.';
                         formAlert.classList.remove('d-none');
                     }
+                    showError(res.message || 'Erro ao salvar.');
                 }
             })
             .catch(function () {
@@ -178,6 +177,7 @@
                     formAlert.textContent = 'Erro de conexão.';
                     formAlert.classList.remove('d-none');
                 }
+                showError('Erro de conexão. Tente novamente.');
             });
         });
     }
