@@ -31,7 +31,7 @@
   const toGridRows = (items) =>
     (items || []).map((l, index) => [
       String(index + 1), // índice sequencial apenas para exibição
-      l.cli_nome || "-",
+      (l.cli_nome || "-").toString().toUpperCase(),
       l.cli_cpf_cnpj || "-",
       l.cli_telefone || "-",
       l.cli_email || "-",
@@ -86,10 +86,13 @@
           const base = (window.__BASE_URL__ || "").replace(/\/$/, "") + "/";
           const iconInfo = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>';
           const iconEdit = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+          const iconTrash = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
+          const nome = (row.cells[1]?.data || "").toString();
           return gridjs.html(`
             <div class="d-flex gap-2 align-items-center">
               <a href="${base}admin/locatarios/detalhes/${id}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center justify-content-center" title="Detalhes">${iconInfo}</a>
               <button type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center justify-content-center btn-edit-locatario" data-id="${id}" title="Editar">${iconEdit}</button>
+              <button type="button" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center justify-content-center btn-delete-locatario" data-id="${id}" data-nome="${nome.replace(/\"/g, '&quot;')}" title="Excluir">${iconTrash}</button>
             </div>
           `);
         },
@@ -440,10 +443,87 @@
   btnSave?.addEventListener("click", submit);
 
   document.addEventListener("click", (e) => {
-    const btn = e.target.closest?.(".btn-edit-locatario");
-    if (!btn) return;
-    const id = btn.getAttribute("data-id");
-    if (id) openEdit(id);
+    const btnEdit = e.target.closest?.(".btn-edit-locatario");
+    if (btnEdit) {
+      const id = btnEdit.getAttribute("data-id");
+      if (id) openEdit(id);
+      return;
+    }
+
+    const btnDelete = e.target.closest?.(".btn-delete-locatario");
+    if (btnDelete) {
+      const id = btnDelete.getAttribute("data-id");
+      const nome = btnDelete.getAttribute("data-nome") || "";
+      if (!id) return;
+
+      const executeDelete = async () => {
+        btnDelete.disabled = true;
+        btnDelete.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+        try {
+          const res = await fetch(`${getBaseUrl()}admin/locatarios/excluir/${id}`, {
+            method: "POST",
+            headers: { "X-Requested-With": "XMLHttpRequest", "Content-Type": "application/json" },
+          });
+          const json = await res.json().catch(() => null);
+          if (res.ok && json?.success) {
+            if (typeof Swal !== "undefined") {
+              await Swal.fire({
+                icon: "success",
+                title: "Locatário excluído",
+                text: json.message || "O locatário foi excluído com sucesso.",
+                confirmButtonText: "OK",
+              });
+            } else {
+              alert(json.message || "Locatário excluído com sucesso.");
+            }
+            await reload();
+          } else {
+            const msg = json?.message || "Não foi possível excluir o locatário.";
+            if (typeof Swal !== "undefined") {
+              Swal.fire({
+                icon: "error",
+                title: "Não foi possível excluir",
+                text: msg,
+                confirmButtonText: "OK",
+              });
+            } else {
+              alert(msg);
+            }
+          }
+        } catch (err) {
+          if (typeof Swal !== "undefined") {
+            Swal.fire({
+              icon: "error",
+              title: "Erro",
+              text: "Erro ao excluir locatário. Tente novamente.",
+              confirmButtonText: "OK",
+            });
+          } else {
+            alert("Erro ao excluir locatário. Tente novamente.");
+          }
+        } finally {
+          btnDelete.disabled = false;
+          btnDelete.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
+        }
+      };
+
+      if (typeof Swal !== "undefined") {
+        Swal.fire({
+          icon: "warning",
+          title: "Excluir locatário?",
+          text: nome ? `Você está prestes a excluir o locatário "${nome}".` : "Você está prestes a excluir este locatário.",
+          showCancelButton: true,
+          confirmButtonText: "Sim, excluir",
+          cancelButtonText: "Cancelar",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            executeDelete();
+          }
+        });
+      } else if (confirm("Tem certeza que deseja excluir este locatário?")) {
+        executeDelete();
+      }
+    }
   });
 
   modalEl?.addEventListener("hidden.bs.modal", () => {

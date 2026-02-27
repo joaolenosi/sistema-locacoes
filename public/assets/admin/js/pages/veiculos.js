@@ -441,13 +441,19 @@
       const id = btnDelete.getAttribute("data-id");
       const placa = btnDelete.getAttribute("data-placa") || id;
       if (!id) return;
-      if (!confirm(`Deseja realmente excluir o veículo ${placa}? Esta ação não pode ser desfeita.`)) return;
-      (async () => {
+      const executeDelete = async () => {
         try {
           const json = await fetchJson(`${getBaseUrl()}admin/veiculos/excluir/${id}`, { method: "POST" });
           if (json?.success) {
             await reload();
-            if (typeof window.toastr !== "undefined") {
+            if (typeof Swal !== "undefined") {
+              await Swal.fire({
+                icon: "success",
+                title: "Veículo excluído",
+                text: json.message || "O veículo foi excluído com sucesso.",
+                confirmButtonText: "OK",
+              });
+            } else if (typeof window.toastr !== "undefined") {
               window.toastr.success(json.message || "Veículo excluído.");
             } else {
               alert(json.message || "Veículo excluído.");
@@ -455,13 +461,37 @@
           }
         } catch (err) {
           const msg = err?.message || "Erro ao excluir veículo.";
-          if (typeof window.toastr !== "undefined") {
+          if (typeof Swal !== "undefined") {
+            Swal.fire({
+              icon: "error",
+              title: "Erro",
+              text: msg,
+              confirmButtonText: "OK",
+            });
+          } else if (typeof window.toastr !== "undefined") {
             window.toastr.error(msg);
           } else {
             alert(msg);
           }
         }
-      })();
+      };
+
+      if (typeof Swal !== "undefined") {
+        Swal.fire({
+          icon: "warning",
+          title: "Excluir veículo?",
+          text: `Deseja realmente excluir o veículo ${placa}? Esta ação não pode ser desfeita.`,
+          showCancelButton: true,
+          confirmButtonText: "Sim, excluir",
+          cancelButtonText: "Cancelar",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            executeDelete();
+          }
+        });
+      } else if (confirm(`Deseja realmente excluir o veículo ${placa}? Esta ação não pode ser desfeita.`)) {
+        executeDelete();
+      }
     }
   });
 

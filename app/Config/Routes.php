@@ -24,6 +24,7 @@ $routes->post('admin/locatarios/criar', 'Locatarios::criar');
 $routes->get('admin/locatarios/editar/(:num)', 'Locatarios::editar/$1');
 $routes->post('admin/locatarios/atualizar/(:num)', 'Locatarios::atualizar/$1');
 $routes->get('admin/locatarios/detalhes/(:num)', 'Locatarios::detalhes/$1');
+$routes->post('admin/locatarios/excluir/(:num)', 'Locatarios::excluir/$1');
 $routes->get('admin/locacoes', 'Locoes::index');
 $routes->get('admin/locacoes/listar', 'Locoes::listar');
 $routes->post('admin/locacoes/criar', 'Locoes::criar');

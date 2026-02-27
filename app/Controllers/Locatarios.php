@@ -333,7 +333,7 @@ class Locatarios extends BaseController
 
         return [
             'cli_tipo_pessoa' => $tipo,
-            'cli_nome' => trim((string) ($payload['cli_nome'] ?? '')),
+            'cli_nome' => mb_strtoupper(trim((string) ($payload['cli_nome'] ?? '')), 'UTF-8'),
             'cli_cpf_cnpj' => $cpfCnpj,
             'cli_data_nascimento' => ($payload['cli_data_nascimento'] ?? '') ?: null,
             'cli_email' => $email,
@@ -380,5 +380,70 @@ class Locatarios extends BaseController
         }
 
         return null;
+    }
+
+    public function excluir($id)
+    {
+        try {
+            $empresaId = get_empresa_id();
+            if ($empresaId < 1) {
+                return $this->response->setStatusCode(403)->setJSON([
+                    'success' => false,
+                    'message' => 'Sessão inválida.',
+                ]);
+            }
+
+            $cliId = (int) $id;
+            if ($cliId < 1) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => 'Locatário inválido.',
+                ]);
+            }
+
+            $clienteModel = new ClienteModel();
+            $locatario = $clienteModel
+                ->where('id', $cliId)
+                ->where('cli_empresa_id', $empresaId)
+                ->first();
+
+            if (!$locatario) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => 'Locatário não encontrado.',
+                ]);
+            }
+
+            // Verificar se existem locações vinculadas a este locatário
+            $locacaoModel = new LocacaoModel();
+            $temLocacoes = $locacaoModel
+                ->where('loc_cli_id', $cliId)
+                ->where('loc_empresa_id', $empresaId)
+                ->countAllResults();
+
+            if ($temLocacoes > 0) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'success' => false,
+                    'message' => 'Não é possível excluir este locatário porque existem locações vinculadas a ele.',
+                ]);
+            }
+
+            if (!$clienteModel->delete($cliId)) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'message' => 'Não foi possível excluir o locatário.',
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Locatário excluído com sucesso.',
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao excluir locatário.',
+            ]);
+        }
     }
 }
