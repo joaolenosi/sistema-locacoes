@@ -24,7 +24,7 @@ class Empresa extends BaseController
      * Serve a imagem de logo/foto da empresa para uso em <img src="...">.
      */
     public function logo()
-    {
+    {   
         $empresaId = get_empresa_id();
         if ($empresaId < 1) {
             return $this->response->setStatusCode(403);

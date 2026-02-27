@@ -67,7 +67,7 @@ class Configuracoes extends BaseController
     {
         try {
             $empresaId = get_empresa_id();
-            $empresaModel = new EmpresaModel();
+            $empresaModel = new EmpresaModel(); 
             $existing = $empresaModel->find($empresaId);
             if (!$existing) {
                 return $this->response->setStatusCode(404)->setJSON([

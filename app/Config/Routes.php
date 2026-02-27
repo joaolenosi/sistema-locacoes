@@ -66,7 +66,7 @@ $routes->post('admin/manutencao-inteligente/atualizar/(:num)', 'ManutencaoInteli
 $routes->get('admin/manutencao-inteligente/detalhes/(:num)', 'ManutencaoInteligente::detalhes/$1');
 $routes->get('admin/manutencao-inteligente/km-atual/(:num)', 'ManutencaoInteligente::kmAtual/$1');
 $routes->post('admin/manutencao-inteligente/completar/(:num)', 'ManutencaoInteligente::completar/$1');
-$routes->get('admin/empresa', 'Empresa::index');
+$routes->get('admin/empresa', 'Empresa::index'); 
 $routes->get('admin/empresa/logo', 'Empresa::logo');
 $routes->get('admin/configuracoes', 'Configuracoes::index');
 $routes->get('admin/configuracoes/listar-planos', 'Configuracoes::listarPlanos');

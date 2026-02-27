@@ -18,7 +18,7 @@ class EmpresaModel extends Model
         'emp_fantasia',
         'emp_logo',
         'emp_cpf_cnpj',
-        'emp_tipo',
+        'emp_tipo',  
         'emp_telefone',
         'emp_email',
         'emp_cep',
