@@ -256,6 +256,56 @@ class Locoes extends BaseController
         }
     }
 
+    public function excluir($id)
+    {
+        try {
+            $empresaId = get_empresa_id();
+            if ($empresaId < 1) {
+                return $this->response->setStatusCode(403)->setJSON([
+                    'success' => false,
+                    'message' => 'Sessão inválida.',
+                ]);
+            }
+
+            $locacaoModel = new LocacaoModel();
+            $locacao = $locacaoModel
+                ->where('loc_empresa_id', $empresaId)
+                ->where('id', (int) $id)
+                ->first();
+
+            if (!$locacao) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => 'Locação não encontrada.',
+                ]);
+            }
+
+            try {
+                if (!$locacaoModel->delete((int) $id)) {
+                    return $this->response->setStatusCode(500)->setJSON([
+                        'success' => false,
+                        'message' => 'Não foi possível excluir a locação.',
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'message' => 'Não foi possível excluir a locação. Verifique se não há registros financeiros ou contratos vinculados.',
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Locação excluída com sucesso.',
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao excluir locação.',
+            ]);
+        }
+    }
+
     /**
      * @param array<int, array<string, mixed>> $locacoes
      * @return array{0:int, 1:int, 2:int}

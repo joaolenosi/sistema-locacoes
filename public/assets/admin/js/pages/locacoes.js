@@ -108,9 +108,9 @@
   const toGridRows = (items) =>
     (items || []).map((l) => [
       String(l.id),
-      l.vei_placa || "-",
-      l.vei_modelo || "-",
-      l.cli_nome || "-",
+      (l.vei_placa || "-").toString().toUpperCase(),
+      (l.vei_modelo || "-").toString().toUpperCase(),
+      (l.cli_nome || "-").toString().toUpperCase(),
       l.loc_data_inicio || "",
       l.loc_data_fim_prevista || "",
       toMoneyNumber(l.loc_valor_locacao || l.loc_valor_total || 0),
@@ -251,9 +251,11 @@
       },
       {
         name: "Ações",
-        width: "180px",
+        width: "220px",
         formatter: (_cell, row) => {
           const id = row.cells[0].data;
+          const placa = row.cells[1].data || "-";
+          const locatario = row.cells[3].data || "-";
           return gridjs.html(`
             <div class="d-flex gap-2">
               <button type="button" class="btn btn-sm btn-outline-info btn-detalhes-locacao" data-id="${id}" title="Ver detalhes">
@@ -261,6 +263,9 @@
               </button>
               <button type="button" class="btn btn-sm btn-outline-primary btn-edit-locacao" data-id="${id}" title="Editar">
                 <iconify-icon icon="iconamoon:edit-duotone" class="fs-18"></iconify-icon>
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-danger btn-delete-locacao" data-id="${id}" data-placa="${placa}" data-locatario="${locatario}" title="Excluir">
+                <iconify-icon icon="iconamoon:trash-duotone" class="fs-18"></iconify-icon>
               </button>
             </div>
           `);
@@ -375,8 +380,12 @@
     document.getElementById("locacao_id").value = l.id ?? "";
     document.getElementById("loc_cli_id").value = l.loc_cli_id ?? "";
     document.getElementById("loc_vei_id").value = l.loc_vei_id ?? "";
-    document.getElementById("loc_cli_display").value = l.cli_nome ? `${l.cli_nome} (${formatCpfCnpj(l.cli_cpf_cnpj)})` : "";
-    document.getElementById("loc_vei_display").value = l.vei_placa ? `${l.vei_placa} - ${l.vei_modelo || ""}`.trim() : "";
+    document.getElementById("loc_cli_display").value = l.cli_nome
+      ? `${String(l.cli_nome).toUpperCase()} (${formatCpfCnpj(l.cli_cpf_cnpj)})`
+      : "";
+    document.getElementById("loc_vei_display").value = l.vei_placa
+      ? `${String(l.vei_placa).toUpperCase()} - ${String(l.vei_modelo || "").toUpperCase()}`.trim()
+      : "";
 
     const setVal = (id, value) => {
       const el = document.getElementById(id);
@@ -833,6 +842,68 @@
       openDetalhesLocacao(btnDetalhes.getAttribute("data-id"));
       return;
     }
+
+    const btnDelete = e.target?.closest?.(".btn-delete-locacao");
+    if (btnDelete) {
+      e.preventDefault();
+      const id = btnDelete.getAttribute("data-id");
+      const placa = btnDelete.getAttribute("data-placa") || "-";
+      const locatario = btnDelete.getAttribute("data-locatario") || "-";
+      if (!id) return;
+
+      const executeDelete = async () => {
+        try {
+          const json = await fetchJson(`${getBaseUrl()}admin/locacoes/excluir/${id}`, {
+            method: "POST",
+          });
+          if (json?.success) {
+            await reload();
+            if (typeof Swal !== "undefined") {
+              await Swal.fire({
+                icon: "success",
+                title: "Locação excluída",
+                text: json.message || "A locação foi excluída com sucesso.",
+                confirmButtonText: "OK",
+              });
+            } else {
+              alert(json.message || "Locação excluída com sucesso.");
+            }
+          }
+        } catch (err) {
+          const msg = err?.message || "Erro ao excluir locação.";
+          if (typeof Swal !== "undefined") {
+            Swal.fire({
+              icon: "error",
+              title: "Erro",
+              text: msg,
+              confirmButtonText: "OK",
+            });
+          } else {
+            alert(msg);
+          }
+        }
+      };
+
+      const textoConfirmacao = `Deseja realmente excluir a locação do veículo ${placa} para o locatário ${locatario}? Esta ação não pode ser desfeita.`;
+
+      if (typeof Swal !== "undefined") {
+        Swal.fire({
+          icon: "warning",
+          title: "Excluir locação?",
+          text: textoConfirmacao,
+          showCancelButton: true,
+          confirmButtonText: "Sim, excluir",
+          cancelButtonText: "Cancelar",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            executeDelete();
+          }
+        });
+      } else if (confirm(textoConfirmacao)) {
+        executeDelete();
+      }
+      return;
+    }
   });
 
   // Usar delegação de eventos no documento para garantir que funcione mesmo quando o grid é renderizado dinamicamente
@@ -961,11 +1032,11 @@
 
     // Preencher campos
     setTextContent("detalhes-loc-id", `#${String(l.id || "").padStart(6, "0")}`);
-    setTextContent("detalhes-loc-cliente", l.cli_nome || "-");
-    setTextContent("detalhes-loc-veiculo-placa", l.vei_placa || "-");
+    setTextContent("detalhes-loc-cliente", (l.cli_nome || "-").toString().toUpperCase());
+    setTextContent("detalhes-loc-veiculo-placa", (l.vei_placa || "-").toString().toUpperCase());
     setTextContent("detalhes-loc-veiculo-modelo", l.vei_marca && l.vei_modelo 
-      ? `${l.vei_marca} ${l.vei_modelo}` 
-      : (l.vei_modelo || "-"));
+      ? `${String(l.vei_marca).toUpperCase()} ${String(l.vei_modelo).toUpperCase()}` 
+      : (l.vei_modelo ? String(l.vei_modelo).toUpperCase() : "-"));
     
     setTextContent("detalhes-loc-data-inicio", formatDateSimple(l.loc_data_inicio));
     setTextContent("detalhes-loc-data-fim-prevista", formatDateSimple(l.loc_data_fim_prevista));

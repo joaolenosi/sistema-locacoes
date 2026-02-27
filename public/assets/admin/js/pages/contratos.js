@@ -15,7 +15,7 @@
         return contratos.map((c) => [
             String(c.id),
             c.numero || '-',
-            c.locatario || '-',
+            (c.locatario || '-').toString().toUpperCase(),
             c.veiculo || '-',
             c.inicio || '-',
             c.termino || '-',
