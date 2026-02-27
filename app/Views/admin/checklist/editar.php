@@ -58,7 +58,7 @@ $imagemInicial = isset($imagem_desenho_url) && $imagem_desenho_url ? $imagem_des
                         <div class="col-md-2">
                             <label class="form-label">Hodômetro saída</label>
                             <input type="text" class="form-control" name="chk_hodometro_saida" value="<?= esc($chk['chk_hodometro_saida'] ?? '') ?>" placeholder="Ex: 50000">
-                        </div>
+                        </div> 
                         <div class="col-md-2">
                             <label class="form-label">Hodômetro chegada</label>
                             <input type="text" class="form-control" name="chk_hodometro_chegada" value="<?= esc($chk['chk_hodometro_chegada'] ?? '') ?>" placeholder="Ex: 50100">

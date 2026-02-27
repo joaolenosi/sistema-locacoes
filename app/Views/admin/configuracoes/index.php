@@ -64,12 +64,12 @@
                         <div class="trial-banner">
                             <p class="trial-text mb-0">
                                 <iconify-icon icon="iconamoon:clock-duotone" style="font-size: 1.25rem;"></iconify-icon>
-                                Seu teste grátis termina em <?= $diasRestantes ?> dias! Não perca o acesso
+                                """!!!Seu teste grátis termina em <?= $diasRestantes ?> dias! Não perca o acesso
                             </p>
                             <button type="button" class="btn btn-assinar-trial" onclick="document.querySelector('[href=\'#minha-assinatura\']').click(); document.querySelector('.toggle-periodo-wrap')?.scrollIntoView({ behavior: 'smooth' });">
                                 Assinar
                             </button>
-                        </div>
+                        </div>  
                         <?php endif; ?>
 
                         <!-- Escolha seu plano -->

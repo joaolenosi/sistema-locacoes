@@ -9,7 +9,7 @@ $routes->get('login', 'Auth::index');
 $routes->post('login/processar', 'Auth::processar');
 $routes->get('logout', 'Auth::logout');
 $routes->get('admin/logout', 'Auth::logout');
-
+  
 $routes->get('/', 'Home::index');
 $routes->get('admin/veiculos', 'Veiculos::index');
 $routes->get('admin/veiculos/listar', 'Veiculos::listar');
@@ -67,6 +67,7 @@ $routes->get('admin/manutencao-inteligente/detalhes/(:num)', 'ManutencaoIntelige
 $routes->get('admin/manutencao-inteligente/km-atual/(:num)', 'ManutencaoInteligente::kmAtual/$1');
 $routes->post('admin/manutencao-inteligente/completar/(:num)', 'ManutencaoInteligente::completar/$1');
 $routes->get('admin/empresa', 'Empresa::index');
+$routes->get('admin/empresa/logo', 'Empresa::logo');
 $routes->get('admin/configuracoes', 'Configuracoes::index');
 $routes->get('admin/configuracoes/listar-planos', 'Configuracoes::listarPlanos');
 $routes->post('admin/configuracoes/atualizar-empresa', 'Configuracoes::atualizarEmpresa');

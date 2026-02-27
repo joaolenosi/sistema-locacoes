@@ -16,6 +16,7 @@ class EmpresaModel extends Model
     protected $allowedFields = [
         'emp_nome',
         'emp_fantasia',
+        'emp_logo',
         'emp_cpf_cnpj',
         'emp_tipo',
         'emp_telefone',

@@ -91,7 +91,7 @@
       "Modelo",
       "Marca",
       { name: "Ano", width: "100px" },
-      "Cor",
+      "Cor", 
       {
         name: "Status",
         width: "140px",

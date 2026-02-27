@@ -25,9 +25,27 @@ echo "📂 Arquivos alterados/criados:"
 echo "$FILES"
 
 echo ""
+echo "🔍 Verificando arquivos existentes no disco..."
+
+EXISTING_FILES_ARRAY=()
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  if [ -e "$f" ]; then
+    EXISTING_FILES_ARRAY+=("$f")
+  else
+    echo "⚠ Arquivo removido ou inexistente, ignorando: $f"
+  fi
+done <<< "$FILES"
+
+if [ ${#EXISTING_FILES_ARRAY[@]} -eq 0 ]; then
+  echo "⚠ Nenhum arquivo existente para compactar (todos foram removidos)."
+  exit 0
+fi
+
+echo ""
 echo "🗜 Compactando arquivos alterados..."
 
-tar -czf deploy-diff.tar.gz $FILES
+tar -czf deploy-diff.tar.gz "${EXISTING_FILES_ARRAY[@]}"
 
 echo ""
 echo "📤 Enviando pacote e extraindo no servidor..."

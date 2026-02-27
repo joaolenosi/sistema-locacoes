@@ -68,7 +68,6 @@ class Configuracoes extends BaseController
         try {
             $empresaId = get_empresa_id();
             $empresaModel = new EmpresaModel();
-
             $existing = $empresaModel->find($empresaId);
             if (!$existing) {
                 return $this->response->setStatusCode(404)->setJSON([
@@ -89,6 +88,64 @@ class Configuracoes extends BaseController
 
             // CNPJ não pode ser alterado
             unset($data['emp_cpf_cnpj']);
+
+            // Upload opcional de foto/logo da empresa
+            $file = $this->request->getFile('foto_empresa');
+            if ($file && $file->getError() !== UPLOAD_ERR_NO_FILE) {
+                if (!$file->isValid() || $file->getError() !== UPLOAD_ERR_OK) {
+                    return $this->response->setStatusCode(422)->setJSON([
+                        'success' => false,
+                        'message' => 'Arquivo de imagem inválido.',
+                    ]);
+                }
+
+                $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+                $mimeType = $file->getMimeType();
+                if (!in_array($mimeType, $allowedMimes, true)) {
+                    return $this->response->setStatusCode(422)->setJSON([
+                        'success' => false,
+                        'message' => 'Formato de imagem não permitido. Use JPG, PNG ou WebP.',
+                    ]);
+                }
+
+                if ($file->getSize() > 5 * 1024 * 1024) {
+                    return $this->response->setStatusCode(422)->setJSON([
+                        'success' => false,
+                        'message' => 'Arquivo muito grande. Tamanho máximo: 5 MB.',
+                    ]);
+                }
+
+                $dir = WRITEPATH . 'uploads/' . $empresaId . '/empresa/';
+                if (!is_dir($dir)) {
+                    if (!@mkdir($dir, 0755, true)) {
+                        return $this->response->setStatusCode(500)->setJSON([
+                            'success' => false,
+                            'message' => 'Não foi possível criar o diretório para armazenar a imagem.',
+                        ]);
+                    }
+                    @file_put_contents(
+                        $dir . 'index.html',
+                        '<!DOCTYPE html><html><head><title>403</title></head><body><p>Forbidden</p></body></html>'
+                    );
+                }
+
+                $ext = $file->getClientExtension() ?: 'jpg';
+                $ext = preg_replace('/[^a-z0-9]/i', '', $ext) ?: 'jpg';
+                $nome = 'logo_empresa.' . $ext;
+
+                // Remove arquivo antigo se existir e for diferente
+                if (!empty($existing['emp_logo'] ?? null)) {
+                    $oldPath = WRITEPATH . $existing['emp_logo'];
+                    if (is_file($oldPath) && realpath($oldPath) !== realpath($dir . $nome)) {
+                        @unlink($oldPath);
+                    }
+                }
+
+                $file->move($dir, $nome, true);
+
+                $caminhoRelativo = 'uploads/' . $empresaId . '/empresa/' . $nome;
+                $data['emp_logo'] = $caminhoRelativo;
+            }
 
             // manter empresa fixa (não confiar no payload)
             $ok = $empresaModel->update($empresaId, $data);
