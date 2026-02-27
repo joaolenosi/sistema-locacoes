@@ -17,6 +17,9 @@
   const telefoneInput = document.getElementById("telefone");
   const tipoEmpresaRadios = document.querySelectorAll('input[name="tipo_empresa"]');
   const labelCpfCnpj = document.getElementById("label-cpf-cnpj");
+  const fotoInput = document.getElementById("foto_empresa");
+  const previewImg = document.getElementById("preview-foto-empresa");
+  const previewPlaceholder = document.getElementById("preview-foto-empresa-placeholder");
 
   const getDigits = (s) => String(s || "").replace(/\D/g, "");
 
@@ -73,6 +76,54 @@
       throw new Error(msg);
     }
     return json;
+  };
+
+  // ---- Preview da foto/logo da empresa ----
+  const showPreviewPlaceholder = () => {
+    if (previewImg) {
+      previewImg.classList.add("d-none");
+      previewImg.removeAttribute("src");
+    }
+    if (previewPlaceholder) {
+      previewPlaceholder.classList.remove("d-none");
+    }
+  };
+
+  const updatePreviewFromFile = (file) => {
+    if (!file) {
+      showPreviewPlaceholder();
+      return;
+    }
+    if (!previewImg) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewImg.src = e.target?.result || "";
+      previewImg.classList.remove("d-none");
+      if (previewPlaceholder) {
+        previewPlaceholder.classList.add("d-none");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const initExistingLogoPreview = () => {
+    if (!previewImg) return;
+    const cfg = window.__CONFIG_EMPRESA__ || {};
+    if (!cfg.emp_logo) {
+      showPreviewPlaceholder();
+      return;
+    }
+    const url = `${getBaseUrl()}admin/empresa/logo?cache=${Date.now()}`;
+    previewImg.onload = () => {
+      previewImg.classList.remove("d-none");
+      if (previewPlaceholder) {
+        previewPlaceholder.classList.add("d-none");
+      }
+    };
+    previewImg.onerror = () => {
+      showPreviewPlaceholder();
+    };
+    previewImg.src = url;
   };
 
   // ---- Máscaras ----
@@ -153,10 +204,15 @@
   cpfCnpjInput?.addEventListener("input", syncCpfCnpjUI);
   cepInput?.addEventListener("input", maskCep);
   telefoneInput?.addEventListener("input", maskTelefone);
+  fotoInput?.addEventListener("change", (e) => {
+    const file = e.target?.files && e.target.files[0] ? e.target.files[0] : null;
+    updatePreviewFromFile(file);
+  });
 
   syncCpfCnpjUI();
   maskCep();
   maskTelefone();
+  initExistingLogoPreview();
 
   // ---- ViaCEP ----
   const VIACEP_FORMATO = "json"; // ou "xml"

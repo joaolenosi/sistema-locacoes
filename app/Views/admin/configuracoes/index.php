@@ -202,6 +202,7 @@
 <!-- end row -->
 
 <script>
+window.__BASE_URL__ = '<?= base_url() ?>';
 window.__CONFIG_PLANOS__ = <?= json_encode($planos ?? []) ?>;
 window.__CONFIG_EMPRESA__ = <?= json_encode($empresa ?? []) ?>;
 </script>

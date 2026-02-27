@@ -1,4 +1,4 @@
-<form id="form-locadora">
+<form id="form-locadora" enctype="multipart/form-data">
     <div id="empresa-form-alert" class="alert alert-danger d-none" role="alert"></div>
 
     <input type="hidden" id="emp_id" name="emp_id" value="<?= esc($empresa['id'] ?? 1) ?>">
@@ -34,6 +34,33 @@
         <div class="col-md-6">
             <label for="cpf_cnpj" class="form-label" id="label-cpf-cnpj">CNPJ <span class="text-danger">*</span></label>
             <input type="text" class="form-control bg-light" id="cpf_cnpj" name="cpf_cnpj" placeholder="00.000.000/0000-00" value="<?= esc($empresa['emp_cpf_cnpj'] ?? '') ?>" required readonly>
+        </div>
+    </div>
+
+    <!-- Logo / Foto da Empresa -->
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-4">
+            <label for="foto_empresa" class="form-label">Logo / Foto da empresa</label>
+            <input
+                type="file"
+                class="form-control"
+                id="foto_empresa"
+                name="foto_empresa"
+                accept="image/*"
+            >
+            <small class="text-muted d-block mt-1">Formatos permitidos: JPG, PNG ou WebP. Tamanho máximo: 5 MB.</small>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label d-block">Preview</label>
+            <div class="border rounded p-2 bg-light" style="max-width: 180px;">
+                <img
+                    id="preview-foto-empresa"
+                    src=""
+                    alt="Logo da empresa"
+                    class="img-fluid d-none"
+                />
+                <span id="preview-foto-empresa-placeholder" class="text-muted small">Nenhuma imagem selecionada.</span>
+            </div>
         </div>
     </div>
 
