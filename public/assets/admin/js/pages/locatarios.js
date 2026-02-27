@@ -29,14 +29,14 @@
   };
 
   const toGridRows = (items) =>
-    (items || []).map((l) => [
-      String(l.id),
+    (items || []).map((l, index) => [
+      String(index + 1), // índice sequencial apenas para exibição
       l.cli_nome || "-",
       l.cli_cpf_cnpj || "-",
       l.cli_telefone || "-",
       l.cli_email || "-",
       statusLabel(l.cli_ativo),
-      String(l.id), // ações
+      String(l.id), // ID real usado apenas para ações
     ]);
 
   let grid = null;
@@ -49,7 +49,7 @@
 
     const columns = [
       {
-        name: "ID",
+        name: "Nº",
         width: "80px",
         formatter: (cell) => gridjs.html(`<span class="fw-semibold">${cell}</span>`),
       },
@@ -81,7 +81,8 @@
         name: "Ações",
         width: "160px",
         formatter: (_cell, row) => {
-          const id = row.cells[0].data;
+          // ID real está na última coluna oculta (posição 6 do array gerado em toGridRows)
+          const id = row.cells[row.cells.length - 1].data;
           const base = (window.__BASE_URL__ || "").replace(/\/$/, "") + "/";
           const iconInfo = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>';
           const iconEdit = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
