@@ -544,15 +544,136 @@ class Contratos extends BaseController
             );
         }
 
+        $empresaArray = is_array($empresa) ? $empresa : [];
+        $nomeEmpresa = htmlspecialchars($empresaArray['emp_fantasia'] ?? $empresaArray['emp_nome'] ?? 'Empresa', ENT_QUOTES, 'UTF-8');
+
+        // Monta endereço resumido da empresa para o rodapé
+        $enderecoPartes = [];
+        $ruaNumero = trim(($empresaArray['emp_rua'] ?? '') . ', ' . ($empresaArray['emp_numero'] ?? ''));
+        if ($ruaNumero !== ',') {
+            $enderecoPartes[] = $ruaNumero;
+        }
+        if (!empty($empresaArray['emp_complemento'])) {
+            $enderecoPartes[] = $empresaArray['emp_complemento'];
+        }
+        $cidadeUf = trim(($empresaArray['emp_cidade'] ?? '') . '/' . ($empresaArray['emp_estado'] ?? ''));
+        if ($cidadeUf !== '/') {
+            $enderecoPartes[] = $cidadeUf;
+        }
+        if (!empty($empresaArray['emp_cep'])) {
+            $enderecoPartes[] = 'CEP ' . $empresaArray['emp_cep'];
+        }
+        $enderecoLinha = implode(' - ', array_filter($enderecoPartes));
+
+        $contatos = [];
+        if (!empty($empresaArray['emp_telefone'])) {
+            $contatos[] = 'Tel: ' . $empresaArray['emp_telefone'];
+        }
+        if (!empty($empresaArray['emp_email'])) {
+            $contatos[] = $empresaArray['emp_email'];
+        }
+        if (!empty($empresaArray['emp_site'])) {
+            $contatos[] = $empresaArray['emp_site'];
+        }
+        $contatoLinha = implode(' | ', $contatos);
+
+        $footerTexto = trim($nomeEmpresa . ($enderecoLinha ? ' - ' . $enderecoLinha : '') . ($contatoLinha ? ' - ' . $contatoLinha : ''));
+
+        // Logo da empresa (se houver) em base64 para o cabeçalho do PDF
+        $logoHtml = '';
+        if (!empty($empresaArray['emp_logo'])) {
+            $logoPath = WRITEPATH . $empresaArray['emp_logo'];
+            if (is_file($logoPath)) {
+                $logoBin = @file_get_contents($logoPath);
+                if ($logoBin !== false) {
+                    $logoMime = mime_content_type($logoPath) ?: 'image/png';
+                    $logoB64 = base64_encode($logoBin);
+                    $logoHtml = '<img src="data:' . $logoMime . ';base64,' . $logoB64 . '" alt="Logo" style="height:40px; max-width:160px;">';
+                }
+            }
+        }
+
+        $tituloContrato = htmlspecialchars($modelo['con_nome'] ?? 'Contrato de Locação de Veículo', ENT_QUOTES, 'UTF-8');
+        $numeroContrato = htmlspecialchars($contrato['con_numero'] ?? (string) $id, ENT_QUOTES, 'UTF-8');
+        $dataHoje = date('d/m/Y');
+
         $bodyContent = $this->conteudoContratoParaPdfHtml($conteudoSubstituido);
         // Garantir que tags HTML não estejam como entidades (evitar que o PDF mostre literalmente <p>, <strong>, etc.)
         $bodyContent = html_entity_decode($bodyContent, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-        body { font-family: DejaVu Serif, serif; font-size: 11pt; line-height: 1.5; margin: 24px; }
+
+        $css = '
+        @page { margin: 110px 40px 80px 40px; }
+        body { font-family: DejaVu Serif, serif; font-size: 11pt; line-height: 1.5; }
+        #header {
+            position: fixed;
+            top: -90px;
+            left: 0;
+            right: 0;
+            height: 80px;
+        }
+        #header-table {
+            width: 100%;
+            border-bottom: 1px solid #cccccc;
+            padding-bottom: 6px;
+            font-size: 9pt;
+        }
+        #header-table td {
+            vertical-align: middle;
+        }
+        #footer {
+            position: fixed;
+            bottom: -60px;
+            left: 0;
+            right: 0;
+            height: 50px;
+            border-top: 0.5px solid #cccccc;
+            font-size: 8pt;
+            font-style: italic;
+            color: #666666;
+        }
+        #footer div {
+            text-align: center;
+            margin-top: 4px;
+        }
+        #content {
+            margin-top: 0;
+        }
         .titulo-contrato { font-size: 14pt; font-weight: bold; margin-top: 1em; margin-bottom: 0.6em; text-align: center; }
         .clausula { font-weight: bold; margin-top: 0.8em; margin-bottom: 0.3em; }
         p { margin: 0.4em 0; }
-        </style></head><body>' . $bodyContent . '</body></html>';
+        ';
+
+        $headerHtml = '
+        <div id="header">
+            <table id="header-table">
+                <tr>
+                    <td style="width: 35%;">' . ($logoHtml !== '' ? $logoHtml : '<strong>' . $nomeEmpresa . '</strong>') . '</td>
+                    <td style="text-align: right;">
+                        <div style="font-size: 10pt; font-weight: bold;">' . $tituloContrato . '</div>
+                        <div style="font-size: 9pt;">Contrato nº ' . $numeroContrato . '</div>
+                        <div style="font-size: 8pt; color: #666;">Gerado em ' . $dataHoje . '</div>
+                    </td>
+                </tr>
+            </table>
+        </div>';
+
+        $footerHtml = '
+        <div id="footer">
+            <div>' . htmlspecialchars($footerTexto, ENT_QUOTES, 'UTF-8') . '</div>
+        </div>';
+
+        $html = '<!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>' . $css . '</style>
+            </head>
+            <body>
+                ' . $headerHtml . '
+                ' . $footerHtml . '
+                <div id="content">' . $bodyContent . '</div>
+            </body>
+        </html>';
 
         try {
             $dompdf = new \Dompdf\Dompdf();
