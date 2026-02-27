@@ -33,6 +33,6 @@
 window.__BASE_URL__ = '<?= base_url() ?>';
 window.__CONFIG_EMPRESA__ = <?= json_encode($empresa ?? []) ?>;
 </script>
-<script src="<?= asset_url('assets/admin/js/pages/empresa.js') ?>"></script>
+<script src="<?= asset_url('assets/admin/js/pages/empresa.js?v=logo1') ?>"></script>
 
 <?= $this->endSection() ?>
