@@ -1032,61 +1032,45 @@
             });
             const json = await res.json().catch(() => null);
             if (res.ok && json?.success) {
-              if (typeof Swal !== 'undefined') {
-                await Swal.fire({
-                  icon: 'success',
-                  title: 'Manutenção excluída',
-                  text: json.message || 'A manutenção foi excluída com sucesso.',
-                  confirmButtonText: 'OK'
-                });
-              } else {
-                alert(json.message || 'Manutenção excluída com sucesso.');
-              }
+              await Swal.fire({
+                icon: 'success',
+                title: 'Manutenção excluída',
+                text: json.message || 'A manutenção foi excluída com sucesso.',
+                confirmButtonText: 'OK'
+              });
               await reload();
             } else {
               const errMsg = json?.message || 'Não foi possível excluir a manutenção.';
-              if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                  icon: 'error',
-                  title: 'Não foi possível excluir',
-                  text: errMsg,
-                  confirmButtonText: 'OK'
-                });
-              } else {
-                alert(errMsg);
-              }
-            }
-          } catch (err) {
-            if (typeof Swal !== 'undefined') {
               Swal.fire({
                 icon: 'error',
-                title: 'Erro',
-                text: 'Erro ao excluir manutenção. Tente novamente.',
+                title: 'Não foi possível excluir',
+                text: errMsg,
                 confirmButtonText: 'OK'
               });
-            } else {
-              alert('Erro ao excluir manutenção. Tente novamente.');
             }
+          } catch (err) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Erro',
+              text: 'Erro ao excluir manutenção. Tente novamente.',
+              confirmButtonText: 'OK'
+            });
           } finally {
             btnDeleteMan.disabled = false;
             btnDeleteMan.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
           }
         };
 
-        if (typeof Swal !== 'undefined') {
-          Swal.fire({
-            icon: 'warning',
-            title: 'Excluir manutenção?',
-            text: msg,
-            showCancelButton: true,
-            confirmButtonText: 'Sim, excluir',
-            cancelButtonText: 'Cancelar'
-          }).then((result) => {
-            if (result?.isConfirmed) executeDelete();
-          });
-        } else if (confirm('Tem certeza que deseja excluir esta manutenção?')) {
-          executeDelete();
-        }
+        Swal.fire({
+          icon: 'warning',
+          title: 'Excluir manutenção?',
+          text: msg,
+          showCancelButton: true,
+          confirmButtonText: 'Sim, excluir',
+          cancelButtonText: 'Cancelar'
+        }).then((result) => {
+          if (result?.isConfirmed) executeDelete();
+        });
       }
 
       const btnAdicionar = e.target.closest?.('.btn-adicionar-item-inteligente');
@@ -1102,8 +1086,16 @@
         const itemId = btnRemover.getAttribute('data-item-id');
         const wrapper = document.querySelector('[data-manutencao-id]');
         const manId = wrapper?.getAttribute('data-manutencao-id');
-        if (!itemId || !manId || !confirm('Remover este item?')) return;
-        btnRemover.disabled = true;
+        if (!itemId || !manId) return;
+        Swal.fire({
+          icon: 'warning',
+          title: 'Remover este item?',
+          showCancelButton: true,
+          confirmButtonText: 'Sim, remover',
+          cancelButtonText: 'Cancelar'
+        }).then((result) => {
+          if (!result?.isConfirmed) return;
+          btnRemover.disabled = true;
         fetch(`${getBaseUrl()}admin/manutencao/itens/deletar/${itemId}`, {
           method: 'POST',
           headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' }
@@ -1122,6 +1114,7 @@
             if (window.toastr) window.toastr.error('Erro ao remover item.');
             btnRemover.disabled = false;
           });
+        });
       }
     });
 

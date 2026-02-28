@@ -175,6 +175,13 @@
 </div>
 <!-- end row -->
 
+<style>
+/* Modal cadastro manutenção: footer fixo, conteúdo rolável */
+#modalManutencao .modal-dialog { max-height: calc(100vh - 2rem); display: flex; }
+#modalManutencao .modal-content { display: flex; flex-direction: column; max-height: calc(100vh - 2rem); }
+#modalManutencao .modal-body { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+#modalManutencao .modal-footer { flex-shrink: 0; }
+</style>
 <!-- Modal: Cadastro de Manutenção -->
 <div class="modal fade" id="modalManutencao" tabindex="-1" aria-labelledby="modalManutencaoLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">

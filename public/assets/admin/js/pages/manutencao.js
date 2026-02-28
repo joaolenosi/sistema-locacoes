@@ -374,8 +374,8 @@
             resetForm();
             if (typeof window.toastr !== 'undefined') {
                 window.toastr.success(id ? 'Manutenção atualizada com sucesso.' : 'Manutenção cadastrada com sucesso.');
-            } else {
-                alert(id ? 'Manutenção atualizada com sucesso.' : 'Manutenção cadastrada com sucesso.');
+            } else if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'success', title: 'Sucesso', text: id ? 'Manutenção atualizada com sucesso.' : 'Manutenção cadastrada com sucesso.', confirmButtonText: 'OK' });
             }
             window.dispatchEvent(new CustomEvent('manutencao-reload'));
         } catch (e) {
@@ -503,42 +503,29 @@
                     })
                     .then(function (result) {
                         if (result.ok && result.json && result.json.success) {
-                            if (typeof Swal !== 'undefined') {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Manutenção excluída',
-                                    text: result.json.message || 'A manutenção foi excluída com sucesso.',
-                                    confirmButtonText: 'OK'
-                                }).then(function () { window.dispatchEvent(new CustomEvent('manutencao-reload')); });
-                            } else {
-                                alert(result.json.message || 'Manutenção excluída com sucesso.');
-                                window.dispatchEvent(new CustomEvent('manutencao-reload'));
-                            }
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Manutenção excluída',
+                                text: result.json.message || 'A manutenção foi excluída com sucesso.',
+                                confirmButtonText: 'OK'
+                            }).then(function () { window.dispatchEvent(new CustomEvent('manutencao-reload')); });
                         } else {
                             var errMsg = (result.json && result.json.message) ? result.json.message : 'Não foi possível excluir a manutenção.';
-                            if (typeof Swal !== 'undefined') {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Não foi possível excluir',
-                                    text: errMsg,
-                                    confirmButtonText: 'OK'
-                                });
-                            } else {
-                                alert(errMsg);
-                            }
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Não foi possível excluir',
+                                text: errMsg,
+                                confirmButtonText: 'OK'
+                            });
                         }
                     })
                     .catch(function () {
-                        if (typeof Swal !== 'undefined') {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Erro',
-                                text: 'Erro ao excluir manutenção. Tente novamente.',
-                                confirmButtonText: 'OK'
-                            });
-                        } else {
-                            alert('Erro ao excluir manutenção. Tente novamente.');
-                        }
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erro',
+                            text: 'Erro ao excluir manutenção. Tente novamente.',
+                            confirmButtonText: 'OK'
+                        });
                     })
                     .finally(function () {
                         btnDelete.disabled = false;
@@ -546,20 +533,16 @@
                     });
             };
 
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Excluir manutenção?',
-                    text: msg,
-                    showCancelButton: true,
-                    confirmButtonText: 'Sim, excluir',
-                    cancelButtonText: 'Cancelar'
-                }).then(function (result) {
-                    if (result && result.isConfirmed) executeDelete();
-                });
-            } else if (confirm('Tem certeza que deseja excluir esta manutenção?')) {
-                executeDelete();
-            }
+            Swal.fire({
+                icon: 'warning',
+                title: 'Excluir manutenção?',
+                text: msg,
+                showCancelButton: true,
+                confirmButtonText: 'Sim, excluir',
+                cancelButtonText: 'Cancelar'
+            }).then(function (result) {
+                if (result && result.isConfirmed) executeDelete();
+            });
             return;
         }
 

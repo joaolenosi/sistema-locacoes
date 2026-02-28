@@ -95,7 +95,14 @@
         if (!btn) return;
         const fotoId = btn.getAttribute('data-foto-id');
         if (!fotoId) return;
-        if (!confirm('Remover esta foto?')) return;
+        const result = await Swal.fire({
+            icon: 'warning',
+            title: 'Remover esta foto?',
+            showCancelButton: true,
+            confirmButtonText: 'Sim, remover',
+            cancelButtonText: 'Cancelar'
+        });
+        if (!result?.isConfirmed) return;
         try {
             const res = await fetch(getBaseUrl() + 'admin/manutencao/fotos/deletar/' + fotoId, {
                 method: 'POST',
@@ -295,7 +302,15 @@
         const btn = e.target && e.target.closest && e.target.closest('.btn-remover-item-manutencao');
         if (!btn) return;
         const itemId = btn.getAttribute('data-item-id');
-        if (!itemId || !confirm('Remover este item da manutenção?')) return;
+        if (!itemId) return;
+        const result = await Swal.fire({
+            icon: 'warning',
+            title: 'Remover este item da manutenção?',
+            showCancelButton: true,
+            confirmButtonText: 'Sim, remover',
+            cancelButtonText: 'Cancelar'
+        });
+        if (!result?.isConfirmed) return;
 
         const btnEl = btn;
         if (btnEl) { btnEl.disabled = true; }

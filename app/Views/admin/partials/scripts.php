@@ -1,4 +1,6 @@
 <?php helper('asset'); ?>
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- Vendor Javascript (Require in all Page) -->
 <script src="<?= asset_url('assets/admin/js/vendor.js') ?>"></script>
 
