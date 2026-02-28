@@ -763,10 +763,50 @@ class ManutencaoInteligente extends BaseController
     private function buildManutencaoPdfHtml(array $manutencao, array $empresa, array $itens, array $fotos): string
     {
         $empNome = htmlspecialchars($empresa['emp_fantasia'] ?? $empresa['emp_nome'] ?? 'Empresa', ENT_QUOTES, 'UTF-8');
-        $empCnpj = htmlspecialchars($empresa['emp_cpf_cnpj'] ?? '', ENT_QUOTES, 'UTF-8');
-        $empEnd = trim(($empresa['emp_rua'] ?? '') . ', ' . ($empresa['emp_numero'] ?? '') . ($empresa['emp_complemento'] ? ' - ' . $empresa['emp_complemento'] : '') . ' - ' . ($empresa['emp_cidade'] ?? '') . '/' . ($empresa['emp_estado'] ?? ''));
-        $empEnd = htmlspecialchars($empEnd, ENT_QUOTES, 'UTF-8');
-        $empTel = htmlspecialchars($empresa['emp_telefone'] ?? $empresa['emp_email'] ?? '', ENT_QUOTES, 'UTF-8');
+
+        // Logo da empresa (base64) para o cabeçalho do PDF
+        $logoHtml = '';
+        if (!empty($empresa['emp_logo'])) {
+            $logoPath = WRITEPATH . $empresa['emp_logo'];
+            if (is_file($logoPath)) {
+                $logoBin = @file_get_contents($logoPath);
+                if ($logoBin !== false) {
+                    $logoMime = mime_content_type($logoPath) ?: 'image/png';
+                    $logoB64 = base64_encode($logoBin);
+                    $logoHtml = '<img src="data:' . $logoMime . ';base64,' . $logoB64 . '" alt="Logo" style="height:40px; max-width:160px;">';
+                }
+            }
+        }
+
+        // Monta endereço e contatos para o rodapé (igual ao contrato)
+        $enderecoPartes = [];
+        $ruaNumero = trim(($empresa['emp_rua'] ?? '') . ', ' . ($empresa['emp_numero'] ?? ''));
+        if ($ruaNumero !== ',') {
+            $enderecoPartes[] = $ruaNumero;
+        }
+        if (!empty($empresa['emp_complemento'])) {
+            $enderecoPartes[] = $empresa['emp_complemento'];
+        }
+        $cidadeUf = trim(($empresa['emp_cidade'] ?? '') . '/' . ($empresa['emp_estado'] ?? ''));
+        if ($cidadeUf !== '/') {
+            $enderecoPartes[] = $cidadeUf;
+        }
+        if (!empty($empresa['emp_cep'])) {
+            $enderecoPartes[] = 'CEP ' . $empresa['emp_cep'];
+        }
+        $enderecoLinha = implode(' - ', array_filter($enderecoPartes));
+        $contatos = [];
+        if (!empty($empresa['emp_telefone'])) {
+            $contatos[] = 'Tel: ' . $empresa['emp_telefone'];
+        }
+        if (!empty($empresa['emp_email'])) {
+            $contatos[] = $empresa['emp_email'];
+        }
+        if (!empty($empresa['emp_site'])) {
+            $contatos[] = $empresa['emp_site'];
+        }
+        $contatoLinha = implode(' | ', $contatos);
+        $footerTexto = trim($empNome . ($enderecoLinha ? ' - ' . $enderecoLinha : '') . ($contatoLinha ? ' - ' . $contatoLinha : ''));
 
         $dataMan = $manutencao['man_data'] ?? '';
         if ($dataMan && preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $dataMan, $m)) {
@@ -784,15 +824,27 @@ class ManutencaoInteligente extends BaseController
         $veiKmStr = $veiKm !== null ? number_format($veiKm, 0, ',', '.') . ' km' : '-';
         $obs = htmlspecialchars(trim($manutencao['man_obs'] ?? ''), ENT_QUOTES, 'UTF-8');
         $total = isset($manutencao['man_total']) ? number_format((float) $manutencao['man_total'], 2, ',', '.') : '0,00';
+        $dataGeracao = date('d/m/Y H:i');
 
-        $header = '
-        <div class="cabecalho" style="border-bottom:2px solid #333; padding-bottom:10px; margin-bottom:15px;">
-            <h1 style="margin:0 0 5px 0; font-size:16pt;">' . $empNome . '</h1>
-            <p style="margin:0; font-size:9pt; color:#555;">CNPJ/CPF: ' . $empCnpj . '</p>
-            <p style="margin:0; font-size:9pt; color:#555;">' . $empEnd . '</p>
-            <p style="margin:0; font-size:9pt; color:#555;">Contato: ' . $empTel . '</p>
-        </div>
-        <h2 style="font-size:14pt; margin:0 0 12px 0; text-align:center;">Relatório de Manutenção</h2>';
+        // Cabeçalho fixo com logo e título (igual ao contrato)
+        $headerHtml = '
+        <div id="header">
+            <table id="header-table">
+                <tr>
+                    <td style="width: 35%;">' . ($logoHtml !== '' ? $logoHtml : '<strong>' . $empNome . '</strong>') . '</td>
+                    <td style="text-align: right;">
+                        <div style="font-size: 12pt; font-weight: bold;">Relatório de Manutenção</div>
+                        <div style="font-size: 9pt;">Veículo ' . $veiPlaca . '</div>
+                        <div style="font-size: 8pt; color: #666;">Gerado em ' . $dataGeracao . '</div>
+                    </td>
+                </tr>
+            </table>
+        </div>';
+
+        $footerHtml = '
+        <div id="footer">
+            <div>' . htmlspecialchars($footerTexto, ENT_QUOTES, 'UTF-8') . '</div>
+        </div>';
 
         $veiculoBlock = '
         <table class="veiculo" style="width:100%; border-collapse:collapse; margin-bottom:15px; font-size:10pt;">
@@ -848,16 +900,48 @@ class ManutencaoInteligente extends BaseController
             $fotosHtml .= '</div>';
         }
 
-        $footer = '<p style="font-size:8pt; color:#666; margin-top:20px; text-align:right;">Documento gerado em ' . date('d/m/Y H:i') . '</p>';
+        $contentHtml = '<h2 style="font-size:14pt; margin:0 0 12px 0; text-align:center;">Relatório de Manutenção</h2>'
+            . $veiculoBlock . $manBlock . $itensHtml . $fotosHtml;
 
         $css = '
-        body { font-family: DejaVu Sans, sans-serif; font-size: 10pt; line-height: 1.4; margin: 20px; }
-        .cabecalho h1 { font-size: 16pt; }
+        @page { margin: 110px 40px 80px 40px; }
+        body { font-family: DejaVu Sans, sans-serif; font-size: 10pt; line-height: 1.4; }
+        #header {
+            position: fixed;
+            top: -90px;
+            left: 0;
+            right: 0;
+            height: 80px;
+        }
+        #header-table {
+            width: 100%;
+            border-bottom: 1px solid #cccccc;
+            padding-bottom: 6px;
+            font-size: 9pt;
+        }
+        #header-table td { vertical-align: middle; }
+        #footer {
+            position: fixed;
+            bottom: -60px;
+            left: 0;
+            right: 0;
+            height: 50px;
+            border-top: 0.5px solid #cccccc;
+            font-size: 8pt;
+            font-style: italic;
+            color: #666666;
+        }
+        #footer div {
+            text-align: center;
+            margin-top: 4px;
+        }
+        #content { margin-top: 0; }
         table { page-break-inside: avoid; }
         img { max-width: 100%; }
         ';
-        $body = $header . $veiculoBlock . $manBlock . $itensHtml . $fotosHtml . $footer;
-        return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' . $css . '</style></head><body>' . $body . '</body></html>';
+
+        return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' . $css . '</style></head><body>'
+            . $headerHtml . $footerHtml . '<div id="content">' . $contentHtml . '</div></body></html>';
     }
 
     public function completar($id)

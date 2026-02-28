@@ -4,15 +4,16 @@ namespace App\Controllers;
 
 use App\Models\ClienteModel;
 use App\Models\LancamentoFinanceiroModel;
-use App\Models\LocacaoModel;
+use App\Services\GeradorCobrancasRecorrentes;
 
 class Cobrancas extends BaseController
 {
     public function index(): string
     {
-        $clienteModel = new ClienteModel();
-        
         $empresaId = get_empresa_id();
+        $this->gerarCobrancasRecorrentes($empresaId);
+
+        $clienteModel = new ClienteModel();
         $locatarios = $clienteModel
             ->where('cli_empresa_id', $empresaId)
             ->where('cli_ativo', 1)
@@ -38,6 +39,8 @@ class Cobrancas extends BaseController
             if ($empresaId < 1) {
                 return $this->response->setStatusCode(401)->setJSON(['success' => false, 'message' => 'Sessão inválida.']);
             }
+
+            $this->gerarCobrancasRecorrentes($empresaId);
 
             $lancamentoModel = new LancamentoFinanceiroModel();
             $lancamentos = $lancamentoModel
@@ -166,6 +169,16 @@ class Cobrancas extends BaseController
             'mensal' => 'Mensal',
         ];
         return $map[$recorrencia] ?? 'Mensal';
+    }
+
+    private function gerarCobrancasRecorrentes(int $empresaId): void
+    {
+        try {
+            $gerador = new GeradorCobrancasRecorrentes();
+            $gerador->executar($empresaId);
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao gerar cobranças recorrentes: ' . $e->getMessage());
+        }
     }
 }
 

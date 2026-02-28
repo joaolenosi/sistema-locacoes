@@ -105,7 +105,10 @@
                         ></iconify-icon>
                     </span>
                     <span class="nav-text"> Cobranças </span>
-                    <span class="badge badge-pill text-end bg-danger">1</span>
+                    <?php $cobrancasCount = get_cobrancas_pendentes_count(); ?>
+                    <?php if ($cobrancasCount > 0): ?>
+                        <span class="badge badge-pill text-end bg-danger"><?= $cobrancasCount ?></span>
+                    <?php endif; ?>
                 </a>
             </li>
 

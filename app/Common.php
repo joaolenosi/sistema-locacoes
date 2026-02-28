@@ -46,6 +46,28 @@ if (!function_exists('get_empresa_id')) {
 }
 
 /**
+ * Retorna a quantidade de cobranças pendentes de locações para a empresa logada.
+ * Usado no badge do menu lateral.
+ */
+if (!function_exists('get_cobrancas_pendentes_count')) {
+    function get_cobrancas_pendentes_count(): int
+    {
+        $empresaId = get_empresa_id();
+        if ($empresaId < 1) {
+            return 0;
+        }
+
+        $model = new \App\Models\LancamentoFinanceiroModel();
+        return (int) $model
+            ->where('lan_empresa_id', $empresaId)
+            ->where('lan_tipo', 'receita')
+            ->where('lan_status', 'pendente')
+            ->where('lan_locacao_id IS NOT NULL', null, false)
+            ->countAllResults();
+    }
+}
+
+/**
  * Retorna as iniciais do nome da empresa (fantasia ou razão social) para exibição em avatar.
  * Ex.: "MOBILI LOCACOES" -> "ML", "Empresa" -> "EM"
  *

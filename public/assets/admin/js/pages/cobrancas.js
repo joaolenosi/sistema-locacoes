@@ -146,15 +146,30 @@
   };
 
   const quitarCobranca = async (id) => {
-    if (!confirm('Deseja realmente marcar esta cobrança como quitada?')) {
-      return;
-    }
+    const result = await Swal.fire({
+      icon: 'question',
+      title: 'Confirmar',
+      text: 'Deseja realmente marcar esta cobrança como quitada?',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, quitar',
+      cancelButtonText: 'Cancelar'
+    });
+    if (!result?.isConfirmed) return;
 
     try {
       await fetchJson(`${getBaseUrl()}admin/cobrancas/quitar/${id}`, { method: 'POST' });
       await reload();
+      Swal.fire({
+        icon: 'success',
+        title: 'Sucesso',
+        text: 'Cobrança quitada com sucesso.'
+      });
     } catch (e) {
-      alert('Erro ao quitar cobrança: ' + (e.message || 'Erro desconhecido'));
+      Swal.fire({
+        icon: 'error',
+        title: 'Erro',
+        text: 'Erro ao quitar cobrança: ' + (e.message || 'Erro desconhecido')
+      });
     }
   };
 

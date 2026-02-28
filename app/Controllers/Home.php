@@ -6,12 +6,14 @@ use App\Models\ClienteModel;
 use App\Models\LancamentoFinanceiroModel;
 use App\Models\ManutencaoModel;
 use App\Models\VeiculoModel;
+use App\Services\GeradorCobrancasRecorrentes;
 
 class Home extends BaseController
 {
     public function index(): string
     {
         $empresaId = get_empresa_id();
+        $this->gerarCobrancasRecorrentes($empresaId);
 
         [$receitasMes, $despesasMes] = $this->getReceitasEDespesasMesAtual($empresaId);
 
@@ -335,5 +337,15 @@ class Home extends BaseController
             ['status' => 'Manutenção', 'quantidade' => $counts['Manutenção']],
             ['status' => 'Inativo', 'quantidade' => $counts['Inativo']],
         ];
+    }
+
+    private function gerarCobrancasRecorrentes(int $empresaId): void
+    {
+        try {
+            $gerador = new GeradorCobrancasRecorrentes();
+            $gerador->executar($empresaId);
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao gerar cobranças recorrentes: ' . $e->getMessage());
+        }
     }
 }
