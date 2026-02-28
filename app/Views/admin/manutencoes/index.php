@@ -228,6 +228,30 @@
                             <small class="text-muted">Se desmarcado, alertará apenas quando a data prevista passar</small>
                             <input type="hidden" id="man_trigger_tipo" name="man_trigger_tipo" value="qualquer">
                         </div>
+                        <div class="col-12 border-top pt-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label fw-semibold mb-0">Produtos e Serviços</label>
+                                <button type="button" class="btn btn-sm btn-primary" id="btn-adicionar-item-cadastro">
+                                    <iconify-icon icon="iconamoon:plus-duotone"></iconify-icon> Adicionar item
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Descrição</th>
+                                            <th class="text-center">Tipo</th>
+                                            <th class="text-center">Qtd</th>
+                                            <th class="text-end">Valor unit.</th>
+                                            <th class="text-end">Total</th>
+                                            <th class="text-center" style="width:50px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody-itens-cadastro"></tbody>
+                                </table>
+                            </div>
+                            <p class="mb-0 mt-2 fw-bold">Total: <span id="man-total-cadastro">R$ 0,00</span></p>
+                        </div>
                     </div>
                 </form>
                 <div id="man-form-alert" class="alert alert-danger mt-3 d-none" role="alert"></div>
@@ -235,6 +259,53 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary" id="btnSalvarManutencao">
+                    <span class="btn-text">Adicionar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Adicionar Item (Produto/Serviço) -->
+<div class="modal fade" id="modalAdicionarItemCadastro" tabindex="-1" aria-labelledby="modalAdicionarItemCadastroLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAdicionarItemCadastroLabel">Adicionar produto ou serviço</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAdicionarItemCadastro">
+                    <div class="mb-3">
+                        <label class="form-label">Tipo</label>
+                        <select class="form-select" id="cadastro-item-tipo" name="tipo_item">
+                            <option value="produto">Produto</option>
+                            <option value="servico">Serviço</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="cadastro-grupo-produto">
+                        <label class="form-label">Produto</label>
+                        <select class="form-select" id="cadastro-item-produto-id" name="produto_id">
+                            <option value="">Selecione um produto</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 d-none" id="cadastro-grupo-servico">
+                        <label class="form-label">Serviço</label>
+                        <select class="form-select" id="cadastro-item-servico-id" name="servico_id">
+                            <option value="">Selecione um serviço</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quantidade</label>
+                        <input type="number" class="form-control" id="cadastro-item-quantidade" name="quantidade" value="1" min="1">
+                    </div>
+                    <p class="mb-0 text-muted small">Valor unit.: <span id="cadastro-item-vu">R$ 0,00</span> | Subtotal: <span id="cadastro-item-subtotal" class="fw-semibold">R$ 0,00</span></p>
+                </form>
+                <div id="cadastro-form-item-alert" class="alert alert-danger mt-2 d-none" role="alert"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn-salvar-item-cadastro">
                     <span class="btn-text">Adicionar</span>
                 </button>
             </div>

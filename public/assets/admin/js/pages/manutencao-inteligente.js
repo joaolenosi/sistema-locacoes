@@ -296,6 +296,37 @@
     const btnSave = document.getElementById('btnSalvarManutencao');
     const btnAdd = document.getElementById('btn-add-manutencao');
     const titleEl = document.getElementById('modalManutencaoLabel');
+    let itensCadastroInteligente = [];
+
+    const formatMoney = (v) => 'R$ ' + (typeof v === 'number' ? v : parseFloat(v || 0)).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+    const renderItensCadastroInteligente = () => {
+      const tbody = document.getElementById('tbody-itens-cadastro-inteligente');
+      const totalEl = document.getElementById('man-total-cadastro-inteligente');
+      if (!tbody) return;
+      let total = 0;
+      tbody.innerHTML = '';
+      itensCadastroInteligente.forEach((item, idx) => {
+        total += parseFloat(item.mai_valor_total || item.valor_total || 0);
+        const tipoLabel = (item.mai_tipo_item || item.tipo_item || '') === 'produto' ? 'Produto' : 'Serviço';
+        const tipoCls = (item.mai_tipo_item || item.tipo_item || '') === 'produto' ? 'info' : 'success';
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-idx', idx);
+        tr.innerHTML = '<td>' + (item.mai_descricao || item.descricao || '—') + '</td>' +
+          '<td class="text-center"><span class="badge bg-' + tipoCls + '-subtle text-' + tipoCls + '">' + tipoLabel + '</span></td>' +
+          '<td class="text-center">' + (item.mai_quantidade || item.quantidade || 1) + '</td>' +
+          '<td class="text-end">' + formatMoney(item.mai_valor_unitario || item.valor_unitario || 0) + '</td>' +
+          '<td class="text-end fw-semibold">' + formatMoney(item.mai_valor_total || item.valor_total || 0) + '</td>' +
+          '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger btn-remover-item-cadastro-inteligente" data-idx="' + idx + '">×</button></td>';
+        tbody.appendChild(tr);
+      });
+      if (itensCadastroInteligente.length === 0) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td colspan="6" class="text-muted text-center py-2">Nenhum item. Clique em Adicionar item.</td>';
+        tbody.appendChild(tr);
+      }
+      if (totalEl) totalEl.textContent = formatMoney(total);
+    };
 
     const getBsModal = () => {
       if (!modalEl) return null;
@@ -334,6 +365,8 @@
     const resetForm = () => {
       setAlert('');
       formEl?.reset();
+      itensCadastroInteligente = [];
+      renderItensCadastroInteligente();
       const idEl = document.getElementById('man_id');
       if (idEl) idEl.value = '';
       const triggerTipoEl = document.getElementById('man_trigger_tipo');
@@ -363,6 +396,18 @@
       const triggerTipoEl = document.getElementById('man_trigger_tipo');
       if (triggerCheckbox) triggerCheckbox.checked = (triggerTipo === 'qualquer');
       if (triggerTipoEl) triggerTipoEl.value = triggerTipo;
+
+      itensCadastroInteligente = Array.isArray(m.itens) ? m.itens.map(i => ({
+        id: i.id,
+        mai_descricao: i.mai_descricao,
+        mai_tipo_item: i.mai_tipo_item,
+        mai_quantidade: i.mai_quantidade,
+        mai_valor_unitario: i.mai_valor_unitario,
+        mai_valor_total: i.mai_valor_total,
+        mai_produto_id: i.mai_produto_id,
+        mai_servico_id: i.mai_servico_id
+      })) : [];
+      renderItensCadastroInteligente();
 
       if (titleEl) titleEl.textContent = 'Editar manutenção';
       btnSave?.querySelector('.btn-text') && (btnSave.querySelector('.btn-text').textContent = 'Salvar alterações');
@@ -401,7 +446,7 @@
       resetForm();
       lockButton(true, 'Carregando...');
       try {
-        const json = await fetchJson(`${getBaseUrl()}admin/manutencao-inteligente/editar/${id}`);
+        const json = await fetchJson(`${getBaseUrl()}admin/manutencao-inteligente/detalhes/${id}`);
         fillForm(json.data);
         getBsModal()?.show();
         setTimeout(() => document.getElementById('man_veiculo_id')?.focus?.(), 150);
@@ -423,6 +468,41 @@
       const obs = m.man_obs || m.observacoes || '';
       const servico = m.servico_nome || 'Manutenção agendada';
       const obsEscaped = obs ? obs.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') : '';
+      const itens = Array.isArray(m.itens) ? m.itens : [];
+      const manTotal = parseFloat(m.man_total || 0);
+      const podeEditarItens = ['aberta', 'rascunho'].includes(m.man_status || '');
+      const isManutencao = !!m.id && Array.isArray(m.itens); // detalhes API retorna itens só para manutenções
+
+      let itensHtml = '';
+      if (isManutencao) {
+        itensHtml = `
+          <div class="pt-2 border-top" data-manutencao-id="${m.id}">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="fw-semibold">Produtos e Serviços</span>
+              ${podeEditarItens ? `<button type="button" class="btn btn-sm btn-primary btn-adicionar-item-inteligente" data-man-id="${m.id}"><iconify-icon icon="iconamoon:plus-duotone"></iconify-icon> Adicionar item</button>` : ''}
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover mb-0">
+                <thead><tr><th>Descrição</th><th class="text-center">Tipo</th><th class="text-center">Qtd</th><th class="text-end">Valor</th><th class="text-end">Total</th>${podeEditarItens ? '<th style="width:50px;"></th>' : ''}</tr></thead>
+                <tbody id="detalhes-itens-tbody">
+                  ${itens.map((i) => {
+                    const tipoItem = (i.mai_tipo_item || '') === 'produto' ? 'Produto' : 'Serviço';
+                    const tipoCls = (i.mai_tipo_item || '') === 'produto' ? 'info' : 'success';
+                    return `<tr data-item-id="${i.id}"><td>${String(i.mai_descricao || '-').replace(/</g, '&lt;')}</td><td class="text-center"><span class="badge bg-${tipoCls}-subtle text-${tipoCls}">${tipoItem}</span></td><td class="text-center">${i.mai_quantidade || 1}</td><td class="text-end">${formatMoney(i.mai_valor_unitario)}</td><td class="text-end fw-semibold">${formatMoney(i.mai_valor_total)}</td>${podeEditarItens ? `<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger btn-remover-item-inteligente" data-item-id="${i.id}" title="Remover">×</button></td>` : ''}</tr>`;
+                  }).join('')}
+                  ${itens.length === 0 ? `<tr><td colspan="${podeEditarItens ? 6 : 5}" class="text-muted text-center py-2">Nenhum item. Clique em Adicionar item.</td></tr>` : ''}
+                </tbody>
+              </table>
+            </div>
+            <div class="d-flex justify-content-end mt-2">
+              <span class="fw-bold">Total: <span id="detalhes-man-total">${formatMoney(manTotal)}</span></span>
+            </div>
+            <div class="mt-2">
+              <a href="${getBaseUrl()}admin/manutencao/${m.id}/pdf" target="_blank" class="btn btn-sm btn-outline-primary"><iconify-icon icon="iconamoon:printer-duotone"></iconify-icon> Imprimir / PDF</a>
+            </div>
+          </div>
+        `;
+      }
 
       let html = `
         <div class="d-flex flex-column gap-3">
@@ -456,6 +536,7 @@
             <p class="mb-0 text-break">${obsEscaped}</p>
           </div>
           ` : ''}
+          ${itensHtml}
         </div>
       `;
       return html;
@@ -519,11 +600,28 @@
 
       lockButton(true, id ? 'Salvando...' : 'Adicionando...');
       try {
-        const url = id
-          ? `${getBaseUrl()}admin/manutencao-inteligente/atualizar/${id}`
-          : `${getBaseUrl()}admin/manutencao-inteligente/criar`;
-
-        await fetchJson(url, { method: 'POST', body: fd });
+        let novoId = id;
+        if (!id) {
+          const criarRes = await fetchJson(`${getBaseUrl()}admin/manutencao-inteligente/criar`, { method: 'POST', body: fd });
+          novoId = criarRes?.id || null;
+          if (novoId && itensCadastroInteligente.length > 0) {
+            for (const it of itensCadastroInteligente) {
+              const payload = {
+                tipo_item: it.mai_tipo_item || 'produto',
+                quantidade: it.mai_quantidade || 1
+              };
+              if ((it.mai_tipo_item || '') === 'servico') payload.servico_id = it.mai_servico_id;
+              else payload.produto_id = it.mai_produto_id;
+              await fetchJson(`${getBaseUrl()}admin/manutencao/${novoId}/itens`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify(payload)
+              });
+            }
+          }
+        } else {
+          await fetchJson(`${getBaseUrl()}admin/manutencao-inteligente/atualizar/${id}`, { method: 'POST', body: fd });
+        }
         getBsModal()?.hide();
         await reload();
         resetForm();
@@ -633,7 +731,263 @@
 
     btnConfirmarCompletar?.addEventListener('click', submitCompletar);
 
+    // Carregar produtos e serviços para o modal Adicionar item
+    const carregarProdutosServicos = async (forCadastro = false) => {
+      const [produtosRes, servicosRes] = await Promise.all([
+        fetchJson(`${getBaseUrl()}admin/cadastro/produtos/listar`).catch(() => ({ data: [] })),
+        fetchJson(`${getBaseUrl()}admin/cadastro/servicos/listar`).catch(() => ({ data: [] }))
+      ]);
+      const produtos = Array.isArray(produtosRes?.data) ? produtosRes.data : [];
+      const servicos = Array.isArray(servicosRes?.data) ? servicosRes.data : [];
+      const prodOpts = '<option value="">Selecione um produto</option>' + produtos.map(p => {
+        const preco = parseFloat(p.pro_preco_venda || p.pro_preco_custo || 0);
+        return `<option value="${p.id}" data-preco="${preco}">${String(p.pro_nome || '').replace(/</g, '&lt;')} - ${formatMoney(preco)}</option>`;
+      }).join('');
+      const servOpts = '<option value="">Selecione um serviço</option>' + servicos.map(s => {
+        const preco = parseFloat(s.ser_preco_padrao || 0);
+        return `<option value="${s.id}" data-preco="${preco}">${String(s.ser_nome || '').replace(/</g, '&lt;')} - ${formatMoney(preco)}</option>`;
+      }).join('');
+      if (forCadastro) {
+        const sp = document.getElementById('cadastro-inteligente-item-produto-id');
+        const ss = document.getElementById('cadastro-inteligente-item-servico-id');
+        if (sp) sp.innerHTML = prodOpts;
+        if (ss) ss.innerHTML = servOpts;
+      } else {
+        const selectProd = document.getElementById('item-produto-id');
+        const selectServ = document.getElementById('item-servico-id');
+        if (selectProd) selectProd.innerHTML = prodOpts;
+        if (selectServ) selectServ.innerHTML = servOpts;
+      }
+    };
+
+    const modalAdicionarItem = document.getElementById('modalAdicionarItem');
+    const itemTipo = document.getElementById('item-tipo');
+    const itemProdutoId = document.getElementById('item-produto-id');
+    const itemServicoId = document.getElementById('item-servico-id');
+    const itemQuantidade = document.getElementById('item-quantidade');
+    const itemValorUnitDisplay = document.getElementById('item-valor-unit-display');
+    const itemSubtotalDisplay = document.getElementById('item-subtotal-display');
+    const grupoProdutoItem = document.getElementById('grupo-produto-item');
+    const grupoServicoItem = document.getElementById('grupo-servico-item');
+    const formItemAlert = document.getElementById('form-item-alert');
+    const btnSalvarItemInteligente = document.getElementById('btn-salvar-item-inteligente');
+
+    const getValorUnitarioItem = () => {
+      const tipo = (itemTipo?.value || 'produto');
+      const sel = tipo === 'produto' ? itemProdutoId : itemServicoId;
+      const opt = sel?.options?.[sel.selectedIndex];
+      return opt ? parseFloat(opt.getAttribute('data-preco') || 0) : 0;
+    };
+
+    const atualizarPreviewItem = () => {
+      const qtd = parseInt(itemQuantidade?.value || 1, 10) || 1;
+      const vu = getValorUnitarioItem();
+      const st = qtd * vu;
+      if (itemValorUnitDisplay) itemValorUnitDisplay.textContent = formatMoney(vu);
+      if (itemSubtotalDisplay) itemSubtotalDisplay.textContent = formatMoney(st);
+    };
+
+    const toggleGruposItem = () => {
+      const tipo = (itemTipo?.value || 'produto');
+      if (grupoProdutoItem) grupoProdutoItem.classList.toggle('d-none', tipo !== 'produto');
+      if (grupoServicoItem) grupoServicoItem.classList.toggle('d-none', tipo !== 'servico');
+      atualizarPreviewItem();
+    };
+
+    const openAdicionarItem = async (manId) => {
+      const idEl = document.getElementById('item-manutencao-id');
+      if (idEl) idEl.value = manId;
+      if (formItemAlert) { formItemAlert.classList.add('d-none'); formItemAlert.textContent = ''; }
+      document.getElementById('formAdicionarItem')?.reset?.();
+      if (itemQuantidade) itemQuantidade.value = '1';
+      await carregarProdutosServicos();
+      toggleGruposItem();
+      if (window.bootstrap?.Modal && modalAdicionarItem) {
+        window.bootstrap.Modal.getOrCreateInstance(modalAdicionarItem).show();
+      }
+    };
+
+    const refreshDetalhesBody = async (manId) => {
+      const bodyEl = document.getElementById('detalhes-manutencao-body');
+      if (!bodyEl || !manId) return;
+      try {
+        const json = await fetchJson(`${getBaseUrl()}admin/manutencao-inteligente/detalhes/${manId}`);
+        bodyEl.innerHTML = buildDetalhesHtml(json.data);
+      } catch (err) {
+        console.error('Erro ao atualizar detalhes:', err);
+      }
+    };
+
+    const submitAdicionarItem = async () => {
+      const manId = document.getElementById('item-manutencao-id')?.value;
+      const tipo = (itemTipo?.value || 'produto');
+      const produtoId = tipo === 'produto' ? parseInt(itemProdutoId?.value || 0, 10) : 0;
+      const servicoId = tipo === 'servico' ? parseInt(itemServicoId?.value || 0, 10) : 0;
+      const quantidade = parseInt(itemQuantidade?.value || 1, 10) || 1;
+      if (!manId) return;
+      if (tipo === 'produto' && produtoId < 1) {
+        if (formItemAlert) { formItemAlert.textContent = 'Selecione um produto.'; formItemAlert.classList.remove('d-none'); }
+        return;
+      }
+      if (tipo === 'servico' && servicoId < 1) {
+        if (formItemAlert) { formItemAlert.textContent = 'Selecione um serviço.'; formItemAlert.classList.remove('d-none'); }
+        return;
+      }
+      const payload = { tipo_item: tipo, quantidade };
+      if (tipo === 'produto') payload.produto_id = produtoId; else payload.servico_id = servicoId;
+
+      if (btnSalvarItemInteligente) btnSalvarItemInteligente.disabled = true;
+      const span = btnSalvarItemInteligente?.querySelector('.btn-text');
+      const origText = span?.textContent;
+      if (span) span.textContent = 'Aguarde...';
+      try {
+        const res = await fetch(`${getBaseUrl()}admin/manutencao/${manId}/itens`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json().catch(() => ({}));
+        if (json.success) {
+          if (window.bootstrap?.Modal && modalAdicionarItem) window.bootstrap.Modal.getOrCreateInstance(modalAdicionarItem).hide();
+          await refreshDetalhesBody(manId);
+          if (window.toastr) window.toastr.success('Item adicionado.');
+        } else {
+          if (formItemAlert) { formItemAlert.textContent = json.message || 'Erro ao adicionar.'; formItemAlert.classList.remove('d-none'); }
+        }
+      } catch (err) {
+        if (formItemAlert) { formItemAlert.textContent = 'Erro ao adicionar item.'; formItemAlert.classList.remove('d-none'); }
+      } finally {
+        if (btnSalvarItemInteligente) btnSalvarItemInteligente.disabled = false;
+        if (span) span.textContent = origText || 'Adicionar';
+      }
+    };
+
+    if (itemTipo) itemTipo.addEventListener('change', toggleGruposItem);
+    if (itemProdutoId) itemProdutoId.addEventListener('change', atualizarPreviewItem);
+    if (itemServicoId) itemServicoId.addEventListener('change', atualizarPreviewItem);
+    if (itemQuantidade) itemQuantidade.addEventListener('input', atualizarPreviewItem);
+    btnSalvarItemInteligente?.addEventListener('click', submitAdicionarItem);
+
+    if (modalAdicionarItem) {
+      modalAdicionarItem.addEventListener('show.bs.modal', toggleGruposItem);
+    }
+
+    // Cadastro modal: Adicionar item (produtos/serviços)
+    const modalItemCadastroInt = document.getElementById('modalAdicionarItemCadastroInteligente');
+    const itemTipoCadInt = document.getElementById('cadastro-inteligente-item-tipo');
+    const itemProdCadInt = document.getElementById('cadastro-inteligente-item-produto-id');
+    const itemServCadInt = document.getElementById('cadastro-inteligente-item-servico-id');
+    const itemQtdCadInt = document.getElementById('cadastro-inteligente-item-quantidade');
+    const getVuCadInt = () => {
+      const tipo = (itemTipoCadInt?.value || 'produto');
+      const sel = tipo === 'produto' ? itemProdCadInt : itemServCadInt;
+      const opt = sel?.options?.[sel.selectedIndex];
+      return opt ? parseFloat(opt.getAttribute('data-preco') || 0) : 0;
+    };
+    const attPreviewCadInt = () => {
+      const q = parseInt((itemQtdCadInt?.value || 1), 10) || 1;
+      const elVu = document.getElementById('cadastro-inteligente-item-vu');
+      const elSt = document.getElementById('cadastro-inteligente-item-subtotal');
+      if (elVu) elVu.textContent = formatMoney(getVuCadInt());
+      if (elSt) elSt.textContent = formatMoney(q * getVuCadInt());
+    };
+    const toggleGruposCadInt = () => {
+      const tipo = (itemTipoCadInt?.value || 'produto');
+      const gp = document.getElementById('cadastro-inteligente-grupo-produto');
+      const gs = document.getElementById('cadastro-inteligente-grupo-servico');
+      if (gp) gp.classList.toggle('d-none', tipo !== 'produto');
+      if (gs) gs.classList.toggle('d-none', tipo !== 'servico');
+      attPreviewCadInt();
+    };
+    itemTipoCadInt?.addEventListener('change', toggleGruposCadInt);
+    itemProdCadInt?.addEventListener('change', attPreviewCadInt);
+    itemServCadInt?.addEventListener('change', attPreviewCadInt);
+    itemQtdCadInt?.addEventListener('input', attPreviewCadInt);
+
+    document.getElementById('btn-adicionar-item-cadastro-inteligente')?.addEventListener('click', async () => {
+      document.getElementById('cadastro-inteligente-form-item-alert')?.classList.add('d-none');
+      document.getElementById('formAdicionarItemCadastroInteligente')?.reset?.();
+      if (itemQtdCadInt) itemQtdCadInt.value = '1';
+      await carregarProdutosServicos(true);
+      toggleGruposCadInt();
+      if (window.bootstrap?.Modal && modalItemCadastroInt) window.bootstrap.Modal.getOrCreateInstance(modalItemCadastroInt).show();
+    });
+
+    document.getElementById('btn-salvar-item-cadastro-inteligente')?.addEventListener('click', async () => {
+      const manId = document.getElementById('man_id')?.value || '';
+      const tipo = (itemTipoCadInt?.value || 'produto');
+      const prodId = tipo === 'produto' ? parseInt((itemProdCadInt?.value || 0), 10) : 0;
+      const servId = tipo === 'servico' ? parseInt((itemServCadInt?.value || 0), 10) : 0;
+      const qtd = parseInt((itemQtdCadInt?.value || 1), 10) || 1;
+      const alertItem = document.getElementById('cadastro-inteligente-form-item-alert');
+      if (tipo === 'produto' && prodId < 1) {
+        if (alertItem) { alertItem.textContent = 'Selecione um produto.'; alertItem.classList.remove('d-none'); }
+        return;
+      }
+      if (tipo === 'servico' && servId < 1) {
+        if (alertItem) { alertItem.textContent = 'Selecione um serviço.'; alertItem.classList.remove('d-none'); }
+        return;
+      }
+      const vu = getVuCadInt();
+      const novoItem = {
+        mai_descricao: ((tipo === 'produto' ? itemProdCadInt?.options?.[itemProdCadInt.selectedIndex] : itemServCadInt?.options?.[itemServCadInt.selectedIndex])?.text?.split(' - ')[0]) || '',
+        mai_tipo_item: tipo,
+        mai_quantidade: qtd,
+        mai_valor_unitario: vu,
+        mai_valor_total: qtd * vu,
+        mai_produto_id: tipo === 'produto' ? prodId : null,
+        mai_servico_id: tipo === 'servico' ? servId : null
+      };
+      if (manId) {
+        const btnSalvar = document.getElementById('btn-salvar-item-cadastro-inteligente');
+        if (btnSalvar) btnSalvar.disabled = true;
+        try {
+          const res = await fetchJson(`${getBaseUrl()}admin/manutencao/${manId}/itens`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ tipo_item: tipo, quantidade: qtd, produto_id: prodId || undefined, servico_id: servId || undefined })
+          });
+          if (res?.success && res?.item) {
+            itensCadastroInteligente.push(res.item);
+            renderItensCadastroInteligente();
+            if (window.bootstrap?.Modal && modalItemCadastroInt) window.bootstrap.Modal.getOrCreateInstance(modalItemCadastroInt).hide();
+            if (window.toastr) window.toastr.success('Item adicionado.');
+          } else if (alertItem) { alertItem.textContent = res?.message || 'Erro ao adicionar.'; alertItem.classList.remove('d-none'); }
+        } catch (err) {
+          if (alertItem) { alertItem.textContent = 'Erro ao adicionar item.'; alertItem.classList.remove('d-none'); }
+        } finally {
+          if (btnSalvar) btnSalvar.disabled = false;
+        }
+      } else {
+        itensCadastroInteligente.push(novoItem);
+        renderItensCadastroInteligente();
+        if (window.bootstrap?.Modal && modalItemCadastroInt) window.bootstrap.Modal.getOrCreateInstance(modalItemCadastroInt).hide();
+      }
+    });
+
     document.addEventListener('click', (e) => {
+      const btnRmCad = e.target.closest?.('.btn-remover-item-cadastro-inteligente');
+      if (btnRmCad) {
+        e.preventDefault();
+        const idx = parseInt(btnRmCad.getAttribute('data-idx'), 10);
+        const manId = document.getElementById('man_id')?.value || '';
+        const item = itensCadastroInteligente[idx];
+        if (item?.id && manId) {
+          btnRmCad.disabled = true;
+          fetch(`${getBaseUrl()}admin/manutencao/itens/deletar/${item.id}`, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' } })
+            .then(r => r.json()).then((json) => {
+              if (json?.success) {
+                itensCadastroInteligente.splice(idx, 1);
+                renderItensCadastroInteligente();
+                if (window.toastr) window.toastr.success('Item removido.');
+              }
+            }).finally(() => { btnRmCad.disabled = false; });
+        } else {
+          itensCadastroInteligente.splice(idx, 1);
+          renderItensCadastroInteligente();
+        }
+        return;
+      }
       const btnCompletar = e.target.closest?.('.btn-completar-manutencao');
       if (btnCompletar) {
         const id = btnCompletar.getAttribute('data-id');
@@ -660,6 +1014,41 @@
           e.preventDefault();
           openDetalhes(id);
         }
+      }
+
+      const btnAdicionar = e.target.closest?.('.btn-adicionar-item-inteligente');
+      if (btnAdicionar) {
+        e.preventDefault();
+        const manId = btnAdicionar.getAttribute('data-man-id');
+        if (manId) openAdicionarItem(manId);
+      }
+
+      const btnRemover = e.target.closest?.('.btn-remover-item-inteligente');
+      if (btnRemover) {
+        e.preventDefault();
+        const itemId = btnRemover.getAttribute('data-item-id');
+        const wrapper = document.querySelector('[data-manutencao-id]');
+        const manId = wrapper?.getAttribute('data-manutencao-id');
+        if (!itemId || !manId || !confirm('Remover este item?')) return;
+        btnRemover.disabled = true;
+        fetch(`${getBaseUrl()}admin/manutencao/itens/deletar/${itemId}`, {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' }
+        })
+          .then(r => r.json().catch(() => ({})))
+          .then(async (json) => {
+            if (json.success) {
+              await refreshDetalhesBody(manId);
+              if (window.toastr) window.toastr.success('Item removido.');
+            } else {
+              if (window.toastr) window.toastr.error(json.message || 'Erro ao remover.');
+              btnRemover.disabled = false;
+            }
+          })
+          .catch(() => {
+            if (window.toastr) window.toastr.error('Erro ao remover item.');
+            btnRemover.disabled = false;
+          });
       }
     });
 

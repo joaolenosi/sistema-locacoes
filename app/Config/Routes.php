@@ -58,6 +58,8 @@ $routes->get('admin/manutencao', 'Manutencao::index');
 $routes->get('admin/manutencao/detalhes/(:num)', 'ManutencaoInteligente::detalhesView/$1');
 $routes->post('admin/manutencao/(:num)/fotos', 'ManutencaoInteligente::uploadFoto/$1');
 $routes->post('admin/manutencao/fotos/deletar/(:num)', 'ManutencaoInteligente::deletarFoto/$1');
+$routes->post('admin/manutencao/(:num)/itens', 'ManutencaoInteligente::adicionarItem/$1');
+$routes->post('admin/manutencao/itens/deletar/(:num)', 'ManutencaoInteligente::removerItem/$1');
 $routes->get('admin/manutencao/(:num)/pdf', 'ManutencaoInteligente::pdf/$1');
 $routes->get('admin/manutencao-inteligente/foto/(:num)', 'ManutencaoInteligente::foto/$1');
 $routes->get('admin/manutencao-inteligente', 'ManutencaoInteligente::index');

@@ -305,6 +305,9 @@ class ManutencaoInteligente extends BaseController
             $fotos = $fotoModel->findByManutencao((int) $id, $empresaId);
             $manutencao['fotos'] = $fotos;
 
+            $itens = $this->buscarItensManutencao((int) $id, $empresaId);
+            $manutencao['itens'] = $itens;
+
             return $this->response->setJSON(['success' => true, 'data' => $manutencao]);
         } catch (\Throwable $e) {
             log_message('error', 'Erro ao carregar detalhes da manutenção: ' . $e->getMessage());
@@ -333,11 +336,193 @@ class ManutencaoInteligente extends BaseController
         }
         $fotoModel = new ManutencaoFotoModel();
         $manutencao['fotos'] = $fotoModel->findByManutencao((int) $id, $empresaId);
+        $manutencao['itens'] = $this->buscarItensManutencao((int) $id, $empresaId);
+
+        $produtoModel = new ProdutoModel();
+        $servicoModel = new ServicoModel();
         $data = [
             'title' => 'Detalhes da Manutenção',
             'manutencao' => $manutencao,
+            'produtos' => $produtoModel->where('pro_empresa_id', $empresaId)->where('pro_ativo', 1)->orderBy('pro_nome')->findAll(),
+            'servicos' => $servicoModel->where('ser_empresa_id', $empresaId)->where('ser_ativo', 1)->orderBy('ser_nome')->findAll(),
         ];
         return view('admin/manutencoes/detalhes', $data);
+    }
+
+    /**
+     * Busca os itens (produtos/serviços) de uma manutenção.
+     */
+    private function buscarItensManutencao(int $manutencaoId, int $empresaId): array
+    {
+        $db = \Config\Database::connect();
+        return $db->table('manutencoes_itens')
+            ->where('mai_manutencao_id', $manutencaoId)
+            ->where('mai_empresa_id', $empresaId)
+            ->orderBy('id', 'ASC')
+            ->get()
+            ->getResultArray();
+    }
+
+    /**
+     * Recalcula e atualiza man_total da manutenção (soma dos itens).
+     */
+    private function recalcularManTotal(int $manutencaoId, int $empresaId): void
+    {
+        $db = \Config\Database::connect();
+        $soma = $db->table('manutencoes_itens')
+            ->selectSum('mai_valor_total')
+            ->where('mai_manutencao_id', $manutencaoId)
+            ->where('mai_empresa_id', $empresaId)
+            ->get()
+            ->getRow();
+        $total = $soma && isset($soma->mai_valor_total) ? (float) $soma->mai_valor_total : 0.00;
+        $manutencaoModel = new ManutencaoModel();
+        $manutencaoModel->update($manutencaoId, ['man_total' => $total]);
+    }
+
+    /**
+     * POST: adiciona um item (produto ou serviço) à manutenção.
+     */
+    public function adicionarItem($id)
+    {
+        try {
+            $empresaId = get_empresa_id();
+            if ($empresaId < 1) {
+                return $this->response->setStatusCode(401)->setJSON(['success' => false, 'message' => 'Sessão inválida.']);
+            }
+            $id = (int) $id;
+            $manutencaoModel = new ManutencaoModel();
+            $manutencao = $manutencaoModel->where('id', $id)->where('man_empresa_id', $empresaId)->first();
+            if (!$manutencao) {
+                return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'Manutenção não encontrada.']);
+            }
+            $statusPermitidos = ['aberta', 'rascunho'];
+            if (!in_array($manutencao['man_status'] ?? '', $statusPermitidos, true)) {
+                return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => 'Só é possível adicionar itens em manutenções abertas ou em rascunho.']);
+            }
+
+            $payload = (array) ($this->request->getJSON(true) ?? $this->request->getPost());
+            $tipoItem = strtolower(trim((string) ($payload['tipo_item'] ?? '')));
+            if (!in_array($tipoItem, ['produto', 'servico'], true)) {
+                return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => 'Informe o tipo: produto ou servico.']);
+            }
+            $quantidade = max(1, (int) ($payload['quantidade'] ?? 1));
+
+            $descricao = '';
+            $valorUnitario = 0.00;
+            $produtoId = null;
+            $servicoId = null;
+
+            if ($tipoItem === 'produto') {
+                $produtoId = (int) ($payload['produto_id'] ?? 0);
+                if ($produtoId < 1) {
+                    return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => 'Selecione um produto.']);
+                }
+                $produtoModel = new ProdutoModel();
+                $produto = $produtoModel->where('id', $produtoId)->where('pro_empresa_id', $empresaId)->first();
+                if (!$produto) {
+                    return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'Produto não encontrado.']);
+                }
+                $descricao = $produto['pro_nome'] ?? 'Produto';
+                $valorUnitario = (float) ($produto['pro_preco_venda'] ?? $produto['pro_preco_custo'] ?? 0);
+            } else {
+                $servicoId = (int) ($payload['servico_id'] ?? 0);
+                if ($servicoId < 1) {
+                    return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => 'Selecione um serviço.']);
+                }
+                $servicoModel = new ServicoModel();
+                $servico = $servicoModel->where('id', $servicoId)->where('ser_empresa_id', $empresaId)->first();
+                if (!$servico) {
+                    return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'Serviço não encontrado.']);
+                }
+                $descricao = $servico['ser_nome'] ?? 'Serviço';
+                $valorUnitario = (float) ($servico['ser_preco_padrao'] ?? 0);
+            }
+
+            $valorTotal = round($quantidade * $valorUnitario, 2);
+
+            $db = \Config\Database::connect();
+            $db->table('manutencoes_itens')->insert([
+                'mai_empresa_id' => $empresaId,
+                'mai_manutencao_id' => $id,
+                'mai_tipo_item' => $tipoItem,
+                'mai_produto_id' => $produtoId,
+                'mai_servico_id' => $servicoId,
+                'mai_descricao' => $descricao,
+                'mai_quantidade' => $quantidade,
+                'mai_valor_unitario' => $valorUnitario,
+                'mai_valor_total' => $valorTotal,
+            ]);
+
+            $itemId = $db->insertID();
+            $this->recalcularManTotal($id, $empresaId);
+
+            $item = [
+                'id' => $itemId,
+                'mai_descricao' => $descricao,
+                'mai_tipo_item' => $tipoItem,
+                'mai_quantidade' => $quantidade,
+                'mai_valor_unitario' => $valorUnitario,
+                'mai_valor_total' => $valorTotal,
+            ];
+
+            $manutencaoAtual = $manutencaoModel->find($id);
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Item adicionado.',
+                'item' => $item,
+                'man_total' => (float) ($manutencaoAtual['man_total'] ?? 0),
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao adicionar item na manutenção: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Erro ao adicionar item.']);
+        }
+    }
+
+    /**
+     * POST: remove um item da manutenção.
+     */
+    public function removerItem($itemId)
+    {
+        try {
+            $empresaId = get_empresa_id();
+            if ($empresaId < 1) {
+                return $this->response->setStatusCode(401)->setJSON(['success' => false, 'message' => 'Sessão inválida.']);
+            }
+            $itemId = (int) $itemId;
+            $db = \Config\Database::connect();
+            $item = $db->table('manutencoes_itens')
+                ->where('id', $itemId)
+                ->where('mai_empresa_id', $empresaId)
+                ->get()
+                ->getRowArray();
+            if (!$item) {
+                return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'Item não encontrado.']);
+            }
+            $manutencaoId = (int) $item['mai_manutencao_id'];
+            $manutencaoModel = new ManutencaoModel();
+            $manutencao = $manutencaoModel->where('id', $manutencaoId)->where('man_empresa_id', $empresaId)->first();
+            if (!$manutencao) {
+                return $this->response->setStatusCode(404)->setJSON(['success' => false, 'message' => 'Manutenção não encontrada.']);
+            }
+            $statusPermitidos = ['aberta', 'rascunho'];
+            if (!in_array($manutencao['man_status'] ?? '', $statusPermitidos, true)) {
+                return $this->response->setStatusCode(422)->setJSON(['success' => false, 'message' => 'Só é possível remover itens de manutenções abertas ou em rascunho.']);
+            }
+
+            $db->table('manutencoes_itens')->where('id', $itemId)->delete();
+            $this->recalcularManTotal($manutencaoId, $empresaId);
+            $manutencaoAtual = $manutencaoModel->find($manutencaoId);
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Item removido.',
+                'man_total' => (float) ($manutencaoAtual['man_total'] ?? 0),
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao remover item da manutenção: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON(['success' => false, 'message' => 'Erro ao remover item.']);
+        }
     }
 
     private const FOTO_MAX_SIZE = 5 * 1024 * 1024; // 5MB
