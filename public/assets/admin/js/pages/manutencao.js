@@ -62,12 +62,17 @@
                 var label = statusLabel[c] || c;
                 return gridjs.html('<span class="badge ' + cls + '">' + label + '</span>');
             }},
-            { name: 'Ações', width: '180px', formatter: function (cell, row) {
+            { name: 'Ações', width: '220px', formatter: function (cell, row) {
                 var id = row.cells[0].data;
+                var placa = (row.cells[1]?.data || '').toString().replace(/"/g, '&quot;');
                 var base = (window.__BASE_URL__ || (window.location.origin + '/')).replace(/\/$/, '') + '/';
+                var iconTrash = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
                 return gridjs.html(
-                    '<a href="' + base + 'admin/manutencao/detalhes/' + id + '" class="btn btn-sm btn-outline-secondary me-1" title="Ver Detalhes"><iconify-icon icon="iconamoon:info-duotone" class="fs-18"></iconify-icon> Detalhes</a>' +
-                    '<button type="button" class="btn btn-sm btn-outline-primary btn-edit-manutencao" data-id="' + id + '" title="Editar"><iconify-icon icon="iconamoon:edit-duotone" class="fs-18"></iconify-icon> Editar</button>'
+                    '<div class="d-flex gap-1 align-items-center flex-nowrap">' +
+                    '<a href="' + base + 'admin/manutencao/detalhes/' + id + '" class="btn btn-sm btn-outline-secondary" title="Ver Detalhes"><iconify-icon icon="iconamoon:info-duotone" class="fs-18"></iconify-icon> Detalhes</a>' +
+                    '<button type="button" class="btn btn-sm btn-outline-primary btn-edit-manutencao" data-id="' + id + '" title="Editar"><iconify-icon icon="iconamoon:edit-duotone" class="fs-18"></iconify-icon> Editar</button>' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center justify-content-center btn-delete-manutencao" data-id="' + id + '" data-placa="' + placa + '" title="Excluir">' + iconTrash + '</button>' +
+                    '</div>'
                 );
             }}
         ];
@@ -381,7 +386,6 @@
         }
     };
 
-    var modalItemCadastro = document.getElementById('modalAdicionarItemCadastro');
     var itemTipoCad = document.getElementById('cadastro-item-tipo');
     var itemProdCad = document.getElementById('cadastro-item-produto-id');
     var itemServCad = document.getElementById('cadastro-item-servico-id');
@@ -392,49 +396,31 @@
         var opt = sel && sel.options && sel.options[sel.selectedIndex];
         return opt ? parseFloat(opt.getAttribute('data-preco') || 0) : 0;
     };
-    var attPreviewCad = function () {
-        var q = parseInt((itemQtdCad && itemQtdCad.value) || 1, 10) || 1;
-        var vu = getVuCad();
-        var elVu = document.getElementById('cadastro-item-vu');
-        var elSt = document.getElementById('cadastro-item-subtotal');
-        if (elVu) elVu.textContent = formatMoney(vu);
-        if (elSt) elSt.textContent = formatMoney(q * vu);
-    };
     var toggleGruposCad = function () {
         var tipo = (itemTipoCad && itemTipoCad.value) || 'produto';
         var gp = document.getElementById('cadastro-grupo-produto');
         var gs = document.getElementById('cadastro-grupo-servico');
         if (gp) gp.classList.toggle('d-none', tipo !== 'produto');
         if (gs) gs.classList.toggle('d-none', tipo !== 'servico');
-        attPreviewCad();
+        if (itemProdCad) itemProdCad.value = '';
+        if (itemServCad) itemServCad.value = '';
     };
-    if (itemTipoCad) itemTipoCad.addEventListener('change', toggleGruposCad);
-    if (itemProdCad) itemProdCad.addEventListener('change', attPreviewCad);
-    if (itemServCad) itemServCad.addEventListener('change', attPreviewCad);
-    if (itemQtdCad) itemQtdCad.addEventListener('input', attPreviewCad);
+    if (itemTipoCad) {
+        itemTipoCad.addEventListener('change', function () {
+            carregarProdutosServicos().then(toggleGruposCad);
+        });
+    }
 
     var btnAddItem = document.getElementById('btn-adicionar-item-cadastro');
-    var btnSaveItem = document.getElementById('btn-salvar-item-cadastro');
     if (btnAddItem) {
         btnAddItem.addEventListener('click', function () {
             var alertItem = document.getElementById('cadastro-form-item-alert');
             if (alertItem) { alertItem.classList.add('d-none'); alertItem.textContent = ''; }
-            document.getElementById('formAdicionarItemCadastro') && document.getElementById('formAdicionarItemCadastro').reset();
-            if (itemQtdCad) itemQtdCad.value = '1';
-            carregarProdutosServicos().then(function () {
-                toggleGruposCad();
-                if (window.bootstrap && modalItemCadastro) window.bootstrap.Modal.getOrCreateInstance(modalItemCadastro).show();
-            });
-        });
-    }
-    if (btnSaveItem) {
-        btnSaveItem.addEventListener('click', function () {
             var manId = document.getElementById('man_id').value;
             var tipo = (itemTipoCad && itemTipoCad.value) || 'produto';
             var prodId = tipo === 'produto' ? parseInt((itemProdCad && itemProdCad.value) || 0, 10) : 0;
             var servId = tipo === 'servico' ? parseInt((itemServCad && itemServCad.value) || 0, 10) : 0;
             var qtd = parseInt((itemQtdCad && itemQtdCad.value) || 1, 10) || 1;
-            var alertItem = document.getElementById('cadastro-form-item-alert');
             if (tipo === 'produto' && prodId < 1) {
                 if (alertItem) { alertItem.textContent = 'Selecione um produto.'; alertItem.classList.remove('d-none'); }
                 return;
@@ -444,20 +430,18 @@
                 return;
             }
             var vu = getVuCad();
-            var vt = qtd * vu;
+            var descricao = (tipo === 'produto' && itemProdCad && itemProdCad.options[itemProdCad.selectedIndex]) ? itemProdCad.options[itemProdCad.selectedIndex].text.split(' - ')[0] : ((tipo === 'servico' && itemServCad && itemServCad.options[itemServCad.selectedIndex]) ? itemServCad.options[itemServCad.selectedIndex].text.split(' - ')[0] : '');
             var novoItem = {
-                mai_descricao: (tipo === 'produto' ? (itemProdCad && itemProdCad.options[itemProdCad.selectedIndex] && itemProdCad.options[itemProdCad.selectedIndex].text) : (itemServCad && itemServCad.options[itemServCad.selectedIndex] && itemServCad.options[itemServCad.selectedIndex].text)) || '',
+                mai_descricao: descricao,
                 mai_tipo_item: tipo,
                 mai_quantidade: qtd,
                 mai_valor_unitario: vu,
-                mai_valor_total: vt,
+                mai_valor_total: qtd * vu,
                 mai_produto_id: tipo === 'produto' ? prodId : null,
                 mai_servico_id: tipo === 'servico' ? servId : null
             };
             if (manId) {
-                btnSaveItem.disabled = true;
-                var stxt = btnSaveItem.querySelector('.btn-text');
-                if (stxt) stxt.textContent = 'Aguarde...';
+                btnAddItem.disabled = true;
                 fetch(getBaseUrl() + 'admin/manutencao/' + manId + '/itens', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
@@ -466,34 +450,119 @@
                     if (json && json.success && json.item) {
                         itensCadastro.push(json.item);
                         renderItensCadastro();
-                        if (window.bootstrap && modalItemCadastro) window.bootstrap.Modal.getOrCreateInstance(modalItemCadastro).hide();
                         if (window.toastr) window.toastr.success('Item adicionado.');
+                        if (itemQtdCad) itemQtdCad.value = '1';
                     } else if (alertItem) {
                         alertItem.textContent = (json && json.message) || 'Erro ao adicionar.';
                         alertItem.classList.remove('d-none');
                     }
                 }).catch(function () {
                     if (alertItem) { alertItem.textContent = 'Erro ao adicionar item.'; alertItem.classList.remove('d-none'); }
-                }).finally(function () {
-                    btnSaveItem.disabled = false;
-                    if (stxt) stxt.textContent = 'Adicionar';
-                });
+                }).finally(function () { btnAddItem.disabled = false; });
             } else {
-                novoItem.mai_descricao = (tipo === 'produto' && itemProdCad && itemProdCad.options[itemProdCad.selectedIndex]) ? itemProdCad.options[itemProdCad.selectedIndex].text.split(' - ')[0] : ((tipo === 'servico' && itemServCad && itemServCad.options[itemServCad.selectedIndex]) ? itemServCad.options[itemServCad.selectedIndex].text.split(' - ')[0] : '');
                 itensCadastro.push(novoItem);
                 renderItensCadastro();
-                if (window.bootstrap && modalItemCadastro) window.bootstrap.Modal.getOrCreateInstance(modalItemCadastro).hide();
+                if (itemQtdCad) itemQtdCad.value = '1';
             }
         });
     }
 
+    modalEl.addEventListener('show.bs.modal', function () {
+        carregarProdutosServicos().then(toggleGruposCad);
+    });
+
     document.addEventListener('click', function (e) {
-        var btn = e.target && e.target.closest && e.target.closest('.btn-edit-manutencao');
-        if (btn) {
+        var btnEdit = e.target && e.target.closest && e.target.closest('.btn-edit-manutencao');
+        if (btnEdit) {
             e.preventDefault();
-            var id = btn.getAttribute('data-id');
+            var id = btnEdit.getAttribute('data-id');
             if (id) openEdit(id);
+            return;
         }
+
+        var btnDelete = e.target && e.target.closest && e.target.closest('.btn-delete-manutencao');
+        if (btnDelete) {
+            e.preventDefault();
+            var id = btnDelete.getAttribute('data-id');
+            var placa = btnDelete.getAttribute('data-placa') || '';
+            if (!id) return;
+
+            var msg = placa ? 'Você está prestes a excluir a manutenção do veículo ' + placa + '.' : 'Você está prestes a excluir esta manutenção.';
+
+            var executeDelete = function () {
+                btnDelete.disabled = true;
+                btnDelete.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                fetch(getBaseUrl() + 'admin/manutencao-inteligente/excluir/' + id, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' }
+                })
+                    .then(function (res) {
+                        return res.json().catch(function () { return null; }).then(function (json) {
+                            return { ok: res.ok, json: json };
+                        });
+                    })
+                    .then(function (result) {
+                        if (result.ok && result.json && result.json.success) {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Manutenção excluída',
+                                    text: result.json.message || 'A manutenção foi excluída com sucesso.',
+                                    confirmButtonText: 'OK'
+                                }).then(function () { window.dispatchEvent(new CustomEvent('manutencao-reload')); });
+                            } else {
+                                alert(result.json.message || 'Manutenção excluída com sucesso.');
+                                window.dispatchEvent(new CustomEvent('manutencao-reload'));
+                            }
+                        } else {
+                            var errMsg = (result.json && result.json.message) ? result.json.message : 'Não foi possível excluir a manutenção.';
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Não foi possível excluir',
+                                    text: errMsg,
+                                    confirmButtonText: 'OK'
+                                });
+                            } else {
+                                alert(errMsg);
+                            }
+                        }
+                    })
+                    .catch(function () {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Erro',
+                                text: 'Erro ao excluir manutenção. Tente novamente.',
+                                confirmButtonText: 'OK'
+                            });
+                        } else {
+                            alert('Erro ao excluir manutenção. Tente novamente.');
+                        }
+                    })
+                    .finally(function () {
+                        btnDelete.disabled = false;
+                        btnDelete.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
+                    });
+            };
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Excluir manutenção?',
+                    text: msg,
+                    showCancelButton: true,
+                    confirmButtonText: 'Sim, excluir',
+                    cancelButtonText: 'Cancelar'
+                }).then(function (result) {
+                    if (result && result.isConfirmed) executeDelete();
+                });
+            } else if (confirm('Tem certeza que deseja excluir esta manutenção?')) {
+                executeDelete();
+            }
+            return;
+        }
+
         var btnRm = e.target && e.target.closest && e.target.closest('.btn-remover-item-cadastro');
         if (btnRm) {
             e.preventDefault();

@@ -161,4 +161,71 @@ class Servicos extends BaseController
         if (($data['ser_nome'] ?? '') === '') return 'Informe o nome.';
         return null;
     }
+
+    public function excluir($id)
+    {
+        try {
+            $empresaId = get_empresa_id();
+            if ($empresaId < 1) {
+                return $this->response->setStatusCode(403)->setJSON([
+                    'success' => false,
+                    'message' => 'Sessão inválida.',
+                ]);
+            }
+
+            $servicoId = (int) $id;
+            if ($servicoId < 1) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => 'Serviço inválido.',
+                ]);
+            }
+
+            $servicoModel = new ServicoModel();
+            $servico = $servicoModel
+                ->where('id', $servicoId)
+                ->where('ser_empresa_id', $empresaId)
+                ->first();
+
+            if (!$servico) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => 'Serviço não encontrado.',
+                ]);
+            }
+
+            $db = \Config\Database::connect();
+            $temVinculo = $db->table('manutencoes_itens')->where('mai_servico_id', $servicoId)->countAllResults();
+            if ($temVinculo > 0) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'success' => false,
+                    'message' => 'Não é possível excluir: o serviço está vinculado a manutenções.',
+                ]);
+            }
+            $temVinculo = $db->table('veiculo_controles')->where('vec_servico_id', $servicoId)->countAllResults();
+            if ($temVinculo > 0) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'success' => false,
+                    'message' => 'Não é possível excluir: o serviço está vinculado ao controle de veículos.',
+                ]);
+            }
+
+            if (!$servicoModel->delete($servicoId)) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'message' => 'Não foi possível excluir o serviço.',
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Serviço excluído com sucesso.',
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao excluir serviço.',
+            ]);
+        }
+    }
 }

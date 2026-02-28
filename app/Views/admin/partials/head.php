@@ -151,6 +151,15 @@
     [data-bs-theme="dark"] .breadcrumb-item.active {
         color: #e9ecef !important;
     }
+    
+    /* Backdrop dos modais: sombra mais forte e desfoque para destacar o modal em foco */
+    .modal-backdrop {
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+    }
+    .modal-backdrop.show {
+        opacity: 0.7 !important;
+    }
 </style>
 
 <!-- Theme Config js (Require in all Page) -->

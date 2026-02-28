@@ -132,4 +132,59 @@ class CategoriasFinanceiras extends BaseController
         }
         return null;
     }
+
+    public function excluir($id)
+    {
+        try {
+            $categoriaId = (int) $id;
+            if ($categoriaId < 1) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => 'Categoria inválida.',
+                ]);
+            }
+
+            $categoriaModel = new CategoriaFinanceiraModel();
+            $categoria = $categoriaModel->find($categoriaId);
+            if (!$categoria) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => 'Categoria não encontrada.',
+                ]);
+            }
+
+            $db = \Config\Database::connect();
+            $temVinculo = $db->table('lancamentos_financeiros')->where('lan_categoria_id', $categoriaId)->countAllResults();
+            if ($temVinculo > 0) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'success' => false,
+                    'message' => 'Não é possível excluir: a categoria está vinculada a lançamentos financeiros.',
+                ]);
+            }
+            if ($db->table('categorias_empresa')->where('cae_categoria_id', $categoriaId)->countAllResults() > 0) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'success' => false,
+                    'message' => 'Não é possível excluir: a categoria está vinculada a empresas.',
+                ]);
+            }
+
+            if (!$categoriaModel->delete($categoriaId)) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'message' => 'Não foi possível excluir a categoria.',
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Categoria excluída com sucesso.',
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao excluir categoria: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao excluir categoria.',
+            ]);
+        }
+    }
 }

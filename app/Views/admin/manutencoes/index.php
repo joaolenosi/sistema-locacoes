@@ -187,13 +187,13 @@
                 <form id="formManutencao" novalidate>
                     <input type="hidden" id="man_id" name="man_id" value="">
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label" for="man_veiculo_id">Veículo <span class="text-danger">*</span></label>
                             <select class="form-select" id="man_veiculo_id" name="man_veiculo_id" required>
                                 <option value="">Selecione um veículo</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label" for="man_tipo">Tipo <span class="text-danger">*</span></label>
                             <select class="form-select" id="man_tipo" name="man_tipo" required>
                                 <option value="">Selecione o tipo</option>
@@ -201,7 +201,7 @@
                                 <option value="corretiva">Corretiva</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label" for="man_data">Data Prevista <span class="text-danger">*</span></label>
                             <input type="date" class="form-control" id="man_data" name="man_data" required>
                         </div>
@@ -212,9 +212,9 @@
                         <div class="col-md-6">
                             <label class="form-label" for="man_km_atual">KM Atual</label>
                             <input type="number" class="form-control" id="man_km_atual" name="man_km_atual" placeholder="Ex.: 45000" min="0">
-                            <small class="text-muted">KM atual do veículo (será buscada automaticamente do histórico se não informada)</small>
+                            <small class="text-muted">Será buscada automaticamente do histórico se não informada.</small>
                         </div>
-                        <div class="col-12">
+                        <div class="col-12" style="margin-top: -10px;">
                             <label class="form-label" for="man_obs">Observações</label>
                             <textarea class="form-control" id="man_obs" name="man_obs" rows="3" placeholder="Observações sobre a manutenção..."></textarea>
                         </div>
@@ -229,12 +229,38 @@
                             <input type="hidden" id="man_trigger_tipo" name="man_trigger_tipo" value="qualquer">
                         </div>
                         <div class="col-12 border-top pt-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <label class="form-label fw-semibold mb-0">Produtos e Serviços</label>
-                                <button type="button" class="btn btn-sm btn-primary" id="btn-adicionar-item-cadastro">
-                                    <iconify-icon icon="iconamoon:plus-duotone"></iconify-icon> Adicionar item
-                                </button>
+                            <label class="form-label fw-semibold mb-2">Produtos e Serviços</label>
+                            <div class="row g-2 mb-3 align-items-end">
+                                <div class="col-auto">
+                                    <label class="form-label small mb-0">Tipo</label>
+                                    <select class="form-select form-select-sm" id="cadastro-item-tipo" name="tipo_item" style="min-width: 100px;">
+                                        <option value="produto">Produto</option>
+                                        <option value="servico">Serviço</option>
+                                    </select>
+                                </div>
+                                <div class="col flex-grow-1" id="cadastro-grupo-produto">
+                                    <label class="form-label small mb-0">Produto</label>
+                                    <select class="form-select form-select-sm" id="cadastro-item-produto-id" name="produto_id">
+                                        <option value="">Selecione um produto</option>
+                                    </select>
+                                </div>
+                                <div class="col flex-grow-1 d-none" id="cadastro-grupo-servico">
+                                    <label class="form-label small mb-0">Serviço</label>
+                                    <select class="form-select form-select-sm" id="cadastro-item-servico-id" name="servico_id">
+                                        <option value="">Selecione um serviço</option>
+                                    </select>
+                                </div>
+                                <div class="col-auto">
+                                    <label class="form-label small mb-0">Quantidade</label>
+                                    <input type="number" class="form-control form-control-sm" id="cadastro-item-quantidade" name="quantidade" value="1" min="1" style="width: 80px;">
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-primary btn-sm" id="btn-adicionar-item-cadastro">
+                                        <iconify-icon icon="iconamoon:plus-duotone"></iconify-icon> Adicionar
+                                    </button>
+                                </div>
                             </div>
+                            <div id="cadastro-form-item-alert" class="alert alert-danger py-2 mb-2 d-none small" role="alert"></div>
                             <div class="table-responsive">
                                 <table class="table table-sm table-hover mb-0">
                                     <thead>
@@ -259,53 +285,6 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary" id="btnSalvarManutencao">
-                    <span class="btn-text">Adicionar</span>
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal: Adicionar Item (Produto/Serviço) -->
-<div class="modal fade" id="modalAdicionarItemCadastro" tabindex="-1" aria-labelledby="modalAdicionarItemCadastroLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalAdicionarItemCadastroLabel">Adicionar produto ou serviço</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-            </div>
-            <div class="modal-body">
-                <form id="formAdicionarItemCadastro">
-                    <div class="mb-3">
-                        <label class="form-label">Tipo</label>
-                        <select class="form-select" id="cadastro-item-tipo" name="tipo_item">
-                            <option value="produto">Produto</option>
-                            <option value="servico">Serviço</option>
-                        </select>
-                    </div>
-                    <div class="mb-3" id="cadastro-grupo-produto">
-                        <label class="form-label">Produto</label>
-                        <select class="form-select" id="cadastro-item-produto-id" name="produto_id">
-                            <option value="">Selecione um produto</option>
-                        </select>
-                    </div>
-                    <div class="mb-3 d-none" id="cadastro-grupo-servico">
-                        <label class="form-label">Serviço</label>
-                        <select class="form-select" id="cadastro-item-servico-id" name="servico_id">
-                            <option value="">Selecione um serviço</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Quantidade</label>
-                        <input type="number" class="form-control" id="cadastro-item-quantidade" name="quantidade" value="1" min="1">
-                    </div>
-                    <p class="mb-0 text-muted small">Valor unit.: <span id="cadastro-item-vu">R$ 0,00</span> | Subtotal: <span id="cadastro-item-subtotal" class="fw-semibold">R$ 0,00</span></p>
-                </form>
-                <div id="cadastro-form-item-alert" class="alert alert-danger mt-2 d-none" role="alert"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="btn-salvar-item-cadastro">
                     <span class="btn-text">Adicionar</span>
                 </button>
             </div>

@@ -52,11 +52,24 @@
                     return gridjs.html('<span class="badge ' + badgeClass + '">' + (cell || '-') + '</span>');
                 }
             },
-            { id: 'acoes', name: 'Ações', width: '120px', formatter: (cell, row) => {
+            { id: 'acoes', name: 'Ações', width: '160px', formatter: (cell, row) => {
                 const verId = row.cells[8].data;
                 const tipo = row.cells[9].data;
-                const url = tipo === 'contrato' ? getBaseUrl() + 'admin/contratos/ver/' + verId : getBaseUrl() + 'admin/locacoes?editar=' + verId;
-                return gridjs.html("<a href='" + url + "' class='text-reset text-decoration-underline btn-detalhes-contrato'>Detalhes</a>");
+                const numero = (row.cells[1]?.data || '').toString();
+                const locatario = (row.cells[2]?.data || '').toString();
+                const base = getBaseUrl();
+                const url = tipo === 'contrato' ? base + 'admin/contratos/ver/' + verId : base + 'admin/locacoes?editar=' + verId;
+                const iconInfo = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>';
+                const iconTrash = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
+                const btnExcluir = tipo === 'contrato'
+                    ? '<button type="button" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center justify-content-center btn-delete-contrato" data-id="' + verId + '" data-numero="' + (numero || '').replace(/"/g, '&quot;') + '" data-locatario="' + (locatario || '').replace(/"/g, '&quot;') + '" title="Excluir">' + iconTrash + '</button>'
+                    : '';
+                return gridjs.html(
+                    '<div class="d-flex gap-2 align-items-center">' +
+                    '<a href="' + url + '" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center justify-content-center btn-detalhes-contrato" title="Detalhes">' + iconInfo + '</a>' +
+                    btnExcluir +
+                    '</div>'
+                );
             }},
             { id: 'ver_id', name: 'VerId', width: '0px', hidden: true, formatter: () => '' },
             { id: 'tipo', name: 'Tipo', width: '0px', hidden: true, formatter: () => '' }
@@ -97,11 +110,96 @@
         loadContratos(tableEl);
 
         document.addEventListener('click', function (e) {
-            const btn = e.target && e.target.closest && e.target.closest('.btn-detalhes-contrato');
-            if (btn) {
+            const btnDetalhes = e.target && e.target.closest && e.target.closest('.btn-detalhes-contrato');
+            if (btnDetalhes) {
                 e.preventDefault();
-                const href = btn.getAttribute('href');
+                const href = btnDetalhes.getAttribute('href');
                 if (href && href !== '#') window.location.href = href;
+                return;
+            }
+
+            const btnDelete = e.target && e.target.closest && e.target.closest('.btn-delete-contrato');
+            if (btnDelete) {
+                const id = btnDelete.getAttribute('data-id');
+                const numero = btnDelete.getAttribute('data-numero') || '';
+                const locatario = btnDelete.getAttribute('data-locatario') || '';
+                if (!id) return;
+
+                const msg = numero || locatario
+                    ? 'Você está prestes a excluir o contrato' + (numero ? ' "' + numero + '"' : '') + (locatario ? ' do locatário ' + locatario : '') + '.'
+                    : 'Você está prestes a excluir este contrato.';
+
+                const executeDelete = function () {
+                    btnDelete.disabled = true;
+                    btnDelete.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                    fetch(getBaseUrl() + 'admin/contratos/excluir/' + id, {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' }
+                    })
+                        .then(function (res) {
+                            return res.json().catch(function () { return null; }).then(function (json) {
+                                return { ok: res.ok, json: json };
+                            });
+                        })
+                        .then(function (result) {
+                            if (result.ok && result.json && result.json.success) {
+                                if (typeof Swal !== 'undefined') {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Contrato excluído',
+                                        text: result.json.message || 'O contrato foi excluído com sucesso.',
+                                        confirmButtonText: 'OK'
+                                    }).then(function () { loadContratos(tableEl); });
+                                } else {
+                                    alert(result.json.message || 'Contrato excluído com sucesso.');
+                                    loadContratos(tableEl);
+                                }
+                            } else {
+                                var errMsg = (result.json && result.json.message) ? result.json.message : 'Não foi possível excluir o contrato.';
+                                if (typeof Swal !== 'undefined') {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Não foi possível excluir',
+                                        text: errMsg,
+                                        confirmButtonText: 'OK'
+                                    });
+                                } else {
+                                    alert(errMsg);
+                                }
+                            }
+                        })
+                        .catch(function () {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Erro',
+                                    text: 'Erro ao excluir contrato. Tente novamente.',
+                                    confirmButtonText: 'OK'
+                                });
+                            } else {
+                                alert('Erro ao excluir contrato. Tente novamente.');
+                            }
+                        })
+                        .finally(function () {
+                            btnDelete.disabled = false;
+                            btnDelete.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
+                        });
+                };
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Excluir contrato?',
+                        text: msg,
+                        showCancelButton: true,
+                        confirmButtonText: 'Sim, excluir',
+                        cancelButtonText: 'Cancelar'
+                    }).then(function (result) {
+                        if (result && result.isConfirmed) executeDelete();
+                    });
+                } else if (confirm('Tem certeza que deseja excluir este contrato?')) {
+                    executeDelete();
+                }
             }
         });
 

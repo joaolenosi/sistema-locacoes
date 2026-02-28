@@ -58,14 +58,17 @@
       },
       {
         name: "Ações",
-        width: "120px",
+        width: "160px",
         formatter: (_cell, row) => {
           const id = row.cells[0].data;
+          const nome = (row.cells[1]?.data || "").toString().replace(/"/g, "&quot;");
+          const iconTrash = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
           return gridjs.html(`
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 align-items-center">
               <button type="button" class="btn btn-sm btn-outline-primary btn-edit-servico" data-id="${id}" title="Editar">
                 <iconify-icon icon="iconamoon:edit-duotone" class="fs-18"></iconify-icon>
               </button>
+              <button type="button" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center justify-content-center btn-delete-servico" data-id="${id}" data-nome="${nome}" title="Excluir">${iconTrash}</button>
             </div>
           `);
         },
@@ -250,10 +253,87 @@
   btnSave?.addEventListener("click", submit);
 
   document.addEventListener("click", (e) => {
-    const btn = e.target.closest?.(".btn-edit-servico");
-    if (!btn) return;
-    const id = btn.getAttribute("data-id");
-    if (id) openEdit(id);
+    const btnEdit = e.target.closest?.(".btn-edit-servico");
+    if (btnEdit) {
+      const id = btnEdit.getAttribute("data-id");
+      if (id) openEdit(id);
+      return;
+    }
+
+    const btnDelete = e.target.closest?.(".btn-delete-servico");
+    if (btnDelete) {
+      const id = btnDelete.getAttribute("data-id");
+      const nome = btnDelete.getAttribute("data-nome") || "";
+      if (!id) return;
+
+      const msg = nome ? `Você está prestes a excluir o serviço "${nome}".` : "Você está prestes a excluir este serviço.";
+
+      const executeDelete = async () => {
+        btnDelete.disabled = true;
+        btnDelete.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+        try {
+          const res = await fetch(`${getBaseUrl()}admin/cadastro/servicos/excluir/${id}`, {
+            method: "POST",
+            headers: { "X-Requested-With": "XMLHttpRequest", "Content-Type": "application/json" },
+          });
+          const json = await res.json().catch(() => null);
+          if (res.ok && json?.success) {
+            if (typeof Swal !== "undefined") {
+              await Swal.fire({
+                icon: "success",
+                title: "Serviço excluído",
+                text: json.message || "O serviço foi excluído com sucesso.",
+                confirmButtonText: "OK",
+              });
+            } else {
+              alert(json.message || "Serviço excluído com sucesso.");
+            }
+            await reload();
+          } else {
+            const errMsg = json?.message || "Não foi possível excluir o serviço.";
+            if (typeof Swal !== "undefined") {
+              Swal.fire({
+                icon: "error",
+                title: "Não foi possível excluir",
+                text: errMsg,
+                confirmButtonText: "OK",
+              });
+            } else {
+              alert(errMsg);
+            }
+          }
+        } catch (err) {
+          if (typeof Swal !== "undefined") {
+            Swal.fire({
+              icon: "error",
+              title: "Erro",
+              text: "Erro ao excluir serviço. Tente novamente.",
+              confirmButtonText: "OK",
+            });
+          } else {
+            alert("Erro ao excluir serviço. Tente novamente.");
+          }
+        } finally {
+          btnDelete.disabled = false;
+          btnDelete.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
+        }
+      };
+
+      if (typeof Swal !== "undefined") {
+        Swal.fire({
+          icon: "warning",
+          title: "Excluir serviço?",
+          text: msg,
+          showCancelButton: true,
+          confirmButtonText: "Sim, excluir",
+          cancelButtonText: "Cancelar",
+        }).then((result) => {
+          if (result.isConfirmed) executeDelete();
+        });
+      } else if (confirm("Tem certeza que deseja excluir este serviço?")) {
+        executeDelete();
+      }
+    }
   });
 
   modalEl?.addEventListener("hidden.bs.modal", () => {

@@ -258,14 +258,14 @@
                     <input type="hidden" id="man_id" name="man_id" value="">
 
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label" for="man_veiculo_id">Veículo <span class="text-danger">*</span></label>
                             <select class="form-select" id="man_veiculo_id" name="man_veiculo_id" required>
                                 <option value="">Selecione um veículo</option>
                             </select>
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label" for="man_tipo">Tipo <span class="text-danger">*</span></label>
                             <select class="form-select" id="man_tipo" name="man_tipo" required>
                                 <option value="">Selecione o tipo</option>
@@ -274,7 +274,7 @@
                             </select>
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label" for="man_data">Data Prevista <span class="text-danger">*</span></label>
                             <input type="date" class="form-control" id="man_data" name="man_data" required>
                         </div>
@@ -306,12 +306,38 @@
                             <input type="hidden" id="man_trigger_tipo" name="man_trigger_tipo" value="qualquer">
                         </div>
                         <div class="col-12 border-top pt-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <label class="form-label fw-semibold mb-0">Produtos e Serviços</label>
-                                <button type="button" class="btn btn-sm btn-primary" id="btn-adicionar-item-cadastro-inteligente">
-                                    <iconify-icon icon="iconamoon:plus-duotone"></iconify-icon> Adicionar item
-                                </button>
+                            <label class="form-label fw-semibold mb-2">Produtos e Serviços</label>
+                            <div class="row g-2 mb-3 align-items-end">
+                                <div class="col-auto">
+                                    <label class="form-label small mb-0">Tipo</label>
+                                    <select class="form-select form-select-sm" id="cadastro-inteligente-item-tipo" style="min-width: 100px;">
+                                        <option value="produto">Produto</option>
+                                        <option value="servico">Serviço</option>
+                                    </select>
+                                </div>
+                                <div class="col flex-grow-1" id="cadastro-inteligente-grupo-produto">
+                                    <label class="form-label small mb-0">Produto</label>
+                                    <select class="form-select form-select-sm" id="cadastro-inteligente-item-produto-id">
+                                        <option value="">Selecione um produto</option>
+                                    </select>
+                                </div>
+                                <div class="col flex-grow-1 d-none" id="cadastro-inteligente-grupo-servico">
+                                    <label class="form-label small mb-0">Serviço</label>
+                                    <select class="form-select form-select-sm" id="cadastro-inteligente-item-servico-id">
+                                        <option value="">Selecione um serviço</option>
+                                    </select>
+                                </div>
+                                <div class="col-auto">
+                                    <label class="form-label small mb-0">Quantidade</label>
+                                    <input type="number" class="form-control form-control-sm" id="cadastro-inteligente-item-quantidade" value="1" min="1" style="width: 80px;">
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-primary btn-sm" id="btn-adicionar-item-cadastro-inteligente">
+                                        <iconify-icon icon="iconamoon:plus-duotone"></iconify-icon> Adicionar
+                                    </button>
+                                </div>
                             </div>
+                            <div id="cadastro-inteligente-form-item-alert" class="alert alert-danger py-2 mb-2 d-none small" role="alert"></div>
                             <div class="table-responsive">
                                 <table class="table table-sm table-hover mb-0">
                                     <thead>
@@ -363,53 +389,6 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Fechar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal: Adicionar Item no Cadastro (Produto/Serviço) -->
-<div class="modal fade" id="modalAdicionarItemCadastroInteligente" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Adicionar produto ou serviço</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-            </div>
-            <div class="modal-body">
-                <form id="formAdicionarItemCadastroInteligente">
-                    <div class="mb-3">
-                        <label class="form-label">Tipo</label>
-                        <select class="form-select" id="cadastro-inteligente-item-tipo">
-                            <option value="produto">Produto</option>
-                            <option value="servico">Serviço</option>
-                        </select>
-                    </div>
-                    <div class="mb-3" id="cadastro-inteligente-grupo-produto">
-                        <label class="form-label">Produto</label>
-                        <select class="form-select" id="cadastro-inteligente-item-produto-id">
-                            <option value="">Selecione um produto</option>
-                        </select>
-                    </div>
-                    <div class="mb-3 d-none" id="cadastro-inteligente-grupo-servico">
-                        <label class="form-label">Serviço</label>
-                        <select class="form-select" id="cadastro-inteligente-item-servico-id">
-                            <option value="">Selecione um serviço</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Quantidade</label>
-                        <input type="number" class="form-control" id="cadastro-inteligente-item-quantidade" value="1" min="1">
-                    </div>
-                    <p class="mb-0 text-muted small">Valor unit.: <span id="cadastro-inteligente-item-vu">R$ 0,00</span> | Subtotal: <span id="cadastro-inteligente-item-subtotal" class="fw-semibold">R$ 0,00</span></p>
-                </form>
-                <div id="cadastro-inteligente-form-item-alert" class="alert alert-danger mt-2 d-none" role="alert"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="btn-salvar-item-cadastro-inteligente">
-                    <span class="btn-text">Adicionar</span>
-                </button>
             </div>
         </div>
     </div>

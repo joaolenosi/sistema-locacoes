@@ -769,4 +769,58 @@ class Contratos extends BaseController
             'token' => $token,
         ]);
     }
+
+    /**
+     * POST: excluir contrato (apenas da tabela contratos, valida empresa)
+     */
+    public function excluir($id)
+    {
+        try {
+            $empresaId = get_empresa_id();
+            if ($empresaId < 1) {
+                return $this->response->setStatusCode(403)->setJSON([
+                    'success' => false,
+                    'message' => 'Sessão inválida.',
+                ]);
+            }
+
+            $contratoId = (int) $id;
+            if ($contratoId < 1) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => 'Contrato inválido.',
+                ]);
+            }
+
+            $contratoModel = new ContratoModel();
+            $contrato = $contratoModel
+                ->where('id', $contratoId)
+                ->where('con_empresa_id', $empresaId)
+                ->first();
+
+            if (!$contrato) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => 'Contrato não encontrado.',
+                ]);
+            }
+
+            if (!$contratoModel->delete($contratoId)) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'message' => 'Não foi possível excluir o contrato.',
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Contrato excluído com sucesso.',
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao excluir contrato.',
+            ]);
+        }
+    }
 }

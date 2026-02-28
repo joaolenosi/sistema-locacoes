@@ -168,4 +168,72 @@ class Produtos extends BaseController
         // preço venda é essencial no plano (mas pode ser nulo se usuário quiser); validamos se vier preenchido
         return null;
     }
+
+    public function excluir($id)
+    {
+        try {
+            $empresaId = get_empresa_id();
+            if ($empresaId < 1) {
+                return $this->response->setStatusCode(403)->setJSON([
+                    'success' => false,
+                    'message' => 'Sessão inválida.',
+                ]);
+            }
+
+            $produtoId = (int) $id;
+            if ($produtoId < 1) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => 'Produto inválido.',
+                ]);
+            }
+
+            $produtoModel = new ProdutoModel();
+            $produto = $produtoModel
+                ->where('id', $produtoId)
+                ->where('pro_empresa_id', $empresaId)
+                ->first();
+
+            if (!$produto) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => 'Produto não encontrado.',
+                ]);
+            }
+
+            $db = \Config\Database::connect();
+            $temVinculo = $db->table('manutencoes_itens')->where('mai_produto_id', $produtoId)->countAllResults();
+            if ($temVinculo > 0) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'success' => false,
+                    'message' => 'Não é possível excluir: o produto está vinculado a manutenções.',
+                ]);
+            }
+            $temVinculo = $db->table('veiculo_controles')->where('vec_produto_id', $produtoId)->countAllResults();
+            if ($temVinculo > 0) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'success' => false,
+                    'message' => 'Não é possível excluir: o produto está vinculado ao controle de veículos.',
+                ]);
+            }
+
+            if (!$produtoModel->delete($produtoId)) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'message' => 'Não foi possível excluir o produto.',
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Produto excluído com sucesso.',
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao excluir produto: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao excluir produto.',
+            ]);
+        }
+    }
 }

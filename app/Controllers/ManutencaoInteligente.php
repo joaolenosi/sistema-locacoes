@@ -282,6 +282,62 @@ class ManutencaoInteligente extends BaseController
         }
     }
 
+    public function excluir($id)
+    {
+        try {
+            $empresaId = get_empresa_id();
+            if ($empresaId < 1) {
+                return $this->response->setStatusCode(403)->setJSON([
+                    'success' => false,
+                    'message' => 'Sessão inválida.',
+                ]);
+            }
+
+            $manutencaoId = (int) $id;
+            if ($manutencaoId < 1) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => 'Manutenção inválida.',
+                ]);
+            }
+
+            $manutencaoModel = new ManutencaoModel();
+            $manutencao = $manutencaoModel
+                ->where('id', $manutencaoId)
+                ->where('man_empresa_id', $empresaId)
+                ->first();
+
+            if (!$manutencao) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => 'Manutenção não encontrada.',
+                ]);
+            }
+
+            $db = \Config\Database::connect();
+            $db->table('manutencoes_itens')->where('mai_manutencao_id', $manutencaoId)->delete();
+            $db->table('manutencoes_fotos')->where('maf_manutencao_id', $manutencaoId)->delete();
+
+            if (!$manutencaoModel->delete($manutencaoId)) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'message' => 'Não foi possível excluir a manutenção.',
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Manutenção excluída com sucesso.',
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao excluir manutenção: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao excluir manutenção.',
+            ]);
+        }
+    }
+
     public function detalhes($id)
     {
         try {

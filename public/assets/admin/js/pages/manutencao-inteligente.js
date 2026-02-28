@@ -174,10 +174,16 @@
         },
         {
           name: 'Ações',
-          width: '180px',
+          width: '220px',
           formatter: (_cell, row) => {
             const id = row.cells[0].data;
             const origem = row.cells[7].data;
+            const placa = (row.cells[1]?.data || '').toString().replace(/"/g, '&quot;');
+            const isManutencao = origem === 'manutencao';
+            const iconTrash = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
+            const btnExcluir = isManutencao
+              ? `<button type="button" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center justify-content-center btn-delete-manutencao-inteligente" data-id="${id}" data-placa="${placa}" title="Excluir">${iconTrash}</button>`
+              : '';
             return gridjs.html(`
               <div class="d-flex gap-1 align-items-center flex-nowrap">
                 <button type="button" class="btn btn-sm btn-outline-success btn-completar-manutencao" data-id="${id}" data-origem="${origem}" title="Marcar como realizada">
@@ -191,6 +197,7 @@
                   <iconify-icon icon="iconamoon:edit-duotone" class="fs-18"></iconify-icon>
                 </button>
                 ` : ''}
+                ${btnExcluir}
               </div>
             `);
           }
@@ -872,8 +879,7 @@
       modalAdicionarItem.addEventListener('show.bs.modal', toggleGruposItem);
     }
 
-    // Cadastro modal: Adicionar item (produtos/serviços)
-    const modalItemCadastroInt = document.getElementById('modalAdicionarItemCadastroInteligente');
+    // Cadastro inline: Adicionar item (produtos/serviços)
     const itemTipoCadInt = document.getElementById('cadastro-inteligente-item-tipo');
     const itemProdCadInt = document.getElementById('cadastro-inteligente-item-produto-id');
     const itemServCadInt = document.getElementById('cadastro-inteligente-item-servico-id');
@@ -884,42 +890,28 @@
       const opt = sel?.options?.[sel.selectedIndex];
       return opt ? parseFloat(opt.getAttribute('data-preco') || 0) : 0;
     };
-    const attPreviewCadInt = () => {
-      const q = parseInt((itemQtdCadInt?.value || 1), 10) || 1;
-      const elVu = document.getElementById('cadastro-inteligente-item-vu');
-      const elSt = document.getElementById('cadastro-inteligente-item-subtotal');
-      if (elVu) elVu.textContent = formatMoney(getVuCadInt());
-      if (elSt) elSt.textContent = formatMoney(q * getVuCadInt());
-    };
     const toggleGruposCadInt = () => {
       const tipo = (itemTipoCadInt?.value || 'produto');
       const gp = document.getElementById('cadastro-inteligente-grupo-produto');
       const gs = document.getElementById('cadastro-inteligente-grupo-servico');
       if (gp) gp.classList.toggle('d-none', tipo !== 'produto');
       if (gs) gs.classList.toggle('d-none', tipo !== 'servico');
+      if (itemProdCadInt) itemProdCadInt.value = '';
+      if (itemServCadInt) itemServCadInt.value = '';
       attPreviewCadInt();
     };
-    itemTipoCadInt?.addEventListener('change', toggleGruposCadInt);
-    itemProdCadInt?.addEventListener('change', attPreviewCadInt);
-    itemServCadInt?.addEventListener('change', attPreviewCadInt);
-    itemQtdCadInt?.addEventListener('input', attPreviewCadInt);
-
-    document.getElementById('btn-adicionar-item-cadastro-inteligente')?.addEventListener('click', async () => {
-      document.getElementById('cadastro-inteligente-form-item-alert')?.classList.add('d-none');
-      document.getElementById('formAdicionarItemCadastroInteligente')?.reset?.();
-      if (itemQtdCadInt) itemQtdCadInt.value = '1';
-      await carregarProdutosServicos(true);
-      toggleGruposCadInt();
-      if (window.bootstrap?.Modal && modalItemCadastroInt) window.bootstrap.Modal.getOrCreateInstance(modalItemCadastroInt).show();
+    itemTipoCadInt?.addEventListener('change', () => {
+      carregarProdutosServicos(true).then(toggleGruposCadInt);
     });
 
-    document.getElementById('btn-salvar-item-cadastro-inteligente')?.addEventListener('click', async () => {
+    document.getElementById('btn-adicionar-item-cadastro-inteligente')?.addEventListener('click', async () => {
+      const alertItem = document.getElementById('cadastro-inteligente-form-item-alert');
+      if (alertItem) alertItem.classList.add('d-none');
       const manId = document.getElementById('man_id')?.value || '';
       const tipo = (itemTipoCadInt?.value || 'produto');
       const prodId = tipo === 'produto' ? parseInt((itemProdCadInt?.value || 0), 10) : 0;
       const servId = tipo === 'servico' ? parseInt((itemServCadInt?.value || 0), 10) : 0;
       const qtd = parseInt((itemQtdCadInt?.value || 1), 10) || 1;
-      const alertItem = document.getElementById('cadastro-inteligente-form-item-alert');
       if (tipo === 'produto' && prodId < 1) {
         if (alertItem) { alertItem.textContent = 'Selecione um produto.'; alertItem.classList.remove('d-none'); }
         return;
@@ -929,8 +921,9 @@
         return;
       }
       const vu = getVuCadInt();
+      const descricao = ((tipo === 'produto' ? itemProdCadInt?.options?.[itemProdCadInt.selectedIndex] : itemServCadInt?.options?.[itemServCadInt.selectedIndex])?.text?.split(' - ')[0]) || '';
       const novoItem = {
-        mai_descricao: ((tipo === 'produto' ? itemProdCadInt?.options?.[itemProdCadInt.selectedIndex] : itemServCadInt?.options?.[itemServCadInt.selectedIndex])?.text?.split(' - ')[0]) || '',
+        mai_descricao: descricao,
         mai_tipo_item: tipo,
         mai_quantidade: qtd,
         mai_valor_unitario: vu,
@@ -938,9 +931,9 @@
         mai_produto_id: tipo === 'produto' ? prodId : null,
         mai_servico_id: tipo === 'servico' ? servId : null
       };
+      const btnAdd = document.getElementById('btn-adicionar-item-cadastro-inteligente');
       if (manId) {
-        const btnSalvar = document.getElementById('btn-salvar-item-cadastro-inteligente');
-        if (btnSalvar) btnSalvar.disabled = true;
+        if (btnAdd) btnAdd.disabled = true;
         try {
           const res = await fetchJson(`${getBaseUrl()}admin/manutencao/${manId}/itens`, {
             method: 'POST',
@@ -950,19 +943,23 @@
           if (res?.success && res?.item) {
             itensCadastroInteligente.push(res.item);
             renderItensCadastroInteligente();
-            if (window.bootstrap?.Modal && modalItemCadastroInt) window.bootstrap.Modal.getOrCreateInstance(modalItemCadastroInt).hide();
+            if (itemQtdCadInt) itemQtdCadInt.value = '1';
             if (window.toastr) window.toastr.success('Item adicionado.');
           } else if (alertItem) { alertItem.textContent = res?.message || 'Erro ao adicionar.'; alertItem.classList.remove('d-none'); }
         } catch (err) {
           if (alertItem) { alertItem.textContent = 'Erro ao adicionar item.'; alertItem.classList.remove('d-none'); }
         } finally {
-          if (btnSalvar) btnSalvar.disabled = false;
+          if (btnAdd) btnAdd.disabled = false;
         }
       } else {
         itensCadastroInteligente.push(novoItem);
         renderItensCadastroInteligente();
-        if (window.bootstrap?.Modal && modalItemCadastroInt) window.bootstrap.Modal.getOrCreateInstance(modalItemCadastroInt).hide();
+        if (itemQtdCadInt) itemQtdCadInt.value = '1';
       }
+    });
+
+    modalEl?.addEventListener('show.bs.modal', () => {
+      carregarProdutosServicos(true).then(toggleGruposCadInt);
     });
 
     document.addEventListener('click', (e) => {
@@ -1013,6 +1010,82 @@
         if (id) {
           e.preventDefault();
           openDetalhes(id);
+        }
+      }
+
+      const btnDeleteMan = e.target.closest?.('.btn-delete-manutencao-inteligente');
+      if (btnDeleteMan) {
+        e.preventDefault();
+        const id = btnDeleteMan.getAttribute('data-id');
+        const placa = btnDeleteMan.getAttribute('data-placa') || '';
+        if (!id) return;
+
+        const msg = placa ? 'Você está prestes a excluir a manutenção do veículo ' + placa + '.' : 'Você está prestes a excluir esta manutenção.';
+
+        const executeDelete = async () => {
+          btnDeleteMan.disabled = true;
+          btnDeleteMan.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+          try {
+            const res = await fetch(`${getBaseUrl()}admin/manutencao-inteligente/excluir/${id}`, {
+              method: 'POST',
+              headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' }
+            });
+            const json = await res.json().catch(() => null);
+            if (res.ok && json?.success) {
+              if (typeof Swal !== 'undefined') {
+                await Swal.fire({
+                  icon: 'success',
+                  title: 'Manutenção excluída',
+                  text: json.message || 'A manutenção foi excluída com sucesso.',
+                  confirmButtonText: 'OK'
+                });
+              } else {
+                alert(json.message || 'Manutenção excluída com sucesso.');
+              }
+              await reload();
+            } else {
+              const errMsg = json?.message || 'Não foi possível excluir a manutenção.';
+              if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Não foi possível excluir',
+                  text: errMsg,
+                  confirmButtonText: 'OK'
+                });
+              } else {
+                alert(errMsg);
+              }
+            }
+          } catch (err) {
+            if (typeof Swal !== 'undefined') {
+              Swal.fire({
+                icon: 'error',
+                title: 'Erro',
+                text: 'Erro ao excluir manutenção. Tente novamente.',
+                confirmButtonText: 'OK'
+              });
+            } else {
+              alert('Erro ao excluir manutenção. Tente novamente.');
+            }
+          } finally {
+            btnDeleteMan.disabled = false;
+            btnDeleteMan.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
+          }
+        };
+
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Excluir manutenção?',
+            text: msg,
+            showCancelButton: true,
+            confirmButtonText: 'Sim, excluir',
+            cancelButtonText: 'Cancelar'
+          }).then((result) => {
+            if (result?.isConfirmed) executeDelete();
+          });
+        } else if (confirm('Tem certeza que deseja excluir esta manutenção?')) {
+          executeDelete();
         }
       }
 
