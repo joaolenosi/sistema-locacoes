@@ -251,11 +251,14 @@
       },
       {
         name: "Ações",
-        width: "220px",
+        width: "260px",
         formatter: (_cell, row) => {
           const id = row.cells[0].data;
           const placa = row.cells[1].data || "-";
           const locatario = row.cells[3].data || "-";
+          const btnFinalizar = `<button type="button" class="btn btn-sm btn-outline-success btn-finalizar-locacao" data-id="${id}" title="Finalizar locação">
+                 <iconify-icon icon="iconamoon:check-circle-duotone" class="fs-18"></iconify-icon>
+               </button>`;
           return gridjs.html(`
             <div class="d-flex gap-2">
               <button type="button" class="btn btn-sm btn-outline-info btn-detalhes-locacao" data-id="${id}" title="Ver detalhes">
@@ -264,6 +267,7 @@
               <button type="button" class="btn btn-sm btn-outline-primary btn-edit-locacao" data-id="${id}" title="Editar">
                 <iconify-icon icon="iconamoon:edit-duotone" class="fs-18"></iconify-icon>
               </button>
+              ${btnFinalizar}
               <button type="button" class="btn btn-sm btn-outline-danger btn-delete-locacao" data-id="${id}" data-placa="${placa}" data-locatario="${locatario}" title="Excluir">
                 <iconify-icon icon="iconamoon:trash-duotone" class="fs-18"></iconify-icon>
               </button>
@@ -351,6 +355,8 @@
     }
   };
 
+  let currentLocacaoId = null;
+
   const resetLocacaoForm = () => {
     const form = document.getElementById("formLocacao");
     form?.reset();
@@ -359,6 +365,7 @@
     document.getElementById("loc_vei_id").value = "";
     document.getElementById("loc_cli_display").value = "";
     document.getElementById("loc_vei_display").value = "";
+    currentLocacaoId = null;
     setupMasks();
   };
 
@@ -366,18 +373,22 @@
     const titleEl = document.getElementById("modalLocacaoLabel");
     const btn = document.getElementById("btnSalvarLocacao");
     const label = btn?.querySelector(".btn-label");
+    const btnFinalizar = document.getElementById("btnFinalizarLocacao");
 
     if (mode === "edit") {
       if (titleEl) titleEl.textContent = "Editar locação";
       if (label) label.textContent = "Salvar";
+      if (btnFinalizar) btnFinalizar.classList.remove("d-none");
     } else {
       if (titleEl) titleEl.textContent = "Cadastrar locação";
       if (label) label.textContent = "Adicionar";
+      if (btnFinalizar) btnFinalizar.classList.add("d-none");
     }
   };
 
   const preencherLocacaoModal = (l) => {
     document.getElementById("locacao_id").value = l.id ?? "";
+    currentLocacaoId = l.id ?? null;
     document.getElementById("loc_cli_id").value = l.loc_cli_id ?? "";
     document.getElementById("loc_vei_id").value = l.loc_vei_id ?? "";
     document.getElementById("loc_cli_display").value = l.cli_nome
@@ -404,6 +415,20 @@
     setVal("loc_status", l.loc_status ?? "reservada");
     const chk = document.getElementById("loc_valores_recebidos");
     if (chk) chk.checked = String(l.loc_valores_recebidos || "0") === "1";
+
+    // Configurar botão de finalizar conforme status
+    const btnFinalizar = document.getElementById("btnFinalizarLocacao");
+    if (btnFinalizar) {
+      const status = String(l.loc_status || "reservada");
+      const podeFinalizar = ["ativa", "atrasada", "reservada"].includes(status);
+      if (podeFinalizar) {
+        btnFinalizar.classList.remove("d-none");
+        btnFinalizar.onclick = () => finalizarLocacao(l.id);
+      } else {
+        btnFinalizar.classList.add("d-none");
+        btnFinalizar.onclick = null;
+      }
+    }
 
     setupMasks();
   };
@@ -483,6 +508,102 @@
       alert(e?.message || "Erro ao salvar.");
     } finally {
       setButtonLoading(btn, false);
+    }
+  };
+
+  const finalizarLocacao = async (id) => {
+    if (!id) return;
+
+    try {
+      // Primeira tentativa: verificar se há cobranças pendentes
+      const res = await fetchJson(`${getBaseUrl()}admin/locacoes/finalizar/${id}`, {
+        method: "POST",
+      });
+
+      if (res.requiresAction && res.pendentes_count > 0) {
+        // Perguntar ao usuário o que fazer com as cobranças pendentes
+        const result = await Swal.fire({
+          icon: "warning",
+          title: "Cobranças pendentes",
+          text: `Existem ${res.pendentes_count} cobrança(s) pendente(s) desta locação. Como deseja proceder?`,
+          showCancelButton: true,
+          confirmButtonText: "Quitar todas e finalizar",
+          cancelButtonText: "Cancelar",
+        });
+
+        if (!result.isConfirmed) {
+          return;
+        }
+
+        // Usuário escolheu quitar pendentes e finalizar
+        const params = new URLSearchParams();
+        params.set("acao_cobrancas", "quitar_pendentes");
+
+        const res2 = await fetchJson(`${getBaseUrl()}admin/locacoes/finalizar/${id}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: params.toString(),
+        });
+
+        if (res2.success) {
+          if (typeof Swal !== "undefined") {
+            await Swal.fire({
+              icon: "success",
+              title: "Locação finalizada",
+              text: res2.message || "Locação finalizada com sucesso.",
+            });
+          }
+          // Fechar modal se estiver aberto e recarregar grid
+          const modalEl = document.getElementById("modalLocacao");
+          if (modalEl && window.bootstrap?.Modal) {
+            const modal = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.hide();
+          }
+          await reload();
+        }
+        return;
+      }
+
+      // Sem pendências ou já finalizou direto
+      if (res.success) {
+        if (typeof Swal !== "undefined") {
+          await Swal.fire({
+            icon: "success",
+            title: "Locação finalizada",
+            text: res.message || "Locação finalizada com sucesso.",
+          });
+        }
+        const modalEl = document.getElementById("modalLocacao");
+        if (modalEl && window.bootstrap?.Modal) {
+          const modal = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+          modal.hide();
+        }
+        await reload();
+        return;
+      }
+
+      // Caso venha um erro sem requiresAction
+      const msg = res.message || "Não foi possível finalizar a locação.";
+      if (typeof Swal !== "undefined") {
+        await Swal.fire({
+          icon: "error",
+          title: "Erro",
+          text: msg,
+        });
+      } else {
+        alert(msg);
+      }
+    } catch (e) {
+      const msg = e?.message || "Erro ao finalizar locação.";
+      if (typeof Swal !== "undefined") {
+        await Swal.fire({
+          icon: "error",
+          title: "Erro",
+          text: msg,
+        });
+      } else {
+        alert(msg);
+      }
     }
   };
 
@@ -680,33 +801,19 @@
     const modalEl = document.getElementById("modalEscolherVeiculo");
     if (!modalEl) return;
 
-    const cliId = document.getElementById("loc_cli_id")?.value;
-    let veiculosParaExibir = [];
-
-    if (cliId && cliId.trim() !== "") {
-      // Se há locatário selecionado, buscar apenas veículos desse cliente
-      veiculosParaExibir = await buscarVeiculosPorCliente(cliId);
-      
-      // Se não houver veículos no histórico, buscar todos os veículos disponíveis
-      if (veiculosParaExibir.length === 0) {
-        if (!veiculosData) {
-          const json = await fetchJson(`${getBaseUrl()}admin/veiculos/listar`);
-          veiculosData = json.data || [];
-        }
-        veiculosParaExibir = veiculosData || [];
-      }
-    } else {
-      // Se não há locatário selecionado, buscar todos os veículos
-      if (!veiculosData) {
-        const json = await fetchJson(`${getBaseUrl()}admin/veiculos/listar`);
-        veiculosData = json.data || [];
-      }
-      veiculosParaExibir = veiculosData || [];
+    // Sempre carregar todos os veículos disponíveis (independente do locatário)
+    if (!veiculosData) {
+      const json = await fetchJson(`${getBaseUrl()}admin/veiculos/listar`);
+      const all = json.data || [];
+      // Filtrar apenas veículos disponíveis (ou sem status definido)
+      veiculosData = all.filter(
+        (v) => !v.vei_status || String(v.vei_status) === "disponivel"
+      );
     }
 
     document.getElementById("filtro-veiculo-geral").value = "";
     document.getElementById("filtro-veiculo-status").value = "";
-    renderVeiculosGrid(veiculosParaExibir);
+    renderVeiculosGrid(veiculosData);
     bootstrap.Modal.getOrCreateInstance(modalEl).show();
   };
 
@@ -795,36 +902,12 @@
       modal.hide();
     }
 
-    // Buscar veículos desse cliente e selecionar automaticamente o primeiro
-    const veiculosDoCliente = await buscarVeiculosPorCliente(id);
-    if (veiculosDoCliente && veiculosDoCliente.length > 0) {
-      // Selecionar o primeiro veículo automaticamente
-      const primeiroVeiculo = veiculosDoCliente[0];
-      const veiIdEl = document.getElementById("loc_vei_id");
-      const veiDisplayEl = document.getElementById("loc_vei_display");
-      
-      if (veiIdEl) veiIdEl.value = primeiroVeiculo.id;
-      if (veiDisplayEl) {
-        const displayText = `${primeiroVeiculo.vei_placa || ""} - ${primeiroVeiculo.vei_modelo || ""}`.trim();
-        veiDisplayEl.value = displayText;
-      }
-      
-      // Atualizar cache de veículos se necessário
-      if (!veiculosData) {
-        veiculosData = [];
-      }
-      // Adicionar veículo ao cache se não estiver lá
-      const veiculoNoCache = veiculosData.find(v => String(v.id) === String(primeiroVeiculo.id));
-      if (!veiculoNoCache) {
-        veiculosData.push(primeiroVeiculo);
-      }
-    } else {
-      // Se não houver veículos no histórico, limpar campo de veículo
-      const veiIdEl = document.getElementById("loc_vei_id");
-      const veiDisplayEl = document.getElementById("loc_vei_display");
-      if (veiIdEl) veiIdEl.value = "";
-      if (veiDisplayEl) veiDisplayEl.value = "";
-    }
+    // Ao selecionar um locatário, não selecionar veículo automaticamente.
+    // Limpar sempre o veículo para que o usuário escolha manualmente.
+    const veiIdEl = document.getElementById("loc_vei_id");
+    const veiDisplayEl = document.getElementById("loc_vei_display");
+    if (veiIdEl) veiIdEl.value = "";
+    if (veiDisplayEl) veiDisplayEl.value = "";
   };
 
   // ======= Eventos =======
@@ -901,6 +984,16 @@
         });
       } else if (confirm(textoConfirmacao)) {
         executeDelete();
+      }
+      return;
+    }
+
+    const btnFinalizar = e.target?.closest?.(".btn-finalizar-locacao");
+    if (btnFinalizar) {
+      e.preventDefault();
+      const id = btnFinalizar.getAttribute("data-id");
+      if (id) {
+        finalizarLocacao(id);
       }
       return;
     }

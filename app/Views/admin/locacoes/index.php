@@ -532,6 +532,10 @@ window.__LOCACOES_BOOTSTRAP__ = {
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-outline-success me-auto d-none" id="btnFinalizarLocacao">
+          <iconify-icon icon="iconamoon:check-circle-duotone" class="fs-18 me-1"></iconify-icon>
+          Finalizar locação
+        </button>
         <button type="button" class="btn btn-primary" id="btnSalvarLocacao" onclick="salvarLocacao()">
           <span class="btn-label">Adicionar</span>
         </button>

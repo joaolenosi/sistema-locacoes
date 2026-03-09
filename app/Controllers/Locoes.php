@@ -7,6 +7,7 @@ use App\Models\ClienteModel;
 use App\Models\LancamentoFinanceiroModel;
 use App\Models\LocacaoModel;
 use App\Models\VeiculoModel;
+use CodeIgniter\Database\BaseBuilder;
 
 class Locoes extends BaseController
 {
@@ -302,6 +303,116 @@ class Locoes extends BaseController
             return $this->response->setStatusCode(500)->setJSON([
                 'success' => false,
                 'message' => 'Erro ao excluir locação.',
+            ]);
+        }
+    }
+
+    public function finalizar($id)
+    {
+        try {
+            $empresaId = get_empresa_id();
+            if ($empresaId < 1) {
+                return $this->response->setStatusCode(403)->setJSON([
+                    'success' => false,
+                    'message' => 'Sessão inválida.',
+                ]);
+            }
+
+            $locacaoModel = new LocacaoModel();
+            $locacao = $locacaoModel
+                ->where('loc_empresa_id', $empresaId)
+                ->where('id', (int) $id)
+                ->first();
+
+            if (!$locacao) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => 'Locação não encontrada.',
+                ]);
+            }
+
+            $statusAtual = (string) ($locacao['loc_status'] ?? 'reservada');
+            if (in_array($statusAtual, ['finalizada', 'cancelada'], true)) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'success' => false,
+                    'message' => 'Esta locação já está finalizada ou cancelada.',
+                ]);
+            }
+
+            // Verificar cobranças pendentes desta locação
+            $lancamentoModel = new LancamentoFinanceiroModel();
+            $pendentesCount = $lancamentoModel
+                ->where('lan_empresa_id', $empresaId)
+                ->where('lan_locacao_id', (int) $id)
+                ->where('lan_tipo', 'receita')
+                ->where('lan_status', 'pendente')
+                ->countAllResults();
+
+            $acaoCobrancas = (string) ($this->request->getPost('acao_cobrancas') ?? '');
+            $acaoCobrancas = trim($acaoCobrancas);
+
+            // Se houver cobranças pendentes e o frontend ainda não escolheu o que fazer
+            if ($pendentesCount > 0 && $acaoCobrancas !== 'quitar_pendentes') {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'requiresAction' => true,
+                    'pendentes_count' => $pendentesCount,
+                    'message' => 'Existem cobranças pendentes para esta locação.',
+                ]);
+            }
+
+            $db = \Config\Database::connect();
+            $db->transStart();
+
+            // Se usuário escolheu quitar pendentes, marcar todas como pagas
+            if ($pendentesCount > 0 && $acaoCobrancas === 'quitar_pendentes') {
+                $hoje = date('Y-m-d');
+                $builder = $lancamentoModel
+                    ->where('lan_empresa_id', $empresaId)
+                    ->where('lan_locacao_id', (int) $id)
+                    ->where('lan_tipo', 'receita')
+                    ->where('lan_status', 'pendente')
+                    ->set('lan_status', 'pago')
+                    ->set('lan_data_pagamento', $hoje)
+                    ->set('lan_valor_pago', 'lan_valor', false);
+                $builder->update();
+            }
+
+            // Finalizar locação
+            $hoje = date('Y-m-d');
+            $updateData = [
+                'loc_status' => 'finalizada',
+            ];
+            if (empty($locacao['loc_data_fim_real'])) {
+                $updateData['loc_data_fim_real'] = $hoje;
+            }
+            $locacaoModel->update((int) $id, $updateData);
+
+            // Liberar veículo (marcar como disponível)
+            $veiId = (int) ($locacao['loc_vei_id'] ?? 0);
+            if ($veiId > 0) {
+                $veiculoModel = new VeiculoModel();
+                $veiculoModel->update($veiId, ['vei_status' => 'disponivel']);
+            }
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'message' => 'Erro ao finalizar locação.',
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Locação finalizada com sucesso.',
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao finalizar locação: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao finalizar locação.',
             ]);
         }
     }
