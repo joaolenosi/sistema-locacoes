@@ -58,12 +58,24 @@ if (!function_exists('get_cobrancas_pendentes_count')) {
         }
 
         $model = new \App\Models\LancamentoFinanceiroModel();
-        return (int) $model
+        $countLocacoes = (int) $model
             ->where('lan_empresa_id', $empresaId)
             ->where('lan_tipo', 'receita')
             ->where('lan_status', 'pendente')
             ->where('lan_locacao_id IS NOT NULL', null, false)
             ->countAllResults();
+
+        $countSistema = 0;
+        if (class_exists('\App\Models\FinanceiroModel')) {
+            try {
+                $financeiroModel = new \App\Models\FinanceiroModel();
+                $countSistema = $financeiroModel->countPendente($empresaId);
+            } catch (\Throwable $e) {
+                log_message('error', 'Erro ao contar cobranças do sistema: ' . $e->getMessage());
+            }
+        }
+
+        return $countLocacoes + $countSistema;
     }
 }
 

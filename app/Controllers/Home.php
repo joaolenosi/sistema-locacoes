@@ -6,10 +6,13 @@ use App\Models\ClienteModel;
 use App\Models\LancamentoFinanceiroModel;
 use App\Models\ManutencaoModel;
 use App\Models\VeiculoModel;
+use App\Models\FinanceiroModel;
 use App\Services\GeradorCobrancasRecorrentes;
 
 class Home extends BaseController
 {
+    private const CODIGO_PIX = '00020126330014BR.GOV.BCB.PIX0111094367194935204000053039865406599.005802BR5901N6001C62220518MENSALIDADESISTEMA6304324C';
+
     public function index(): string
     {
         $empresaId = get_empresa_id();
@@ -17,11 +20,13 @@ class Home extends BaseController
 
         [$receitasMes, $despesasMes] = $this->getReceitasEDespesasMesAtual($empresaId);
 
+        $faturaVencida = $this->verificarFaturaVencida($empresaId);
+
         $data = [
             'title' => 'Dashboard',
-            'faturamento_mes_atual'   => $receitasMes, // faturamento = receitas recebidas no mês
+            'faturamento_mes_atual'   => $receitasMes,
             'faturamento_mes_anterior' => $this->getFaturamentoMesAnterior($empresaId),
-            'crescimento_percentual' => 0, // filled below
+            'crescimento_percentual' => 0,
             'caixa_total'            => $this->getCaixaTotal($empresaId),
             'receitas_mes_atual'     => $receitasMes,
             'despesas_mes_atual'     => $despesasMes,
@@ -34,6 +39,10 @@ class Home extends BaseController
             'fluxo_caixa'            => $this->getFluxoCaixa12Meses($empresaId),
             'tipos_movimentacao'     => $this->getTiposMovimentacao($empresaId),
             'veiculos_status'        => $this->getVeiculosPorStatus($empresaId),
+            'fatura_vencida'         => $faturaVencida,
+            'pix_config' => [
+                'codigo' => self::CODIGO_PIX,
+            ],
         ];
 
         $atual   = $data['faturamento_mes_atual'];
@@ -46,6 +55,21 @@ class Home extends BaseController
             return view('admin/dashboard', $data);
         } catch (\Exception $e) {
             return 'Error: ' . $e->getMessage();
+        }
+    }
+
+    private function verificarFaturaVencida(int $empresaId): ?array
+    {
+        try {
+            $model = new FinanceiroModel();
+            $model->marcarFaturasVencidas();
+            
+            $faturaVencida = $model->getFaturaVencida($empresaId);
+            
+            return $faturaVencida ?: null;
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao verificar fatura vencida: ' . $e->getMessage());
+            return null;
         }
     }
 
@@ -346,6 +370,60 @@ class Home extends BaseController
             $gerador->executar($empresaId);
         } catch (\Throwable $e) {
             log_message('error', 'Erro ao gerar cobranças recorrentes: ' . $e->getMessage());
+        }
+    }
+
+    public function debugFatura()
+    {
+        $empresaId = get_empresa_id();
+        
+        header('Content-Type: text/plain; charset=utf-8');
+        
+        echo "=== DEBUG FATURA ===\n";
+        echo "Empresa ID: $empresaId\n";
+        echo "Data hoje: " . date('Y-m-d') . "\n\n";
+        
+        try {
+            $model = new FinanceiroModel();
+            
+            // Verifica se a tabela existe
+            $db = \Config\Database::connect();
+            $tables = $db->listTables();
+            echo "Tabelas disponíveis: " . implode(', ', $tables) . "\n\n";
+            
+            if (!in_array('financeiro', $tables)) {
+                echo "ERRO: Tabela 'financeiro' não existe!\n";
+                echo "Execute o SQL para criar a tabela.\n";
+                return;
+            }
+            
+            // Marcar vencidas
+            $model->marcarFaturasVencidas();
+            echo "Faturas vencidas marcadas.\n\n";
+            
+            // Buscar faturas abertas
+            $faturas = $model->getFaturasAbertas($empresaId);
+            echo "Faturas em aberto (" . count($faturas) . "):\n";
+            foreach ($faturas as $f) {
+                echo "- ID: {$f['id']}, Desc: {$f['fin_descricao']}, Valor: R\$ {$f['fin_valor']}, Venc: {$f['fin_data_vencimento']}, Status: {$f['fin_status']}\n";
+            }
+            echo "\n";
+            
+            // Buscar fatura vencida
+            $faturaVencida = $model->getFaturaVencida($empresaId);
+            if ($faturaVencida) {
+                echo "Fatura vencida encontrada: ID {$faturaVencida['id']}\n";
+                echo "Vencimento: {$faturaVencida['fin_data_vencimento']}\n";
+                echo "Hoje: " . date('Y-m-d') . "\n";
+                echo "É vencida? " . ($faturaVencida['fin_data_vencimento'] < date('Y-m-d') ? 'SIM' : 'NAO') . "\n";
+            } else {
+                echo "Nenhuma fatura vencida encontrada.\n";
+            }
+            
+        } catch (\Throwable $e) {
+            echo "ERRO: " . $e->getMessage() . "\n";
+            echo "File: " . $e->getFile() . "\n";
+            echo "Line: " . $e->getLine() . "\n";
         }
     }
 }

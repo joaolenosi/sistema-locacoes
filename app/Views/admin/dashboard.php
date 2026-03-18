@@ -482,9 +482,154 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Inicializar popovers de ajuda do dashboard
-document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(el) {
-    new bootstrap.Popover(el, { sanitize: false });
-});
+if (typeof bootstrap !== 'undefined') {
+    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(el) {
+        new bootstrap.Popover(el, { sanitize: false });
+    });
+}
+
+// Verificar fatura vencida e mostrar modal de bloqueio
+<?php if (!empty($fatura_vencida)): ?>
+(function mostrarModalFatura() {
+    var tentativas = 0;
+    var maxTentativas = 20;
+    
+    function tentar() {
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            var modalBloqueio = new bootstrap.Modal(document.getElementById('modalBloqueioPagamento'), {
+                backdrop: 'static',
+                keyboard: false
+            });
+            modalBloqueio.show();
+        } else if (tentativas < maxTentativas) {
+            tentativas++;
+            setTimeout(tentar, 100);
+        }
+    }
+    
+    tentar();
+})();
+<?php endif; ?>
+
+// Funções para o modal de pagamento
+function copiarCodigoPixBloqueio() {
+    var input = document.getElementById('codigo-pix-bloqueio');
+    if (input) {
+        input.select();
+        navigator.clipboard.writeText(input.value).then(function() {
+            var btn = document.getElementById('btn-copiar-pix-bloqueio');
+            if (btn) {
+                btn.innerHTML = '<iconify-icon icon="iconamoon:check-circle-1-duotone"></iconify-icon> Copiado!';
+                btn.classList.add('btn-success');
+                setTimeout(function() {
+                    btn.innerHTML = '<iconify-icon icon="iconamoon:copy-duotone"></iconify-icon> Copiar';
+                    btn.classList.remove('btn-success');
+                }, 2000);
+            }
+        });
+    }
+}
 </script>
+
+<?php if (!empty($fatura_vencida)): ?>
+<?php 
+    $empresaNome = session()->get('empresa_nome') ?? 'Empresa';
+    $valorFormatado = number_format((float) ($fatura_vencida['fin_valor'] ?? 0), 2, ',', '.');
+    $dataVencimento = date('d/m/Y', strtotime($fatura_vencida['fin_data_vencimento'] ?? ''));
+    $mensagemWhats = "Olá! Efetuei o pagamento da mensalidade do sistema de locação.%0A%0A";
+    $mensagemWhats .= "Empresa: $empresaNome%0A";
+    $mensagemWhats .= "Valor: R\$ $valorFormatado%0A";
+    $mensagemWhats .= "Vencimento: $dataVencimento%0A%0A";
+    $mensagemWhats .= "Por favor, realizar a liberação do sistema.";
+?>
+<style>
+#modalBloqueioPagamento .modal-dialog {
+    max-width: 650px;
+}
+#modalBloqueioPagamento .modal-body {
+    padding: 1.5rem;
+}
+#modalBloqueioPagamento .qrcode-container img {
+    max-width: 180px;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    padding: 10px;
+    background: white;
+}
+</style>
+<!-- Modal Bloqueio por Pagamento Vencido -->
+<div class="modal fade" id="modalBloqueioPagamento" tabindex="-1" aria-labelledby="modalBloqueioLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white py-2">
+                <h5 class="modal-title" id="modalBloqueioLabel">
+                    <iconify-icon icon="iconamoon:lock-duotone"></iconify-icon>
+                    Acesso Bloqueado - Pagamento Pendente
+                </h5>
+            </div>
+            <div class="modal-body">
+                <!-- Alerta de bloqueio -->
+                <div class="alert alert-danger py-2 mb-3 text-center">
+                    <iconify-icon icon="iconamoon:warning-duotone" class="me-1"></iconify-icon>
+                    <strong>Sua mensalidade esta em atraso!</strong>
+                </div>
+                
+                <!-- Info da cobranca -->
+                <div class="d-flex justify-content-between align-items-center bg-light rounded p-2 mb-3">
+                    <div>
+                        <small class="text-muted d-block">Descricao</small>
+                        <strong><?= esc($fatura_vencida['fin_descricao'] ?? 'Mensalidade Sistema') ?></strong>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted d-block">Valor</small>
+                        <strong class="text-danger fs-5">R$ <?= number_format((float) ($fatura_vencida['fin_valor'] ?? 0), 2, ',', '.') ?></strong>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted d-block">Vencimento</small>
+                        <strong><?= date('d/m/Y', strtotime($fatura_vencida['fin_data_vencimento'] ?? '')) ?></strong>
+                    </div>
+                </div>
+                
+                <!-- QR Code e Instrucoes lado a lado -->
+                <div class="row g-3">
+                    <div class="col-md-4 text-center">
+                        <div class="qrcode-container mb-2">
+                            <img src="<?= asset_url('assets/admin/images/qrcode-pix.png') ?>" alt="QR Code PIX" class="img-fluid">
+                        </div>
+                        <small class="text-muted">Escaneie com Pix</small>
+                    </div>
+                    <div class="col-md-8">
+                        <h6 class="mb-2"><iconify-icon icon="iconamoon:info-duotone"></iconify-icon> Como pagar:</h6>
+                        <ol class="small mb-2 ps-3">
+                            <li>Abra o app do seu banco</li>
+                            <li>Escolha Pix e escaneie o QR Code</li>
+                            <li>Confirme o valor de <strong>R$ <?= number_format((float) ($fatura_vencida['fin_valor'] ?? 0), 2, ',', '.') ?></strong></li>
+                            <li>Efetue o pagamento</li>
+                        </ol>
+                        
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold mb-1">Ou copie o codigo Pix:</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" id="codigo-pix-bloqueio" readonly value="<?= esc($fatura_vencida['fin_codigo_pix'] ?? $pix_config['codigo'] ?? '') ?>">
+                                <button class="btn btn-outline-primary" type="button" id="btn-copiar-pix-bloqueio" onclick="copiarCodigoPixBloqueio()">
+                                    <iconify-icon icon="iconamoon:copy-duotone"></iconify-icon> Copiar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-2 justify-content-center">
+                <a href="https://wa.me/5584981359585?text=<?= $mensagemWhats ?>" 
+                   target="_blank" 
+                   class="btn btn-success">
+                    <iconify-icon icon="iconamoon:brand-whatsapp-filled"></iconify-icon>
+                    Enviar Comprovante via WhatsApp
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <?= $this->endSection() ?>

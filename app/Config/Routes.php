@@ -77,6 +77,9 @@ $routes->get('admin/empresa', 'Empresa::index');
 $routes->get('admin/empresa/logo', 'Empresa::logo');
 $routes->get('admin/configuracoes', 'Configuracoes::index');
 $routes->get('admin/configuracoes/listar-planos', 'Configuracoes::listarPlanos');
+$routes->get('admin/configuracoes/listar-faturas', 'Configuracoes::listarFaturas');
+$routes->get('admin/configuracoes/obter-pix-fatura/(:num)', 'Configuracoes::obterPixFatura/$1');
+$routes->post('admin/configuracoes/confirmar-pagamento', 'Configuracoes::confirmarPagamento');
 $routes->post('admin/configuracoes/atualizar-empresa', 'Configuracoes::atualizarEmpresa');
 $routes->get('admin/cadastro/produtos', 'Produtos::index');
 $routes->get('admin/cadastro/produtos/listar', 'Produtos::listar');
@@ -117,3 +120,5 @@ $routes->post('admin/checklist/excluir/(:num)', 'Checklist::excluir/$1');
 $routes->get('admin/checklist/(:num)/pdf', 'Checklist::pdf/$1');
 $routes->get('admin/checklist/anexo/(:num)', 'Checklist::servirAnexo/$1');
 $routes->get('admin/checklist/desenho/(:num)', 'Checklist::desenho/$1');
+
+$routes->get('admin/debug-fatura', 'Home::debugFatura');

@@ -3,10 +3,15 @@
 namespace App\Controllers;
 
 use App\Models\EmpresaModel;
+use App\Models\FinanceiroModel;
 use CodeIgniter\HTTP\RedirectResponse;
 
 class Auth extends BaseController
 {
+    private const VALOR_MENSALIDADE = 59.90;
+    private const DESCRICAO_MENSALIDADE = 'Mensalidade Sistema de Locações';
+    private const CODIGO_PIX = '00020126330014BR.GOV.BCB.PIX0111094367194935204000053039865406599.005802BR5901N6001C62220518MENSALIDADESISTEMA6304324C';
+
     public function index()
     {
         if (session()->get('empresa_logado')) {
@@ -42,7 +47,28 @@ class Auth extends BaseController
             'empresa_nome' => $empresa['emp_fantasia'] ?? $empresa['emp_nome'] ?? '',
         ]);
 
+        $this->gerarCobrancaMensalSeNecessario((int) $empresa['id']);
+
         return redirect()->to(base_url());
+    }
+
+    private function gerarCobrancaMensalSeNecessario(int $empresaId): void
+    {
+        try {
+            $financeiroModel = new FinanceiroModel();
+            $mesAtual = date('Y-m');
+
+            if (! $financeiroModel->existeCobrancaMes($empresaId, $mesAtual)) {
+                $financeiroModel->criarCobrancaMensal(
+                    $empresaId,
+                    self::DESCRICAO_MENSALIDADE,
+                    self::VALOR_MENSALIDADE,
+                    self::CODIGO_PIX
+                );
+            }
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao gerar cobrança mensal: ' . $e->getMessage());
+        }
     }
 
     public function logout(): RedirectResponse

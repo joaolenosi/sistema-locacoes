@@ -27,6 +27,8 @@ class EmpresaModel extends Model
         'emp_rua',
         'emp_numero',
         'emp_complemento',
+        'emp_dt_assinatura',
+        'emp_plano_id',
         'emp_ativo',
         'emp_obs',
         'emp_inscricao_estadual',

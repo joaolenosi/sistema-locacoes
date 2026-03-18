@@ -4,14 +4,20 @@ namespace App\Controllers;
 
 use App\Models\EmpresaModel;
 use App\Models\PlanoModel;
+use App\Models\FinanceiroModel;
 
 class Configuracoes extends BaseController
 {
+    private const VALOR_MENSALIDADE = 59.90;
+    private const DESCRICAO_MENSALIDADE = 'Mensalidade Sistema de Locações';
+    private const CODIGO_PIX = '00020126330014BR.GOV.BCB.PIX0111094367194935204000053039865406599.005802BR5901N6001C62220518MENSALIDADESISTEMA6304324C';
+
     public function index(): string
     {
         $empresaId = get_empresa_id();
         $empresaModel = new EmpresaModel();
         $planoModel = new PlanoModel();
+        $financeiroModel = new FinanceiroModel();
 
         $empresa = $empresaModel->find($empresaId);
 
@@ -22,10 +28,32 @@ class Configuracoes extends BaseController
 
         $planos = $this->mapPlanosForView($planosDb);
 
-        // Plano atual: por enquanto, UI (sem integração de assinatura)
+        $faturas = $financeiroModel->getByEmpresa($empresaId);
+        $faturasAbertas = $financeiroModel->getFaturasAbertas($empresaId);
+
+        $temPlanoAssinado = !empty($empresa['emp_plano_id']);
+        $planoAssinado = null;
+        $diasRestantes = 0;
+
+        if ($temPlanoAssinado) {
+            $planoAssinado = $planoModel->find($empresa['emp_plano_id']);
+            if ($planoAssinado) {
+                $valorMensal = (float) ($planoAssinado['pla_preco_mensal'] ?? 59.90);
+            } else {
+                $valorMensal = 59.90;
+            }
+        } else {
+            $valorMensal = self::VALOR_MENSALIDADE;
+        }
+
         $plano_atual = [
-            'nome' => 'Período de Teste',
-            'dias_restantes' => 5,
+            'nome' => $temPlanoAssinado && $planoAssinado 
+                ? ($planoAssinado['pla_nome'] ?? 'Plano') 
+                : 'Período de Teste',
+            'dias_restantes' => $diasRestantes,
+            'tem_plano' => $temPlanoAssinado,
+            'valor_mensal' => $valorMensal,
+            'plano' => $planoAssinado,
         ];
 
         $data = [
@@ -33,6 +61,14 @@ class Configuracoes extends BaseController
             'planos' => $planos,
             'plano_atual' => $plano_atual,
             'empresa' => $empresa,
+            'faturas' => $faturas,
+            'faturasAbertas' => $faturasAbertas,
+            'tem_plano_assinado' => $temPlanoAssinado,
+            'pixConfig' => [
+                'codigo' => self::CODIGO_PIX,
+                'valor' => $valorMensal,
+                'descricao' => self::DESCRICAO_MENSALIDADE,
+            ],
         ];
         
         try {
@@ -59,6 +95,128 @@ class Configuracoes extends BaseController
             return $this->response->setStatusCode(500)->setJSON([
                 'success' => false,
                 'message' => 'Erro ao listar planos.',
+            ]);
+        }
+    }
+
+    public function listarFaturas()
+    {
+        try {
+            $empresaId = get_empresa_id();
+            $financeiroModel = new FinanceiroModel();
+            $faturas = $financeiroModel->getByEmpresa($empresaId);
+
+            $faturasMapped = array_map(function ($fatura) {
+                return [
+                    'id' => (int) ($fatura['id'] ?? 0),
+                    'descricao' => (string) ($fatura['fin_descricao'] ?? ''),
+                    'valor' => (float) ($fatura['fin_valor'] ?? 0),
+                    'data_vencimento' => $fatura['fin_data_vencimento'] ?? '',
+                    'data_pagamento' => $fatura['fin_data_pagamento'] ?? null,
+                    'status' => (string) ($fatura['fin_status'] ?? 'pendente'),
+                    'codigo_pix' => $fatura['fin_codigo_pix'] ?? '',
+                    'mes_referencia' => $fatura['fin_mes_referencia'] ?? '',
+                    'forma_pagamento' => (string) ($fatura['fin_forma_pagamento'] ?? 'pix'),
+                ];
+            }, $faturas);
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $faturasMapped,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao listar faturas.',
+            ]);
+        }
+    }
+
+    public function obterPixFatura(int $id)
+    {
+        try {
+            $empresaId = get_empresa_id();
+            $financeiroModel = new FinanceiroModel();
+            $fatura = $financeiroModel->where('id', $id)
+                ->where('fin_emp_id', $empresaId)
+                ->first();
+
+            if (!$fatura) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => 'Fatura não encontrada.',
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => [
+                    'id' => (int) $fatura['id'],
+                    'descricao' => (string) ($fatura['fin_descricao'] ?? ''),
+                    'valor' => (float) ($fatura['fin_valor'] ?? 0),
+                    'data_vencimento' => $fatura['fin_data_vencimento'] ?? '',
+                    'codigo_pix' => $fatura['fin_codigo_pix'] ?? '',
+                    'status' => (string) ($fatura['fin_status'] ?? 'pendente'),
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao obter dados da fatura.',
+            ]);
+        }
+    }
+
+    public function confirmarPagamento()
+    {
+        try {
+            $empresaId = get_empresa_id();
+            $id = (int) $this->request->getPost('id');
+            $referencia = trim((string) $this->request->getPost('referencia') ?? '');
+
+            if ($id <= 0) {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'success' => false,
+                    'message' => 'ID da fatura inválido.',
+                ]);
+            }
+
+            $financeiroModel = new FinanceiroModel();
+            $fatura = $financeiroModel->where('id', $id)
+                ->where('fin_emp_id', $empresaId)
+                ->first();
+
+            if (!$fatura) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => 'Fatura não encontrada.',
+                ]);
+            }
+
+            if ($fatura['fin_status'] === 'pago') {
+                return $this->response->setStatusCode(422)->setJSON([
+                    'success' => false,
+                    'message' => 'Esta fatura já foi paga.',
+                ]);
+            }
+
+            $ok = $financeiroModel->marcarComoPago($id, $referencia ?: null);
+
+            if (!$ok) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'message' => 'Não foi possível confirmar o pagamento.',
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Pagamento confirmado com sucesso!',
+            ]);
+        } catch (\Throwable $e) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => 'Erro ao confirmar pagamento.',
             ]);
         }
     }
