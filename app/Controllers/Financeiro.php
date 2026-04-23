@@ -822,6 +822,7 @@ class Financeiro extends BaseController
         $clienteUf = $this->esc((string) ($locacaoJoin['cli_estado'] ?? ''));
         $clienteCidade = $this->esc((string) ($locacaoJoin['cli_cidade'] ?? ''));
         $clienteTelefone = $this->esc((string) ($locacaoJoin['cli_telefone'] ?? ''));
+        $logoHtml = $this->buildEmpresaLogoHtml($empresa);
 
         $descricaoLocacao = 'LOCAÇÃO DE AUTOMÓVEIS TIPO ' . trim($marca . '/ ' . $modelo)
             . ' - PLACA: ' . $placa
@@ -860,6 +861,7 @@ class Financeiro extends BaseController
     <table class="mb4">
       <tr>
         <td style="width: 70%;">
+          <div class="mb8">' . $logoHtml . '</div>
           <div class="bold" style="font-size:13px;">' . $empresaNome . '</div>
           <div>' . $empresaEndereco . ', ' . $empresaNumero . ' ' . $empresaBairro . '</div>
           <div>' . $empresaCidadeUf . '</div>
@@ -1058,5 +1060,27 @@ class Financeiro extends BaseController
             return $prefixo;
         }
         return $prefixo . ($resto < 100 ? ' e ' : ', ') . $this->numeroPorExtenso($resto);
+    }
+
+    private function buildEmpresaLogoHtml(array $empresa): string
+    {
+        $logoRelPath = trim((string) ($empresa['emp_logo'] ?? ''));
+        if ($logoRelPath === '') {
+            return '';
+        }
+
+        $logoPath = WRITEPATH . $logoRelPath;
+        if (!is_file($logoPath)) {
+            return '';
+        }
+
+        $bin = @file_get_contents($logoPath);
+        if ($bin === false) {
+            return '';
+        }
+
+        $mime = mime_content_type($logoPath) ?: 'image/png';
+        $b64 = base64_encode($bin);
+        return '<img src="data:' . $mime . ';base64,' . $b64 . '" alt="Logo" style="height:48px; max-width:220px;">';
     }
 }
