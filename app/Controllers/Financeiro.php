@@ -286,6 +286,72 @@ class Financeiro extends BaseController
         }
     }
 
+    public function fatura($id)
+    {
+        try {
+            $empresaId = get_empresa_id();
+            if ($empresaId <= 0) {
+                return $this->response->setStatusCode(401)->setBody('Sessão inválida.');
+            }
+
+            $lancamentoModel = new LancamentoFinanceiroModel();
+            $lancamento = $lancamentoModel->find((int) $id);
+            if (!$lancamento) {
+                return $this->response->setStatusCode(404)->setBody('Lançamento não encontrado.');
+            }
+
+            if ((int) ($lancamento['lan_empresa_id'] ?? 0) !== $empresaId) {
+                return $this->response->setStatusCode(403)->setBody('Acesso negado.');
+            }
+
+            if (($lancamento['lan_status'] ?? '') !== 'pago') {
+                return $this->response->setStatusCode(422)->setBody('A fatura só pode ser emitida para lançamentos pagos.');
+            }
+
+            $locacaoId = (int) ($lancamento['lan_locacao_id'] ?? 0);
+            if ($locacaoId <= 0) {
+                return $this->response->setStatusCode(422)->setBody('Lançamento sem locação vinculada.');
+            }
+
+            $db = \Config\Database::connect();
+            $row = $db->table('locacoes')
+                ->select('locacoes.*')
+                ->select('clientes.*')
+                ->select('veiculos.*')
+                ->join('clientes', 'clientes.id = locacoes.loc_cli_id', 'left')
+                ->join('veiculos', 'veiculos.id = locacoes.loc_vei_id', 'left')
+                ->where('locacoes.id', $locacaoId)
+                ->where('locacoes.loc_empresa_id', $empresaId)
+                ->get()
+                ->getRowArray();
+
+            if (!$row) {
+                return $this->response->setStatusCode(404)->setBody('Locação vinculada não encontrada.');
+            }
+
+            $empresa = $db->table('empresas')->where('id', $empresaId)->get()->getRowArray() ?: [];
+
+            $html = $this->buildFaturaPdfHtml($lancamento, $row, $empresa);
+
+            $dompdf = new \Dompdf\Dompdf();
+            $dompdf->loadHtml($html, 'UTF-8');
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+            $pdfOutput = $dompdf->output();
+
+            $numero = str_pad((string) ((int) $lancamento['id']), 6, '0', STR_PAD_LEFT);
+            $filename = 'fatura-locacao-' . $numero . '.pdf';
+
+            return $this->response
+                ->setHeader('Content-Type', 'application/pdf')
+                ->setHeader('Content-Disposition', 'inline; filename="' . $filename . '"')
+                ->setBody($pdfOutput);
+        } catch (\Throwable $e) {
+            log_message('error', 'Erro ao gerar fatura de locação: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setBody('Erro ao gerar fatura.');
+        }
+    }
+
     public function excluir($id)
     {
         try {
@@ -723,5 +789,274 @@ class Financeiro extends BaseController
         if ($raw === '') return null;
 
         return (float) $raw;
+    }
+
+    private function buildFaturaPdfHtml(array $lancamento, array $locacaoJoin, array $empresa): string
+    {
+        $numeroFatura = str_pad((string) ((int) ($lancamento['id'] ?? 0)), 6, '0', STR_PAD_LEFT);
+        $valorTotal = (float) (($lancamento['lan_valor_pago'] ?? null) !== null && $lancamento['lan_valor_pago'] !== ''
+            ? $lancamento['lan_valor_pago']
+            : ($lancamento['lan_valor'] ?? 0));
+
+        $emissao = $this->formatDateBR((string) ($lancamento['lan_data_pagamento'] ?? date('Y-m-d')));
+        $inicio = $this->formatDateBR((string) ($locacaoJoin['loc_data_inicio'] ?? ''));
+        $fim = $this->formatDateBR((string) ($locacaoJoin['loc_data_fim_prevista'] ?? ''));
+        $placa = strtoupper((string) ($locacaoJoin['vei_placa'] ?? ''));
+        $marca = strtoupper((string) ($locacaoJoin['vei_marca'] ?? ''));
+        $modelo = strtoupper((string) ($locacaoJoin['vei_modelo'] ?? ''));
+
+        $empresaNome = $this->esc((string) ($empresa['emp_nome'] ?? $empresa['emp_fantasia'] ?? 'EMPRESA'));
+        $empresaCpfCnpj = $this->esc((string) ($empresa['emp_cpf_cnpj'] ?? ''));
+        $empresaTelefone = $this->esc((string) ($empresa['emp_telefone'] ?? ''));
+        $empresaEndereco = $this->esc(trim((string) ($empresa['emp_rua'] ?? '')));
+        $empresaNumero = $this->esc(trim((string) ($empresa['emp_numero'] ?? '')));
+        $empresaBairro = $this->esc(trim((string) ($empresa['emp_bairro'] ?? '')));
+        $empresaCidadeUf = $this->esc(trim((string) (($empresa['emp_cidade'] ?? '') . '/' . ($empresa['emp_estado'] ?? ''))));
+        $empresaCep = $this->esc((string) ($empresa['emp_cep'] ?? ''));
+
+        $clienteNome = $this->esc((string) ($locacaoJoin['cli_nome'] ?? ''));
+        $clienteCpfCnpj = $this->esc((string) ($locacaoJoin['cli_cpf_cnpj'] ?? ''));
+        $clienteEndereco = $this->esc(trim((string) ($locacaoJoin['cli_endereco'] ?? '')));
+        $clienteBairro = $this->esc((string) ($locacaoJoin['cli_bairro'] ?? ''));
+        $clienteCep = $this->esc((string) ($locacaoJoin['cli_cep'] ?? ''));
+        $clienteUf = $this->esc((string) ($locacaoJoin['cli_estado'] ?? ''));
+        $clienteCidade = $this->esc((string) ($locacaoJoin['cli_cidade'] ?? ''));
+        $clienteTelefone = $this->esc((string) ($locacaoJoin['cli_telefone'] ?? ''));
+
+        $descricaoLocacao = 'LOCAÇÃO DE AUTOMÓVEIS TIPO ' . trim($marca . '/ ' . $modelo)
+            . ' - PLACA: ' . $placa
+            . ' - REF. AO PERÍODO (' . $inicio . ' À ' . $fim . ')';
+
+        $valorExtenso = strtoupper($this->valorPorExtenso($valorTotal));
+        $valorFormatado = $this->formatMoneyBR($valorTotal);
+
+        return '<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #111; }
+    .sheet { width: 100%; }
+    .title { text-align: right; font-weight: bold; font-size: 20px; margin-bottom: 8px; }
+    .line { border-bottom: 1px solid #000; margin: 6px 0 8px 0; }
+    .row { width: 100%; }
+    .small { font-size: 10px; }
+    .mb4 { margin-bottom: 4px; }
+    .mb8 { margin-bottom: 8px; }
+    .mb12 { margin-bottom: 12px; }
+    .bold { font-weight: bold; }
+    .box-title { font-weight: bold; margin-bottom: 4px; }
+    table { width: 100%; border-collapse: collapse; }
+    td, th { vertical-align: top; padding: 2px 4px; }
+    .right { text-align: right; }
+    .center { text-align: center; }
+    .border { border: 1px solid #000; }
+    .top-space { margin-top: 14px; }
+    .canhoto { margin-top: 18px; border-top: 1px dashed #000; padding-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <table class="mb4">
+      <tr>
+        <td style="width: 70%;">
+          <div class="bold" style="font-size:13px;">' . $empresaNome . '</div>
+          <div>' . $empresaEndereco . ', ' . $empresaNumero . ' ' . $empresaBairro . '</div>
+          <div>' . $empresaCidadeUf . '</div>
+          <div>CEP: ' . $empresaCep . '</div>
+          <div>CNPJ: ' . $empresaCpfCnpj . '</div>
+          <div>TELEFONE: ' . $empresaTelefone . '</div>
+        </td>
+        <td style="width: 30%;">
+          <div class="title">FATURA DE LOCAÇÃO</div>
+          <div class="border" style="padding:8px;">
+            <div><span class="bold">Nº:</span> ' . $numeroFatura . '</div>
+            <div><span class="bold">Emissão:</span> ' . $emissao . '</div>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <div class="line"></div>
+    <div class="box-title">DESTINATÁRIO</div>
+    <table class="border mb8">
+      <tr>
+        <td style="width:70%;"><span class="small">Razão Social / Nome Cliente</span><br><span class="bold">' . $clienteNome . '</span></td>
+        <td style="width:30%;"><span class="small">CNPJ / CPF</span><br><span class="bold">' . $clienteCpfCnpj . '</span></td>
+      </tr>
+      <tr>
+        <td><span class="small">Endereço</span><br>' . $clienteEndereco . '</td>
+        <td><span class="small">Bairro</span><br>' . $clienteBairro . '</td>
+      </tr>
+      <tr>
+        <td><span class="small">Cidade</span><br>' . $clienteCidade . '</td>
+        <td><span class="small">CEP / UF / Telefone</span><br>' . $clienteCep . ' - ' . $clienteUf . ' - ' . $clienteTelefone . '</td>
+      </tr>
+    </table>
+
+    <div class="mb4"><span class="bold">CONDIÇÃO DE PAGAMENTO:</span> À VISTA</div>
+    <div class="mb8"><span class="bold">OBSERVAÇÃO</span> ' . $this->esc((string) ($lancamento['lan_obs'] ?? '')) . '</div>
+
+    <div class="box-title">DADOS DA LOCAÇÃO</div>
+    <table class="border mb8">
+      <tr>
+        <th style="width:12%;">Código</th>
+        <th style="width:58%;">Descrição / Configuração</th>
+        <th style="width:10%;" class="center">Quantidade</th>
+        <th style="width:10%;" class="right">Valor Unitário</th>
+        <th style="width:10%;" class="right">Valor Total</th>
+      </tr>
+      <tr>
+        <td>' . $numeroFatura . '</td>
+        <td>' . $this->esc($descricaoLocacao) . '</td>
+        <td class="center">1</td>
+        <td class="right">R$ ' . $valorFormatado . '</td>
+        <td class="right">R$ ' . $valorFormatado . '</td>
+      </tr>
+    </table>
+
+    <div class="mb12 bold">Valor Total da Fatura: R$' . $valorFormatado . ' ( ' . $valorExtenso . ' )</div>
+
+    <div class="canhoto small">
+      <div>RECEBI(EMOS) DE ' . $empresaNome . ' AS LOCAÇÕES CONSTANTES NESSA FATURA INDICADA AO LADO.</div>
+      <table style="margin-top:10px;">
+        <tr>
+          <td style="width:60%;">
+            <div style="border-top:1px solid #000; padding-top:3px;">DATA DO RECEBIMENTO</div>
+          </td>
+          <td style="width:40%;">
+            <div style="border-top:1px solid #000; padding-top:3px;">IDENTIFICAÇÃO E ASSINATURA DO RECEBEDOR</div>
+          </td>
+        </tr>
+      </table>
+      <div class="right bold">FATURA DE LOCAÇÃO Nº: ' . $numeroFatura . '</div>
+    </div>
+  </div>
+</body>
+</html>';
+    }
+
+    private function esc(string $value): string
+    {
+        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    }
+
+    private function formatDateBR(string $date): string
+    {
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $date, $m)) {
+            return $m[3] . '/' . $m[2] . '/' . $m[1];
+        }
+        return $date;
+    }
+
+    private function formatMoneyBR(float $value): string
+    {
+        return number_format($value, 2, ',', '.');
+    }
+
+    private function valorPorExtenso(float $value): string
+    {
+        $inteiro = (int) floor($value);
+        $centavos = (int) round(($value - $inteiro) * 100);
+
+        $textoInteiro = $this->numeroPorExtenso($inteiro);
+        $saida = $textoInteiro . ' ' . ($inteiro === 1 ? 'real' : 'reais');
+
+        if ($centavos > 0) {
+            $saida .= ' e ' . $this->numeroPorExtenso($centavos) . ' ' . ($centavos === 1 ? 'centavo' : 'centavos');
+        }
+
+        return $saida;
+    }
+
+    private function numeroPorExtenso(int $numero): string
+    {
+        if ($numero === 0) {
+            return 'zero';
+        }
+
+        $unidades = [
+            0 => '',
+            1 => 'um',
+            2 => 'dois',
+            3 => 'três',
+            4 => 'quatro',
+            5 => 'cinco',
+            6 => 'seis',
+            7 => 'sete',
+            8 => 'oito',
+            9 => 'nove',
+            10 => 'dez',
+            11 => 'onze',
+            12 => 'doze',
+            13 => 'treze',
+            14 => 'quatorze',
+            15 => 'quinze',
+            16 => 'dezesseis',
+            17 => 'dezessete',
+            18 => 'dezoito',
+            19 => 'dezenove',
+        ];
+
+        $dezenas = [
+            2 => 'vinte',
+            3 => 'trinta',
+            4 => 'quarenta',
+            5 => 'cinquenta',
+            6 => 'sessenta',
+            7 => 'setenta',
+            8 => 'oitenta',
+            9 => 'noventa',
+        ];
+
+        $centenas = [
+            1 => 'cento',
+            2 => 'duzentos',
+            3 => 'trezentos',
+            4 => 'quatrocentos',
+            5 => 'quinhentos',
+            6 => 'seiscentos',
+            7 => 'setecentos',
+            8 => 'oitocentos',
+            9 => 'novecentos',
+        ];
+
+        if ($numero < 20) {
+            return $unidades[$numero];
+        }
+
+        if ($numero < 100) {
+            $dezena = (int) floor($numero / 10);
+            $resto = $numero % 10;
+            return $dezenas[$dezena] . ($resto ? ' e ' . $unidades[$resto] : '');
+        }
+
+        if ($numero === 100) {
+            return 'cem';
+        }
+
+        if ($numero < 1000) {
+            $centena = (int) floor($numero / 100);
+            $resto = $numero % 100;
+            return $centenas[$centena] . ($resto ? ' e ' . $this->numeroPorExtenso($resto) : '');
+        }
+
+        if ($numero < 1000000) {
+            $milhar = (int) floor($numero / 1000);
+            $resto = $numero % 1000;
+            $prefixo = $milhar === 1 ? 'mil' : $this->numeroPorExtenso($milhar) . ' mil';
+            if ($resto === 0) {
+                return $prefixo;
+            }
+            return $prefixo . ($resto < 100 ? ' e ' : ', ') . $this->numeroPorExtenso($resto);
+        }
+
+        $milhoes = (int) floor($numero / 1000000);
+        $resto = $numero % 1000000;
+        $prefixo = $milhoes === 1 ? 'um milhão' : $this->numeroPorExtenso($milhoes) . ' milhões';
+        if ($resto === 0) {
+            return $prefixo;
+        }
+        return $prefixo . ($resto < 100 ? ' e ' : ', ') . $this->numeroPorExtenso($resto);
     }
 }

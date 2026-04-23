@@ -355,12 +355,14 @@
       },
       {
         name: "Ações",
-        width: "220px",
+        width: "280px",
         formatter: (_cell, row) => {
           const id = row.cells[0].data;
           const tipo = row.cells[2].data;
           const status = row.cells[6].data;
+          const lancamento = (allData || []).find((l) => String(l.id) === String(id));
           const isPendente = status === "pendente";
+          const canPrintInvoice = status === "pago" && Number(lancamento?.lan_locacao_id || 0) > 0;
           
           return gridjs.html(`
             <div class="d-flex gap-2">
@@ -370,6 +372,11 @@
               ${isPendente ? `
                 <button type="button" class="btn btn-sm btn-success btn-efetuar-pagamento" data-id="${id}" title="Efetuar Pagamento">
                   <iconify-icon icon="iconamoon:check-circle-1-duotone" class="fs-18"></iconify-icon>
+                </button>
+              ` : ''}
+              ${canPrintInvoice ? `
+                <button type="button" class="btn btn-sm btn-outline-dark btn-imprimir-fatura" data-id="${id}" title="Imprimir fatura">
+                  <iconify-icon icon="iconamoon:printer-duotone" class="fs-18"></iconify-icon>
                 </button>
               ` : ''}
               <button type="button" class="btn btn-sm btn-outline-danger btn-excluir-lancamento" data-id="${id}" title="Excluir">
@@ -491,6 +498,15 @@
       e.preventDefault();
       const id = btnExcluir.getAttribute("data-id");
       if (id) excluirLancamento(id);
+      return;
+    }
+    const btnImprimirFatura = e.target?.closest?.(".btn-imprimir-fatura");
+    if (btnImprimirFatura) {
+      e.preventDefault();
+      const id = btnImprimirFatura.getAttribute("data-id");
+      if (id) {
+        window.open(`${getBaseUrl()}admin/financeiro/fatura/${id}`, "_blank", "noopener");
+      }
     }
   });
 

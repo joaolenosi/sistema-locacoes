@@ -50,6 +50,7 @@ $routes->get('admin/financeiro', 'Financeiro::index');
 $routes->get('admin/financeiro/debug-queries', 'Financeiro::debugQueries');
 $routes->get('admin/financeiro/movimentacoes', 'Financeiro::movimentacoes');
 $routes->get('admin/financeiro/listar', 'Financeiro::listar');
+$routes->get('admin/financeiro/fatura/(:num)', 'Financeiro::fatura/$1');
 $routes->post('admin/financeiro/criar', 'Financeiro::criar');
 $routes->get('admin/financeiro/editar/(:num)', 'Financeiro::editar/$1');
 $routes->post('admin/financeiro/atualizar/(:num)', 'Financeiro::atualizar/$1');

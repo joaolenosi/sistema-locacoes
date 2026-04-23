@@ -14,7 +14,8 @@
 .assinatura-planos .plano-atual-card {
   border: none;
   border-radius: var(--planos-card-radius);
-  background: linear-gradient(135deg, #fff 0%, var(--planos-bg-soft) 100%);
+  /* background: linear-gradient(135deg, #fff 0%, var(--planos-bg-soft) 100%); */
+  background: linear-gradient(135deg, #ff4e48 0%, #fc0411 100%);
   box-shadow: var(--planos-card-shadow);
 }
 

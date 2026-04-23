@@ -533,7 +533,7 @@ window.__LOCACOES_BOOTSTRAP__ = {
       <div class="modal-footer">
         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
         <button type="button" class="btn btn-outline-success me-auto d-none" id="btnFinalizarLocacao">
-          <iconify-icon icon="iconamoon:check-circle-duotone" class="fs-18 me-1"></iconify-icon>
+          <iconify-icon icon="iconamoon:check-circle-1-duotone" class="fs-18 me-1"></iconify-icon>
           Finalizar locação
         </button>
         <button type="button" class="btn btn-primary" id="btnSalvarLocacao" onclick="salvarLocacao()">
@@ -545,7 +545,7 @@ window.__LOCACOES_BOOTSTRAP__ = {
 </div>
 
 <!-- Modal: escolher veículo -->
-<div class="modal fade" id="modalEscolherVeiculo" tabindex="-1" aria-labelledby="modalEscolherVeiculoLabel" aria-hidden="true">
+<div class="modal fade" id="modalEscolherVeiculo" tabindex="-1" aria-labelledby="modalEscolherVeiculoLabel" aria-hidden="true" data-bs-backdrop="static">
   <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
@@ -577,7 +577,7 @@ window.__LOCACOES_BOOTSTRAP__ = {
 </div>
 
 <!-- Modal: escolher locatário -->
-<div class="modal fade" id="modalEscolherLocatario" tabindex="-1" aria-labelledby="modalEscolherLocatarioLabel" aria-hidden="true">
+<div class="modal fade" id="modalEscolherLocatario" tabindex="-1" aria-labelledby="modalEscolherLocatarioLabel" aria-hidden="true" data-bs-backdrop="static">
   <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">

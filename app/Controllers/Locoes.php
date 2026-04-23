@@ -138,6 +138,17 @@ class Locoes extends BaseController
                 ]);
             }
 
+            // Atualizar status do veículo para locado
+            try {
+                $veiId = (int) ($data['loc_vei_id'] ?? 0);
+                if ($veiId > 0) {
+                    $veiculoModel = new VeiculoModel();
+                    $veiculoModel->update($veiId, ['vei_status' => 'locado']);
+                }
+            } catch (\Throwable $e) {
+                log_message('error', 'Erro ao atualizar status do veículo após criar locação: ' . $e->getMessage());
+            }
+
             // Criar lançamento de receita para caução se necessário
             try {
                 $this->criarLancamentoReceitaCaucao((int) $id, $data);
@@ -203,6 +214,19 @@ class Locoes extends BaseController
                     'success' => false,
                     'message' => 'Não foi possível atualizar a locação.',
                 ]);
+            }
+
+            // Atualizar status do veículo conforme status da locação
+            try {
+                $veiId = (int) ($data['loc_vei_id'] ?? $existing['loc_vei_id'] ?? 0);
+                if ($veiId > 0) {
+                    $veiculoModel = new VeiculoModel();
+                    $novoStatus = (string) ($data['loc_status'] ?? $existing['loc_status'] ?? 'reservada');
+                    $veiStatus = in_array($novoStatus, ['finalizada', 'cancelada'], true) ? 'disponivel' : 'locado';
+                    $veiculoModel->update($veiId, ['vei_status' => $veiStatus]);
+                }
+            } catch (\Throwable $e) {
+                log_message('error', 'Erro ao atualizar status do veículo após atualizar locação: ' . $e->getMessage());
             }
 
             // Verificar se precisa criar lançamento de receita para caução

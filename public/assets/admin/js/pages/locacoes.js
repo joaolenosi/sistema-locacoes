@@ -257,7 +257,7 @@
           const placa = row.cells[1].data || "-";
           const locatario = row.cells[3].data || "-";
           const btnFinalizar = `<button type="button" class="btn btn-sm btn-outline-success btn-finalizar-locacao" data-id="${id}" title="Finalizar locação">
-                 <iconify-icon icon="iconamoon:check-circle-duotone" class="fs-18"></iconify-icon>
+                 <iconify-icon icon="iconamoon:check-circle-1-duotone" class="fs-18"></iconify-icon>
                </button>`;
           return gridjs.html(`
             <div class="d-flex gap-2">
