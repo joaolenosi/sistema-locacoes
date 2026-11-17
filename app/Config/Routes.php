@@ -74,8 +74,6 @@ $routes->get('admin/manutencao-inteligente/detalhes/(:num)', 'ManutencaoIntelige
 $routes->get('admin/manutencao-inteligente/km-atual/(:num)', 'ManutencaoInteligente::kmAtual/$1');
 $routes->post('admin/manutencao-inteligente/completar/(:num)', 'ManutencaoInteligente::completar/$1');
 $routes->post('admin/manutencao-inteligente/excluir/(:num)', 'ManutencaoInteligente::excluir/$1');
-$routes->get('admin/meu-acesso', 'MeuAcesso::index');
-$routes->post('admin/meu-acesso/atualizar', 'MeuAcesso::atualizar', ['filter' => 'csrf']);
 $routes->get('admin/empresa', 'Empresa::index'); 
 $routes->get('admin/empresa/logo', 'Empresa::logo');
 $routes->get('admin/configuracoes', 'Configuracoes::index');

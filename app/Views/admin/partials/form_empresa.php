@@ -152,19 +152,16 @@
     <!-- Telefone, E-mail e Senha (credenciais de acesso) -->
     <div class="row mb-3">
         <div class="col-md-4">
-            <label for="telefone" class="form-label">Telefone de acesso</label>
-            <input type="text" class="form-control bg-light" id="telefone" name="telefone" value="<?= esc($empresa['emp_telefone'] ?? '') ?>" readonly>
-            <small class="text-muted">Para trocar, use <a href="<?= base_url('admin/meu-acesso') ?>">Meu acesso</a>.</small>
+            <label for="telefone" class="form-label">Telefone <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="telefone" name="telefone" placeholder="(00) 00000-0000" value="<?= esc($empresa['emp_telefone'] ?? '') ?>" required>
         </div>
         <div class="col-md-4">
             <label for="email" class="form-label">E-mail <span class="text-danger">*</span></label>
             <input type="email" class="form-control" id="email" name="email" value="<?= esc($empresa['emp_email'] ?? '') ?>" required>
         </div>
         <div class="col-md-4">
-            <label class="form-label">Senha</label>
-            <a href="<?= base_url('admin/meu-acesso') ?>" class="btn btn-light border w-100 text-start">
-                <i class="bx bx-lock-alt align-middle me-1"></i> Alterar senha em Meu acesso
-            </a>
+            <label for="senha" class="form-label">Senha</label>
+            <input type="password" class="form-control" id="senha" name="senha" placeholder="Deixe em branco para não alterar" autocomplete="new-password">
         </div>
     </div>
 

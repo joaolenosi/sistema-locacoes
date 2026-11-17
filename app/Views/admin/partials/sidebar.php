@@ -234,17 +234,6 @@
                 </a>
             </li>
 
-            <li class="nav-item">
-                <a class="nav-link" href="<?= base_url('admin/meu-acesso') ?>">
-                    <span class="nav-icon">
-                        <iconify-icon
-                            icon="iconamoon:shield-yes-duotone"
-                        ></iconify-icon>
-                    </span>
-                    <span class="nav-text"> Meu acesso </span>
-                </a>
-            </li>
-
             <li class="nav-item">   
                 <a class="nav-link" href="<?= base_url('logout') ?>">
                     <span class="nav-icon">

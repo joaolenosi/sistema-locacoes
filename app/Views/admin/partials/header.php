@@ -108,10 +108,6 @@ if (!function_exists('empresa_iniciais')) {
                                         <i class="bx bx-building-house text-muted fs-18 align-middle me-1"></i>
                                         <span class="align-middle">Empresa</span>
                                     </a>
-                                    <a class="dropdown-item" href="<?= base_url('admin/meu-acesso') ?>">
-                                        <i class="bx bx-lock-alt text-muted fs-18 align-middle me-1"></i>
-                                        <span class="align-middle">Meu acesso</span>
-                                    </a>
                                     <!-- <a class="dropdown-item" href="apps-chat.html">
                                         <i
                                             class="bx bx-message-dots text-muted fs-18 align-middle me-1"
