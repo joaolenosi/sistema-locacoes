@@ -247,6 +247,9 @@ class Configuracoes extends BaseController
             // CNPJ não pode ser alterado
             unset($data['emp_cpf_cnpj']);
 
+            // Telefone de login e senha só mudam em "Meu acesso" (exige a senha atual)
+            unset($data['emp_telefone'], $data['senha']);
+
             // Upload opcional de foto/logo da empresa
             $file = $this->request->getFile('foto_empresa');
             if ($file && $file->getError() !== UPLOAD_ERR_NO_FILE) {
